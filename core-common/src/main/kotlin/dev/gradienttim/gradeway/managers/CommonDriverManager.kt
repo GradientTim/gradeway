@@ -1,0 +1,93 @@
+/*
+MIT License
+Copyright (c) 2026 GradientTim
+*/
+package dev.gradienttim.gradeway.managers
+
+import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.driver.Driver
+import dev.gradienttim.gradeway.driver.DriverConfig
+import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.ksp.resolvers.DriverResolver
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import java.io.File
+import java.net.URLClassLoader
+import java.nio.file.Path
+import java.util.zip.ZipFile
+import kotlin.io.path.createDirectory
+import kotlin.io.path.exists
+import kotlin.io.path.extension
+import kotlin.io.path.listDirectoryEntries
+
+class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
+    private val drivers = mutableSetOf<Driver>()
+    private val directory: Path by lazy {
+        val driversDirectory = gradeway.directory.resolve("drivers")
+        if (!driversDirectory.exists()) {
+            driversDirectory.createDirectory()
+        }
+        driversDirectory
+    }
+
+    override fun load() {
+        directory.listDirectoryEntries().filter { it.extension == "jar" }.forEach { path ->
+            loadDriver(path.toFile())
+        }
+    }
+
+    override fun unload() {
+        drivers.forEach { it.classLoader.close() }
+        drivers.clear()
+    }
+
+    override fun findDriver(id: String, type: DriverType): Driver? {
+        return drivers.find { driver ->
+            val (configId, configType) = driver.config
+            configId == id && configType == type
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun loadDriver(file: File) {
+        val zipFile = ZipFile(file)
+        val configEntry = zipFile.getEntry(DriverResolver.DRIVER_CONFIG_FILE)
+        if (configEntry == null) {
+            gradeway.logger.error("Unable to load driver '${file.name}': No driver config found.")
+            return
+        }
+
+        val configStream = zipFile.getInputStream(configEntry)
+        if (configStream == null) {
+            gradeway.logger.error("Unable to load driver '${file.name}': Failed to open stream of config.")
+            return
+        }
+
+        try {
+            val config = configStream.use { Json.decodeFromStream<DriverConfig>(it) }
+            val driverClassLoader = URLClassLoader(
+                arrayOf(file.toURI().toURL()),
+                this::class.java.classLoader
+            )
+
+            val driverClass = Class.forName(config.entry, true, driverClassLoader)
+            val driver = driverClass.getDeclaredConstructor().newInstance() as Driver
+
+            driver.config = config
+            driver.classLoader = driverClassLoader
+
+            if (!drivers.add(driver)) {
+                gradeway.logger.warn("Unable to load driver '${file.name}': Driver already loaded.")
+                return
+            }
+
+            driver.load()
+            gradeway.logger.info("Loaded driver '${file.name}'.")
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Unable to load driver '${file.name}': ${throwable.localizedMessage}")
+        } finally {
+            zipFile.close()
+        }
+    }
+}

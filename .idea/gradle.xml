@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <option name="externalProjectPath" value="$PROJECT_DIR$" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/core-api" />
+            <option value="$PROJECT_DIR$/core-common" />
+            <option value="$PROJECT_DIR$/driver-database-h2" />
+            <option value="$PROJECT_DIR$/driver-database-mariadb" />
+            <option value="$PROJECT_DIR$/driver-database-mysql" />
+            <option value="$PROJECT_DIR$/driver-database-oracle" />
+            <option value="$PROJECT_DIR$/driver-database-postgres" />
+            <option value="$PROJECT_DIR$/driver-database-sqlite" />
+            <option value="$PROJECT_DIR$/driver-database-sqlserver" />
+            <option value="$PROJECT_DIR$/driver-messaging-redis" />
+            <option value="$PROJECT_DIR$/plugin-bukkit" />
+            <option value="$PROJECT_DIR$/plugin-bungeecord" />
+            <option value="$PROJECT_DIR$/plugin-velocity" />
+          </set>
+        </option>
+        <option name="myGradleHome" value="" />
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>
