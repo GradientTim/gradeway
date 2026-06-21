@@ -10,6 +10,8 @@ import dev.gradienttim.gradeway.Gradeway
 import java.util.UUID
 
 class GradewayPermissionFunction(val gradeway: Gradeway, val playerId: UUID) : PermissionFunction {
+    @Suppress("ForbiddenComment")
+    // TODO: ADD ROLE PERMISSIONS
     override fun getPermissionValue(permission: String): Tristate {
         val permissions = gradeway.players.getPermissions(playerId)
         val status = permissions[permission] ?: return Tristate.UNDEFINED

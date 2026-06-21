@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.shadow)
     alias(libs.plugins.kotlin.jvm)
 }
 
@@ -9,8 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core-api"))
-    implementation(project(":core-common"))
+    api(project(":core-common"))
 
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.9-alpha")
 }

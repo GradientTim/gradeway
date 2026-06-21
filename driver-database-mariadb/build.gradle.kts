@@ -11,14 +11,14 @@ repositories {
 @Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     ksp(project(":core-api"))
-    implementation(project(":core-api"))
+    compileOnly(project(":core-api"))
 
     shadow("org.mariadb.jdbc:mariadb-java-client:3.5.6")
 }
 
 tasks {
     jar {
-        dependsOn(shadowJar)
+        enabled = false
     }
 
     shadowJar {

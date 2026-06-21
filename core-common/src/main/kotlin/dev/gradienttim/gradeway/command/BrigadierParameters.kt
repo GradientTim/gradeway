@@ -8,7 +8,6 @@ import com.mojang.brigadier.context.CommandContext
 import dev.gradienttim.gradeway.Gradeway
 import dev.gradienttim.gradeway.database.models.player.PlayerEntity
 import dev.gradienttim.gradeway.database.models.role.RoleEntity
-import java.util.*
 
 fun <TCommandSource> CommandContext<TCommandSource>.stringParam(
     name: String,
@@ -39,13 +38,7 @@ fun <TCommandSource> CommandContext<TCommandSource>.playerEntityParam(
     gradeway: Gradeway,
 ): Pair<String, PlayerEntity?> {
     val idOrName = stringParam(name)
-
-    return try {
-        val uniqueId = UUID.fromString(idOrName)
-        idOrName to gradeway.players.findById(uniqueId)
-    } catch (_: IllegalArgumentException) {
-        idOrName to gradeway.players.findByName(idOrName)
-    }
+    return idOrName to gradeway.players.findByIdOrName(idOrName)
 }
 
 fun <TCommandSource> CommandContext<TCommandSource>.roleEntityParam(
@@ -53,11 +46,5 @@ fun <TCommandSource> CommandContext<TCommandSource>.roleEntityParam(
     gradeway: Gradeway,
 ): Pair<String, RoleEntity?> {
     val idOrName = stringParam(name)
-
-    return try {
-        val uniqueId = UUID.fromString(idOrName)
-        idOrName to gradeway.roles.findById(uniqueId)
-    } catch (_: IllegalArgumentException) {
-        idOrName to gradeway.roles.findByName(idOrName)
-    }
+    return idOrName to gradeway.roles.findByIdOrName(idOrName)
 }

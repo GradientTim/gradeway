@@ -14,31 +14,29 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import java.io.File
 import java.net.URLClassLoader
-import java.nio.file.Path
 import java.util.zip.ZipFile
-import kotlin.io.path.createDirectory
-import kotlin.io.path.exists
-import kotlin.io.path.extension
-import kotlin.io.path.listDirectoryEntries
 
 class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
     private val drivers = mutableSetOf<Driver>()
-    private val directory: Path by lazy {
-        val driversDirectory = gradeway.directory.resolve("drivers")
+    private val directory by lazy {
+        val driversDirectory = File(gradeway.directory, "drivers")
         if (!driversDirectory.exists()) {
-            driversDirectory.createDirectory()
+            driversDirectory.mkdirs()
         }
         driversDirectory
     }
 
     override fun load() {
-        directory.listDirectoryEntries().filter { it.extension == "jar" }.forEach { path ->
-            loadDriver(path.toFile())
+        directory.listFiles { it.extension == "jar" }.forEach { file ->
+            loadDriver(file)
         }
     }
 
     override fun unload() {
-        drivers.forEach { it.classLoader.close() }
+        drivers.forEach {
+            it.unload()
+            it.classLoader.close()
+        }
         drivers.clear()
     }
 

@@ -11,14 +11,14 @@ repositories {
 @Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     ksp(project(":core-api"))
-    implementation(project(":core-api"))
+    compileOnly(project(":core-api"))
 
     shadow("com.h2database:h2:2.4.240")
 }
 
 tasks {
     jar {
-        dependsOn(shadowJar)
+        enabled = false
     }
 
     shadowJar {

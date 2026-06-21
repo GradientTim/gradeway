@@ -11,7 +11,7 @@ import dev.gradienttim.gradeway.managers.DriverManager
 import dev.gradienttim.gradeway.managers.LanguageManager
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
-import java.nio.file.Path
+import java.io.File
 
 /**
  * Represents a lifecycle-aware extension of the Gradeway interface, adding support for
@@ -29,7 +29,7 @@ import java.nio.file.Path
  */
 interface GradewayLifecycle : Gradeway {
     val logger: Logger
-    val directory: Path
+    val directory: File
     val environment: Environment
 
     val databases: DatabaseManager

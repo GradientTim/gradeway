@@ -74,20 +74,18 @@ data class GradewayConfig(
         val file: String = "./.env",
 
         @TomlComments(
-            "If this option is enabled, Gradeway will attempt to read environment variables from the currently running application. ",
-            "If there are any environment variables, they will override existing values from the .env file and the variables defined in this configuration."
+            "If this option is enabled, Gradeway will attempt to read environment variables from the configured .env file above.",
+            "Variables found in the .env file will override Variables defined in the Gradeway configuration."
         )
         val readFromFile: Boolean = true,
 
         @TomlComments(
-            "If this option is enabled, Gradeway will attempt to read environment variables from the currently running application. ",
-            "If there are any environment variables, they will override existing values from the .env file and the variables defined in this configuration."
+            "If this option is enabled, Gradeway will attempt to read environment variables from global system environment variables.",
         )
         val readFromSystem: Boolean = false,
 
         @TomlComments(
-            "If this option is enabled, Gradeway will attempt to read environment variables from the currently running application. ",
-            "If there are any environment variables, they will override existing values from the .env file and the variables defined in this configuration."
+            "If this option is enabled, Gradeway will attempt to read environment variables from the running application that defines properties via the '-Dkey=value' flag.",
         )
         val readFromProperties: Boolean = false,
     )

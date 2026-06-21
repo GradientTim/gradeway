@@ -16,13 +16,11 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
-import java.nio.file.Path
-import kotlin.io.path.createDirectory
-import kotlin.io.path.exists
+import java.io.File
 
 class CommonGradeway(
     override val logger: Logger,
-    override val directory: Path,
+    override val directory: File,
 ) : GradewayLifecycle, KoinComponent {
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
@@ -63,7 +61,7 @@ class CommonGradeway(
         }
 
         if (!directory.exists()) {
-            directory.createDirectory()
+            directory.mkdirs()
         }
 
         koin = startKoin {

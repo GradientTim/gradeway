@@ -10,12 +10,13 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
 import kotlinx.serialization.encodeToString
+import java.io.File
 
 class CommonConfigManager(val gradeway: CommonGradeway) : ConfigManager {
     override var config: GradewayConfig = GradewayConfig()
 
     override fun load() {
-        val configFile = gradeway.directory.resolve("config.toml").toFile()
+        val configFile = File(gradeway.directory, "config.toml")
         if (configFile.exists()) {
             configFile.inputStream().use {
                 config = Toml.decodeFromStream<GradewayConfig>(it)

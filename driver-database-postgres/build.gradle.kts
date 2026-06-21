@@ -11,14 +11,14 @@ repositories {
 @Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     ksp(project(":core-api"))
-    implementation(project(":core-api"))
+    compileOnly(project(":core-api"))
 
     shadow("org.postgresql:postgresql:42.7.8")
 }
 
 tasks {
     jar {
-        dependsOn(shadowJar)
+        enabled = false
     }
 
     shadowJar {
