@@ -7,8 +7,14 @@ package dev.gradienttim.gradeway.command
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
+import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.suggestion.Suggestions
+import com.mojang.brigadier.suggestion.SuggestionsBuilder
+import kotlinx.coroutines.*
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.milliseconds
 
 fun <TCommandSource> command(
     name: String,
@@ -38,4 +44,30 @@ inline fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.executeWith(
     crossinline execute: CommandContext<TCommandSource>.() -> Int,
 ): ArgumentBuilder<TCommandSource, *> = this.executes {
     execute(it)
+}
+
+private val commandSuggestionScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+fun <S, T> RequiredArgumentBuilder<S, T>.suggestsDebounced(
+    delayMillis: Long = 250,
+    block: suspend (builder: SuggestionsBuilder) -> Unit
+): RequiredArgumentBuilder<S, T> {
+    var searchJob: Job? = null
+
+    return this.suggests { _, builder ->
+        searchJob?.cancel()
+
+        val future = CompletableFuture<Suggestions>()
+
+        searchJob = commandSuggestionScope.launch {
+            try {
+                delay(delayMillis.milliseconds)
+                block(builder)
+            } finally {
+                future.complete(builder.build())
+            }
+        }
+
+        return@suggests future
+    }
 }

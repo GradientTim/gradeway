@@ -22,7 +22,6 @@ import java.util.*
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JsonClassDiscriminator("type")
-@Suppress("UNUSED")
 sealed class Attribute<TValue : Any> {
     companion object : AttributeBuilder
 
@@ -124,6 +123,17 @@ sealed class Attribute<TValue : Any> {
      */
     val isNumber: Boolean
         get() = isInteger || isLong || isDouble || isFloat || isShort || isByte
+
+    /**
+     * Indicates whether the current attribute represents a special type.
+     *
+     * The attribute is considered special if it is of one of the following types:
+     * - UuidAttribute
+     * - InstantAttribute
+     * - DurationAttribute
+     */
+    val isSpecial: Boolean
+        get() = isUuid || isInstant || isDuration
 
     abstract fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean
 

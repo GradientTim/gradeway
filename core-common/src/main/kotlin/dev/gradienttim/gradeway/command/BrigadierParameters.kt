@@ -6,7 +6,6 @@ package dev.gradienttim.gradeway.command
 
 import com.mojang.brigadier.context.CommandContext
 import dev.gradienttim.gradeway.Gradeway
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
 import dev.gradienttim.gradeway.database.models.role.RoleEntity
 
 fun <TCommandSource> CommandContext<TCommandSource>.stringParam(
@@ -32,14 +31,6 @@ fun <TCommandSource> CommandContext<TCommandSource>.doubleParam(
 fun <TCommandSource> CommandContext<TCommandSource>.booleanParam(
     name: String,
 ) = param(name, Boolean::class)
-
-fun <TCommandSource> CommandContext<TCommandSource>.playerEntityParam(
-    name: String,
-    gradeway: Gradeway,
-): Pair<String, PlayerEntity?> {
-    val idOrName = stringParam(name)
-    return idOrName to gradeway.players.findByIdOrName(idOrName)
-}
 
 fun <TCommandSource> CommandContext<TCommandSource>.roleEntityParam(
     name: String,

@@ -1,0 +1,23 @@
+Models:
+- Move Database Models to the Common module and only use Entity classes in API module.
+- Maybe(?) move attributes in separate tables (size limit on table field).
+- Complete pausing and time-based roles implementation.
+
+Permissions:
+- Template system with link/unlink and apply/revoke support.
+- For better support may create a global permissions Model and link them in Templates, Players and Roles.
+
+Messaging:
+- Plan the architecture in the Common and API module.
+
+Services:
+- Shared services should handle the specific TEntity type for its use.
+- Add "idOrName" support in role / player service.
+
+Commands:
+- May create a Attribute category beside/instead the child role/player nodes.
+
+Plugins:
+- Add Sponge support
+- Add Minestom support
+- Add BungeeCord support
