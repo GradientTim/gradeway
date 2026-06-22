@@ -129,11 +129,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun <TValue : Any> addAttribute(entity: RoleEntity, attribute: Attribute<TValue>) =
         attributeService.addRoleAttribute(entity, attribute)
 
+    override fun <TValue : Any> addAttribute(idOrName: String, attribute: Attribute<TValue>) =
+        attributeService.addRoleAttribute(idOrName, attribute)
+
     override fun <TValue : Any> updateAttribute(id: UUID, key: Key, value: TValue) =
         attributeService.updateRoleAttribute(id, key, value)
 
     override fun <TValue : Any> updateAttribute(entity: RoleEntity, key: Key, value: TValue) =
         attributeService.updateRoleAttribute(entity, key, value)
+
+    override fun <TValue : Any> updateAttribute(idOrName: String, key: Key, value: TValue) =
+        attributeService.updateRoleAttribute(idOrName, key, value)
 
     override fun removeAttribute(id: UUID, key: Key) =
         attributeService.removeRoleAttribute(id, key)
@@ -141,11 +147,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun removeAttribute(entity: RoleEntity, key: Key) =
         attributeService.removeRoleAttribute(entity, key)
 
+    override fun removeAttribute(idOrName: String, key: Key) =
+        attributeService.removeRoleAttribute(idOrName, key)
+
     override fun clearAttributes(id: UUID) =
         attributeService.clearRoleAttributes(id)
 
     override fun clearAttributes(entity: RoleEntity) =
         attributeService.clearRoleAttributes(entity)
+
+    override fun clearAttributes(idOrName: String) =
+        attributeService.clearRoleAttributes(idOrName)
 
     override fun hasAttribute(id: UUID, key: Key) =
         attributeService.hasRoleAttribute(id, key)
@@ -153,11 +165,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun hasAttribute(entity: RoleEntity, key: Key) =
         attributeService.hasRoleAttribute(entity, key)
 
+    override fun hasAttribute(idOrName: String, key: Key) =
+        attributeService.hasRoleAttribute(idOrName, key)
+
     override fun getAttribute(id: UUID, key: Key) =
         attributeService.getRoleAttribute(id, key)
 
     override fun getAttribute(entity: RoleEntity, key: Key) =
         attributeService.getRoleAttribute(entity, key)
+
+    override fun getAttribute(idOrName: String, key: Key) =
+        attributeService.getRoleAttribute(idOrName, key)
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =
         permissionService.setRolePermission(id, permission, enabled)
@@ -165,11 +183,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun setPermission(entity: RoleEntity, permission: String, enabled: Boolean) =
         permissionService.setRolePermission(entity, permission, enabled)
 
+    override fun setPermission(idOrName: String, permission: String, enabled: Boolean) =
+        permissionService.setRolePermission(idOrName, permission, enabled)
+
     override fun setPermissions(id: UUID, permissions: Map<String, Boolean>) =
         permissionService.setRolePermissions(id, permissions)
 
     override fun setPermissions(entity: RoleEntity, permissions: Map<String, Boolean>) =
         permissionService.setRolePermissions(entity, permissions)
+
+    override fun setPermissions(idOrName: String, permissions: Map<String, Boolean>) =
+        permissionService.setRolePermissions(idOrName, permissions)
 
     override fun unsetPermission(id: UUID, permission: String) =
         permissionService.unsetRolePermission(id, permission)
@@ -177,11 +201,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun unsetPermission(entity: RoleEntity, permission: String) =
         permissionService.unsetRolePermission(entity, permission)
 
+    override fun unsetPermission(idOrName: String, permission: String) =
+        permissionService.unsetRolePermission(idOrName, permission)
+
     override fun unsetPermissions(id: UUID, permissions: List<String>) =
         permissionService.unsetRolePermissions(id, permissions)
 
     override fun unsetPermissions(entity: RoleEntity, permissions: List<String>) =
         permissionService.unsetRolePermissions(entity, permissions)
+
+    override fun unsetPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.unsetRolePermissions(idOrName, permissions)
 
     override fun clearPermissions(id: UUID) =
         permissionService.clearRolePermissions(id)
@@ -189,11 +219,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun clearPermissions(entity: RoleEntity) =
         permissionService.clearRolePermissions(entity)
 
+    override fun clearPermissions(idOrName: String) =
+        permissionService.clearRolePermissions(idOrName)
+
     override fun hasPermission(id: UUID, permission: String) =
         permissionService.hasRolePermission(id, permission)
 
     override fun hasPermission(entity: RoleEntity, permission: String) =
         permissionService.hasRolePermission(entity, permission)
+
+    override fun hasPermission(idOrName: String, permission: String) =
+        permissionService.hasRolePermission(idOrName, permission)
 
     override fun hasAnyPermissions(id: UUID, permissions: List<String>) =
         permissionService.hasRoleAnyPermissions(id, permissions)
@@ -201,11 +237,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun hasAnyPermissions(entity: RoleEntity, permissions: List<String>) =
         permissionService.hasRoleAnyPermissions(entity, permissions)
 
+    override fun hasAnyPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.hasRoleAnyPermissions(idOrName, permissions)
+
     override fun hasAllPermissions(id: UUID, permissions: List<String>) =
         permissionService.hasRoleAllPermissions(id, permissions)
 
     override fun hasAllPermissions(entity: RoleEntity, permissions: List<String>) =
         permissionService.hasRoleAllPermissions(entity, permissions)
+
+    override fun hasAllPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.hasRoleAllPermissions(idOrName, permissions)
 
     override fun getPermissions(id: UUID) =
         permissionService.getRolePermissions(id)
@@ -213,11 +255,17 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun getPermissions(entity: RoleEntity) =
         permissionService.getRolePermissions(entity)
 
+    override fun getPermissions(idOrName: String) =
+        permissionService.getRolePermissions(idOrName)
+
     override fun getPermissions(id: UUID, enabled: Boolean) =
         permissionService.getRolePermissions(id, enabled)
 
     override fun getPermissions(entity: RoleEntity, enabled: Boolean) =
         permissionService.getRolePermissions(entity, enabled)
+
+    override fun getPermissions(idOrName: String, enabled: Boolean) =
+        permissionService.getRolePermissions(idOrName, enabled)
 
     private fun isNameValid(name: String): Boolean {
         if (name.isNotBlank()) return true

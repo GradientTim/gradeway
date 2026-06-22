@@ -46,6 +46,21 @@ interface PlayerPermissionService {
     ): Either<PermissionService.SetPermissionError, Boolean>
 
     /**
+     * Sets a specific permission for a player, identified by their unique identifier or name, to either enable or disabled.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param permission The name of the permission to modify.
+     * @param enabled Whether the permission should be enabled (true) or disabled (false). Defaults to true.
+     * @return An instance of [Either], containing either a [PermissionService.SetPermissionError] if an error occurs,
+     *         or `true` if the update succeeds.
+     */
+    fun setPlayerPermission(
+        idOrName: String,
+        permission: String,
+        enabled: Boolean = true
+    ): Either<PermissionService.SetPermissionError, Boolean>
+
+    /**
      * Sets multiple permissions for a player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions are being modified.
@@ -74,6 +89,20 @@ interface PlayerPermissionService {
     ): Either<PermissionService.BulkSetPermissionError, Boolean>
 
     /**
+     * Sets multiple permissions for a player, identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions are being modified.
+     * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
+     *                    indicating whether the permission should be enabled (true) or disabled (false).
+     * @return An [Either] instance containing either a [PermissionService.BulkSetPermissionError] if an error occurs,
+     *         or `true` if the update succeeds.
+     */
+    fun setPlayerPermissions(
+        idOrName: String,
+        permissions: Map<String, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+
+    /**
      * Revokes a specific permission for a player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player from whom the permission will be revoked.
@@ -93,6 +122,19 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermission(
         entity: PlayerEntity,
+        permission: String
+    ): Either<PermissionService.UnsetPermissionError, Boolean>
+
+    /**
+     * Revokes a specific permission for a player, identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player from whom the permission will be revoked.
+     * @param permission The name of the permission to be revoked.
+     * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
+     *         or `true` if the update succeeds.
+     */
+    fun unsetPlayerPermission(
+        idOrName: String,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Boolean>
 
@@ -123,6 +165,19 @@ interface PlayerPermissionService {
     ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
 
     /**
+     * Revokes multiple permissions for a player, identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions will be revoked.
+     * @param permissions A list of permission names to be revoked for the specified player.
+     * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
+     *         or `true` if the update succeeds.
+     */
+    fun unsetPlayerPermissions(
+        idOrName: String,
+        permissions: List<String>
+    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+
+    /**
      * Clears all permissions associated with a specific player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions should be removed.
@@ -139,6 +194,15 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionError, Boolean>
+
+    /**
+     * Clears all permissions associated with a specific player, identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions should be removed.
+     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     *         or `true` if the update succeeds.
+     */
+    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Boolean>
 
     /**
      * Checks if a player, identified by their unique identifier, has a specific permission.
@@ -159,6 +223,15 @@ interface PlayerPermissionService {
     fun hasPlayerPermission(entity: PlayerEntity, permission: String): Boolean
 
     /**
+     * Checks if a player, identified by their unique identifier or name, has a specific permission.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param permission The name of the permission to check.
+     * @return `true` if the player has the specified permission, otherwise `false`.
+     */
+    fun hasPlayerPermission(idOrName: String, permission: String): Boolean
+
+    /**
      * Checks if a player, identified by their UUID, has at least one of the specified permissions.
      *
      * @param id The unique identifier (UUID) of the player whose permissions are being checked.
@@ -175,6 +248,15 @@ interface PlayerPermissionService {
      * @return True if the player entity has at least one of the specified permissions, false otherwise.
      */
     fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: List<String>): Boolean
+
+    /**
+     * Checks if a player, identified by their unique identifier or name, has at least one of the specified permissions.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions are being checked.
+     * @param permissions A list of permission strings to check against the player's permissions.
+     * @return `true` if the player has at least one of the permissions in the list, `false` otherwise.
+     */
+    fun hasPlayerAnyPermissions(idOrName: String, permissions: List<String>): Boolean
 
     /**
      * Checks if a player identified by their UUID has all the specified permissions.
@@ -195,6 +277,15 @@ interface PlayerPermissionService {
     fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: List<String>): Boolean
 
     /**
+     * Checks if a player, identified by their unique identifier or name, has all the specified permissions.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions are being checked.
+     * @param permissions The list of permissions to verify against the player's assigned permissions.
+     * @return `true` if the player has all the specified permissions, `false` otherwise.
+     */
+    fun hasPlayerAllPermissions(idOrName: String, permissions: List<String>): Boolean
+
+    /**
      * Retrieves the permissions assigned to a player identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions are being fetched.
@@ -211,6 +302,15 @@ interface PlayerPermissionService {
      * whether the player has the corresponding permission (true) or not (false).
      */
     fun getPlayerPermissions(entity: PlayerEntity): Map<String, Boolean>
+
+    /**
+     * Retrieves the permissions assigned to a player identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose permissions are being fetched.
+     * @return A map where the keys represent permission names and the values are booleans
+     * indicating whether the permission is granted (true) or denied (false).
+     */
+    fun getPlayerPermissions(idOrName: String): Map<String, Boolean>
 
     /**
      * Retrieves a set of permissions associated with a player based on their unique identifier and status.
@@ -231,6 +331,15 @@ interface PlayerPermissionService {
     fun getPlayerPermissions(entity: PlayerEntity, status: Boolean): Set<String>
 
     /**
+     * Retrieves a set of permissions associated with a player based on their unique identifier or name and status.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param status The status of the player, which may influence the permissions returned.
+     * @return A set of permissions associated with the player.
+     */
+    fun getPlayerPermissions(idOrName: String, status: Boolean): Set<String>
+
+    /**
      * Retrieves the set of permissions enabled for a specific player.
      *
      * @param id The unique identifier of the player whose enabled permissions are to be retrieved.
@@ -247,6 +356,14 @@ interface PlayerPermissionService {
     fun getPlayerEnabledPermissions(entity: PlayerEntity): Set<String> = getPlayerPermissions(entity, true)
 
     /**
+     * Retrieves the set of permissions enabled for a player identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose enabled permissions are to be retrieved.
+     * @return A set of strings representing the enabled permissions for the specified player.
+     */
+    fun getPlayerEnabledPermissions(idOrName: String): Set<String> = getPlayerPermissions(idOrName, true)
+
+    /**
      * Retrieves a set of permissions that are disabled for a specific player.
      *
      * @param id The unique identifier of the player whose disabled permissions are to be retrieved.
@@ -261,4 +378,12 @@ interface PlayerPermissionService {
      * @return A set of strings representing the permissions that are disabled for the provided player.
      */
     fun getPlayerDisabledPermissions(entity: PlayerEntity): Set<String> = getPlayerPermissions(entity, false)
+
+    /**
+     * Retrieves the set of permissions that are disabled for a player identified by their unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose disabled permissions are to be retrieved.
+     * @return A set of strings representing the disabled permissions for the specified player.
+     */
+    fun getPlayerDisabledPermissions(idOrName: String): Set<String> = getPlayerPermissions(idOrName, false)
 }

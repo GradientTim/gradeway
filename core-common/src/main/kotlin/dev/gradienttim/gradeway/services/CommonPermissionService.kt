@@ -34,6 +34,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Boolean> = setEntityPermission(entity, permission, enabled)
 
+    override fun setRolePermission(
+        idOrName: String,
+        permission: String,
+        enabled: Boolean
+    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+        val entity = rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        return setRolePermission(entity, permission, enabled)
+    }
+
     override fun setRolePermissions(
         id: UUID,
         permissions: Map<String, Boolean>
@@ -46,6 +55,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: RoleEntity,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Boolean> = setEntityPermissions(entity, permissions)
+
+    override fun setRolePermissions(
+        idOrName: String,
+        permissions: Map<String, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+        val entity =
+            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+        return setRolePermissions(entity, permissions)
+    }
 
     override fun unsetRolePermission(
         id: UUID,
@@ -60,6 +78,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Boolean> = unsetEntityPermission(entity, permission)
 
+    override fun unsetRolePermission(
+        idOrName: String,
+        permission: String
+    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+        val entity =
+            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+        return unsetRolePermission(entity, permission)
+    }
+
     override fun unsetRolePermissions(
         id: UUID,
         permissions: List<String>
@@ -73,6 +100,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         permissions: List<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = unsetEntityPermissions(entity, permissions)
 
+    override fun unsetRolePermissions(
+        idOrName: String,
+        permissions: List<String>
+    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+        val entity =
+            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+        return unsetRolePermissions(entity, permissions)
+    }
+
     override fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearRolePermissions(entity)
@@ -82,6 +118,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: RoleEntity
     ): Either<PermissionService.ClearPermissionError, Boolean> = clearEntityPermissions(entity)
 
+    override fun clearRolePermissions(
+        idOrName: String
+    ): Either<PermissionService.ClearPermissionError, Boolean> = either {
+        val entity =
+            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
+        return clearRolePermissions(entity)
+    }
+
     override fun hasRolePermission(id: UUID, permission: String): Boolean {
         val entityPermissions = getRolePermissions(id, true)
         return permission in entityPermissions
@@ -89,6 +133,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun hasRolePermission(entity: RoleEntity, permission: String): Boolean {
         val entityPermissions = getRolePermissions(entity, true)
+        return permission in entityPermissions
+    }
+
+    override fun hasRolePermission(idOrName: String, permission: String): Boolean {
+        val entityPermissions = getRolePermissions(idOrName, true)
         return permission in entityPermissions
     }
 
@@ -102,6 +151,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         return permissions.any { entityPermissions.contains(it) }
     }
 
+    override fun hasRoleAnyPermissions(idOrName: String, permissions: List<String>): Boolean {
+        val entityPermissions = getRolePermissions(idOrName, true)
+        return permissions.any { entityPermissions.contains(it) }
+    }
+
     override fun hasRoleAllPermissions(id: UUID, permissions: List<String>): Boolean {
         val entityPermissions = getRolePermissions(id, true)
         return permissions.all { entityPermissions.contains(it) }
@@ -109,6 +163,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun hasRoleAllPermissions(entity: RoleEntity, permissions: List<String>): Boolean {
         val entityPermissions = getRolePermissions(entity, true)
+        return permissions.all { entityPermissions.contains(it) }
+    }
+
+    override fun hasRoleAllPermissions(idOrName: String, permissions: List<String>): Boolean {
+        val entityPermissions = getRolePermissions(idOrName, true)
         return permissions.all { entityPermissions.contains(it) }
     }
 
@@ -121,6 +180,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         return entity.permissions
     }
 
+    override fun getRolePermissions(idOrName: String): Map<String, Boolean> {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return emptyMap<String, Boolean>()
+        return getRolePermissions(entity)
+    }
+
     override fun getRolePermissions(id: UUID, status: Boolean): Set<String> {
         val entity = rolesService.findById(id) ?: return emptySet<String>()
         return getRolePermissions(entity, status)
@@ -128,6 +192,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun getRolePermissions(entity: RoleEntity, status: Boolean): Set<String> {
         return entity.permissions.filter { (_, enabled) -> status == enabled }.keys
+    }
+
+    override fun getRolePermissions(idOrName: String, status: Boolean): Set<String> {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet<String>()
+        return getRolePermissions(entity, status)
     }
 
     override fun setPlayerPermission(
@@ -145,6 +214,16 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Boolean> = setEntityPermission(entity, permission, enabled)
 
+    override fun setPlayerPermission(
+        idOrName: String,
+        permission: String,
+        enabled: Boolean
+    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+        val entity =
+            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        return setPlayerPermission(entity, permission, enabled)
+    }
+
     override fun setPlayerPermissions(
         id: UUID,
         permissions: Map<String, Boolean>
@@ -157,6 +236,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: PlayerEntity,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Boolean> = setEntityPermissions(entity, permissions)
+
+    override fun setPlayerPermissions(
+        idOrName: String,
+        permissions: Map<String, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+        val entity =
+            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+        return setPlayerPermissions(entity, permissions)
+    }
 
     override fun unsetPlayerPermission(
         id: UUID,
@@ -171,6 +259,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Boolean> = unsetEntityPermission(entity, permission)
 
+    override fun unsetPlayerPermission(
+        idOrName: String,
+        permission: String
+    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+        val entity =
+            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+        return unsetPlayerPermission(entity, permission)
+    }
+
     override fun unsetPlayerPermissions(
         id: UUID,
         permissions: List<String>
@@ -184,6 +281,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         permissions: List<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = unsetEntityPermissions(entity, permissions)
 
+    override fun unsetPlayerPermissions(
+        idOrName: String,
+        permissions: List<String>
+    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+        val entity =
+            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+        return unsetPlayerPermissions(entity, permissions)
+    }
+
     override fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearPlayerPermissions(entity)
@@ -193,6 +299,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: PlayerEntity
     ): Either<PermissionService.ClearPermissionError, Boolean> = clearEntityPermissions(entity)
 
+    override fun clearPlayerPermissions(
+        idOrName: String
+    ): Either<PermissionService.ClearPermissionError, Boolean> = either {
+        val entity =
+            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
+        return clearPlayerPermissions(entity)
+    }
+
     override fun hasPlayerPermission(id: UUID, permission: String): Boolean {
         val entityPermissions = getPlayerPermissions(id, true)
         return permission in entityPermissions
@@ -200,6 +314,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun hasPlayerPermission(entity: PlayerEntity, permission: String): Boolean {
         val entityPermissions = getPlayerPermissions(entity, true)
+        return permission in entityPermissions
+    }
+
+    override fun hasPlayerPermission(idOrName: String, permission: String): Boolean {
+        val entityPermissions = getPlayerPermissions(idOrName, true)
         return permission in entityPermissions
     }
 
@@ -213,6 +332,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         return permissions.any { entityPermissions.contains(it) }
     }
 
+    override fun hasPlayerAnyPermissions(idOrName: String, permissions: List<String>): Boolean {
+        val entityPermissions = getPlayerPermissions(idOrName, true)
+        return permissions.any { entityPermissions.contains(it) }
+    }
+
     override fun hasPlayerAllPermissions(id: UUID, permissions: List<String>): Boolean {
         val entityPermissions = getPlayerPermissions(id, true)
         return permissions.all { entityPermissions.contains(it) }
@@ -220,6 +344,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: List<String>): Boolean {
         val entityPermissions = getPlayerPermissions(entity, true)
+        return permissions.all { entityPermissions.contains(it) }
+    }
+
+    override fun hasPlayerAllPermissions(idOrName: String, permissions: List<String>): Boolean {
+        val entityPermissions = getPlayerPermissions(idOrName, true)
         return permissions.all { entityPermissions.contains(it) }
     }
 
@@ -232,6 +361,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         return entity.permissions
     }
 
+    override fun getPlayerPermissions(idOrName: String): Map<String, Boolean> {
+        val entity = playersService.findByIdOrName(idOrName) ?: return emptyMap<String, Boolean>()
+        return getPlayerPermissions(entity)
+    }
+
     override fun getPlayerPermissions(id: UUID, status: Boolean): Set<String> {
         val entity = playersService.findById(id) ?: return emptySet<String>()
         return getPlayerPermissions(entity, status)
@@ -239,6 +373,11 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun getPlayerPermissions(entity: PlayerEntity, status: Boolean): Set<String> {
         return entity.permissions.filter { (_, enabled) -> status == enabled }.keys
+    }
+
+    override fun getPlayerPermissions(idOrName: String, status: Boolean): Set<String> {
+        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet<String>()
+        return getPlayerPermissions(entity, status)
     }
 
     private fun setEntityPermission(

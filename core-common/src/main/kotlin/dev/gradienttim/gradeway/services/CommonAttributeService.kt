@@ -34,6 +34,14 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, Boolean> = addEntityAttribute(entity, attribute)
 
+    override fun <TValue : Any> addRoleAttribute(
+        idOrName: String,
+        attribute: Attribute<TValue>
+    ): Either<AttributeService.AddAttributeError, Boolean> = either {
+        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        return addRoleAttribute(entity, attribute)
+    }
+
     override fun <TValue : Any> updateRoleAttribute(
         id: UUID,
         key: Key,
@@ -49,6 +57,15 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, Boolean> = updateEntityAttribute(entity, key, value)
 
+    override fun <TValue : Any> updateRoleAttribute(
+        idOrName: String,
+        key: Key,
+        value: TValue
+    ): Either<AttributeService.UpdateAttributeError, Boolean> = either {
+        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        return updateRoleAttribute(entity, key, value)
+    }
+
     override fun removeRoleAttribute(
         id: UUID,
         key: Key
@@ -62,6 +79,14 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Boolean> = removeEntityAttribute(entity, key)
 
+    override fun removeRoleAttribute(
+        idOrName: String,
+        key: Key
+    ): Either<AttributeService.RemoveAttributeError, Boolean> = either {
+        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        return removeRoleAttribute(entity, key)
+    }
+
     override fun clearRoleAttributes(
         id: UUID
     ): Either<AttributeService.ClearAttributesError, Boolean> = either {
@@ -73,6 +98,13 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: RoleEntity
     ): Either<AttributeService.ClearAttributesError, Boolean> = clearEntityAttributes(entity)
 
+    override fun clearRoleAttributes(
+        idOrName: String
+    ): Either<AttributeService.ClearAttributesError, Boolean> = either {
+        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        return clearRoleAttributes(entity)
+    }
+
     override fun hasRoleAttribute(id: UUID, key: Key): Boolean {
         val entity = roleService.findById(id) ?: return false
         return hasRoleAttribute(entity, key)
@@ -82,6 +114,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         return entity.attributes.any { it.key == key }
     }
 
+    override fun hasRoleAttribute(idOrName: String, key: Key): Boolean {
+        val entity = roleService.findByIdOrName(idOrName) ?: return false
+        return hasRoleAttribute(entity, key)
+    }
+
     override fun getRoleAttribute(id: UUID, key: Key): Attribute<*>? {
         val entity = roleService.findById(id) ?: return null
         return getRoleAttribute(entity, key)
@@ -89,6 +126,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
 
     override fun getRoleAttribute(entity: RoleEntity, key: Key): Attribute<*>? {
         return entity.attributes.find { it.key == key }
+    }
+
+    override fun getRoleAttribute(idOrName: String, key: Key): Attribute<*>? {
+        val entity = roleService.findByIdOrName(idOrName) ?: return null
+        return getRoleAttribute(entity, key)
     }
 
     override fun <TValue : Any> addPlayerAttribute(
@@ -103,6 +145,14 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: PlayerEntity,
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, Boolean> = addEntityAttribute(entity, attribute)
+
+    override fun <TValue : Any> addPlayerAttribute(
+        idOrName: String,
+        attribute: Attribute<TValue>
+    ): Either<AttributeService.AddAttributeError, Boolean> = either {
+        val entity = playerService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        return addPlayerAttribute(entity, attribute)
+    }
 
     override fun <TValue : Any> updatePlayerAttribute(
         id: UUID,
@@ -119,6 +169,16 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, Boolean> = updateEntityAttribute(entity, key, value)
 
+    override fun <TValue : Any> updatePlayerAttribute(
+        idOrName: String,
+        key: Key,
+        value: TValue
+    ): Either<AttributeService.UpdateAttributeError, Boolean> = either {
+        val entity =
+            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        return updatePlayerAttribute(entity, key, value)
+    }
+
     override fun removePlayerAttribute(
         id: UUID,
         key: Key
@@ -132,6 +192,15 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Boolean> = removeEntityAttribute(entity, key)
 
+    override fun removePlayerAttribute(
+        idOrName: String,
+        key: Key
+    ): Either<AttributeService.RemoveAttributeError, Boolean> = either {
+        val entity =
+            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        return removePlayerAttribute(entity, key)
+    }
+
     override fun clearPlayerAttributes(
         id: UUID
     ): Either<AttributeService.ClearAttributesError, Boolean> = either {
@@ -143,6 +212,14 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: PlayerEntity,
     ): Either<AttributeService.ClearAttributesError, Boolean> = clearEntityAttributes(entity)
 
+    override fun clearPlayerAttributes(
+        idOrName: String,
+    ): Either<AttributeService.ClearAttributesError, Boolean> = either {
+        val entity =
+            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        return clearPlayerAttributes(entity)
+    }
+
     override fun hasPlayerAttribute(id: UUID, key: Key): Boolean {
         val entity = playerService.findById(id) ?: return false
         return hasPlayerAttribute(entity, key)
@@ -152,6 +229,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         return entity.attributes.any { it.key == key }
     }
 
+    override fun hasPlayerAttribute(idOrName: String, key: Key): Boolean {
+        val entity = playerService.findByIdOrName(idOrName) ?: return false
+        return hasPlayerAttribute(entity, key)
+    }
+
     override fun getPlayerAttribute(id: UUID, key: Key): Attribute<*>? {
         val entity = playerService.findById(id) ?: return null
         return getPlayerAttribute(entity, key)
@@ -159,6 +241,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
 
     override fun getPlayerAttribute(entity: PlayerEntity, key: Key): Attribute<*>? {
         return entity.attributes.find { it.key == key }
+    }
+
+    override fun getPlayerAttribute(idOrName: String, key: Key): Attribute<*>? {
+        val entity = playerService.findByIdOrName(idOrName) ?: return null
+        return getPlayerAttribute(entity, key)
     }
 
     private fun <TValue : Any> addEntityAttribute(

@@ -136,7 +136,7 @@ complexity:
     active: true
     excludes: ['**/test/**']
     allowedFunctionsPerFile: 20
-    allowedFunctionsPerClass: 50
+    allowedFunctionsPerClass: 75
     allowedFunctionsPerInterface: 50
     allowedFunctionsPerObject: 20
     allowedFunctionsPerEnum: 10

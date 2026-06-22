@@ -10,10 +10,6 @@ Permissions:
 Messaging:
 - Plan the architecture in the Common and API module.
 
-Services:
-- Shared services should handle the specific TEntity type for its use.
-- Add "idOrName" support in role / player service.
-
 Commands:
 - May create a Attribute category beside/instead the child role/player nodes.
 

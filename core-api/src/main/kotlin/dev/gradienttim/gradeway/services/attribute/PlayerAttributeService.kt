@@ -42,6 +42,18 @@ interface PlayerAttributeService {
     ): Either<AttributeService.AddAttributeError, Boolean>
 
     /**
+     * Adds a new attribute to a player identified by their unique ID or name.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param attribute The attribute to be added to the player.
+     * @return An [Either] containing [AttributeService.AddAttributeError] in case of a failure, or [Unit] on success.
+     */
+    fun <TValue : Any> addPlayerAttribute(
+        idOrName: String,
+        attribute: Attribute<TValue>
+    ): Either<AttributeService.AddAttributeError, Boolean>
+
+    /**
      * Updates the attribute of a player identified by their unique ID.
      *
      * @param id The unique identifier of the player whose attribute is being updated.
@@ -71,6 +83,20 @@ interface PlayerAttributeService {
     ): Either<AttributeService.UpdateAttributeError, Boolean>
 
     /**
+     * Updates the attribute of a player identified by their unique ID or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose attribute is being updated.
+     * @param key The key identifying the attribute to be updated.
+     * @param value The new value to set for the specified attribute.
+     * @return An [Either] containing [AttributeService.UpdateAttributeError] in case of an error, or [Unit] if the operation succeeds.
+     */
+    fun <TValue : Any> updatePlayerAttribute(
+        idOrName: String,
+        key: Key,
+        value: TValue
+    ): Either<AttributeService.UpdateAttributeError, Boolean>
+
+    /**
      * Removes a specific attribute from a player identified by their unique ID.
      *
      * @param id The unique identifier of the player whose attribute is to be removed.
@@ -91,6 +117,16 @@ interface PlayerAttributeService {
     fun removePlayerAttribute(entity: PlayerEntity, key: Key): Either<AttributeService.RemoveAttributeError, Boolean>
 
     /**
+     * Removes a specific attribute from a player identified by their unique ID or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose attribute is to be removed.
+     * @param key The key that identifies the attribute to be removed.
+     * @return An [Either] containing [AttributeService.RemoveAttributeError] in case of a failure,
+     *         or [Unit] if the attribute is successfully removed.
+     */
+    fun removePlayerAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Boolean>
+
+    /**
      * Clears all attributes associated with the player identified by their unique ID.
      *
      * @param id The unique identifier of the player whose attributes are to be cleared.
@@ -107,6 +143,15 @@ interface PlayerAttributeService {
      *         or [Unit] if the attributes are successfully cleared.
      */
     fun clearPlayerAttributes(entity: PlayerEntity): Either<AttributeService.ClearAttributesError, Boolean>
+
+    /**
+     * Clears all attributes associated with the player identified by their unique ID or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose attributes are to be cleared.
+     * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
+     *         or [Unit] if the attributes are successfully cleared.
+     */
+    fun clearPlayerAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Boolean>
 
     /**
      * Checks if a player identified by their unique ID has a specific attribute.
@@ -127,6 +172,15 @@ interface PlayerAttributeService {
     fun hasPlayerAttribute(entity: PlayerEntity, key: Key): Boolean
 
     /**
+     * Checks if a player identified by their unique ID or name has a specific attribute.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param key The key identifying the attribute to check.
+     * @return `true` if the player has the specified attribute, otherwise `false`.
+     */
+    fun hasPlayerAttribute(idOrName: String, key: Key): Boolean
+
+    /**
      * Retrieves a specific attribute associated with a player identified by their unique ID.
      *
      * @param id The unique identifier of the player whose attribute is being retrieved.
@@ -143,4 +197,13 @@ interface PlayerAttributeService {
      * @return The attribute associated with the specified key, or `null` if no such attribute exists.
      */
     fun getPlayerAttribute(entity: PlayerEntity, key: Key): Attribute<*>?
+
+    /**
+     * Retrieves a specific attribute associated with a player identified by their unique ID or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose attribute is being retrieved.
+     * @param key The key that identifies the attribute to retrieve.
+     * @return The attribute associated with the given key, or `null` if no such attribute exists.
+     */
+    fun getPlayerAttribute(idOrName: String, key: Key): Attribute<*>?
 }

@@ -113,11 +113,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun <TValue : Any> addAttribute(entity: PlayerEntity, attribute: Attribute<TValue>) =
         attributeService.addPlayerAttribute(entity, attribute)
 
+    override fun <TValue : Any> addAttribute(idOrName: String, attribute: Attribute<TValue>) =
+        attributeService.addPlayerAttribute(idOrName, attribute)
+
     override fun <TValue : Any> updateAttribute(id: UUID, key: Key, value: TValue) =
         attributeService.updatePlayerAttribute(id, key, value)
 
     override fun <TValue : Any> updateAttribute(entity: PlayerEntity, key: Key, value: TValue) =
         attributeService.updatePlayerAttribute(entity, key, value)
+
+    override fun <TValue : Any> updateAttribute(idOrName: String, key: Key, value: TValue) =
+        attributeService.updatePlayerAttribute(idOrName, key, value)
 
     override fun removeAttribute(id: UUID, key: Key) =
         attributeService.removePlayerAttribute(id, key)
@@ -125,11 +131,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun removeAttribute(entity: PlayerEntity, key: Key) =
         attributeService.removePlayerAttribute(entity, key)
 
+    override fun removeAttribute(idOrName: String, key: Key) =
+        attributeService.removePlayerAttribute(idOrName, key)
+
     override fun clearAttributes(id: UUID) =
         attributeService.clearPlayerAttributes(id)
 
     override fun clearAttributes(entity: PlayerEntity) =
         attributeService.clearPlayerAttributes(entity)
+
+    override fun clearAttributes(idOrName: String) =
+        attributeService.clearPlayerAttributes(idOrName)
 
     override fun hasAttribute(id: UUID, key: Key) =
         attributeService.hasPlayerAttribute(id, key)
@@ -137,11 +149,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun hasAttribute(entity: PlayerEntity, key: Key) =
         attributeService.hasPlayerAttribute(entity, key)
 
+    override fun hasAttribute(idOrName: String, key: Key) =
+        attributeService.hasPlayerAttribute(idOrName, key)
+
     override fun getAttribute(id: UUID, key: Key) =
         attributeService.getPlayerAttribute(id, key)
 
     override fun getAttribute(entity: PlayerEntity, key: Key) =
         attributeService.getPlayerAttribute(entity, key)
+
+    override fun getAttribute(idOrName: String, key: Key) =
+        attributeService.getPlayerAttribute(idOrName, key)
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =
         permissionService.setPlayerPermission(id, permission, enabled)
@@ -149,11 +167,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun setPermission(entity: PlayerEntity, permission: String, enabled: Boolean) =
         permissionService.setPlayerPermission(entity, permission, enabled)
 
+    override fun setPermission(idOrName: String, permission: String, enabled: Boolean) =
+        permissionService.setPlayerPermission(idOrName, permission, enabled)
+
     override fun setPermissions(id: UUID, permissions: Map<String, Boolean>) =
         permissionService.setPlayerPermissions(id, permissions)
 
     override fun setPermissions(entity: PlayerEntity, permissions: Map<String, Boolean>) =
         permissionService.setPlayerPermissions(entity, permissions)
+
+    override fun setPermissions(idOrName: String, permissions: Map<String, Boolean>) =
+        permissionService.setPlayerPermissions(idOrName, permissions)
 
     override fun unsetPermission(id: UUID, permission: String) =
         permissionService.unsetPlayerPermission(id, permission)
@@ -161,11 +185,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun unsetPermission(entity: PlayerEntity, permission: String) =
         permissionService.unsetPlayerPermission(entity, permission)
 
+    override fun unsetPermission(idOrName: String, permission: String) =
+        permissionService.unsetPlayerPermission(idOrName, permission)
+
     override fun unsetPermissions(id: UUID, permissions: List<String>) =
         permissionService.unsetPlayerPermissions(id, permissions)
 
     override fun unsetPermissions(entity: PlayerEntity, permissions: List<String>) =
         permissionService.unsetPlayerPermissions(entity, permissions)
+
+    override fun unsetPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.unsetPlayerPermissions(idOrName, permissions)
 
     override fun clearPermissions(id: UUID) =
         permissionService.clearPlayerPermissions(id)
@@ -173,11 +203,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun clearPermissions(entity: PlayerEntity) =
         permissionService.clearPlayerPermissions(entity)
 
+    override fun clearPermissions(idOrName: String) =
+        permissionService.clearPlayerPermissions(idOrName)
+
     override fun hasPermission(id: UUID, permission: String) =
         permissionService.hasPlayerPermission(id, permission)
 
     override fun hasPermission(entity: PlayerEntity, permission: String) =
         permissionService.hasPlayerPermission(entity, permission)
+
+    override fun hasPermission(idOrName: String, permission: String) =
+        permissionService.hasPlayerPermission(idOrName, permission)
 
     override fun hasAnyPermissions(id: UUID, permissions: List<String>) =
         permissionService.hasPlayerAnyPermissions(id, permissions)
@@ -185,11 +221,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun hasAnyPermissions(entity: PlayerEntity, permissions: List<String>) =
         permissionService.hasPlayerAnyPermissions(entity, permissions)
 
+    override fun hasAnyPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.hasPlayerAnyPermissions(idOrName, permissions)
+
     override fun hasAllPermissions(id: UUID, permissions: List<String>) =
         permissionService.hasPlayerAllPermissions(id, permissions)
 
     override fun hasAllPermissions(entity: PlayerEntity, permissions: List<String>) =
         permissionService.hasPlayerAllPermissions(entity, permissions)
+
+    override fun hasAllPermissions(idOrName: String, permissions: List<String>) =
+        permissionService.hasPlayerAllPermissions(idOrName, permissions)
 
     override fun getPermissions(id: UUID) =
         permissionService.getPlayerPermissions(id)
@@ -197,11 +239,17 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun getPermissions(entity: PlayerEntity) =
         permissionService.getPlayerPermissions(entity)
 
+    override fun getPermissions(idOrName: String) =
+        permissionService.getPlayerPermissions(idOrName)
+
     override fun getPermissions(id: UUID, enabled: Boolean) =
         permissionService.getPlayerPermissions(id, enabled)
 
     override fun getPermissions(entity: PlayerEntity, enabled: Boolean) =
         permissionService.getPlayerPermissions(entity, enabled)
+
+    override fun getPermissions(idOrName: String, enabled: Boolean) =
+        permissionService.getPlayerPermissions(idOrName, enabled)
 
     private fun isNameValid(name: String): Boolean {
         if (name.isNotBlank()) return true
