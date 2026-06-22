@@ -79,7 +79,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
     }
 }
 
-@Suppress("ForbiddenComment", "UnusedParameter")
+@Suppress("UnusedParameter", "LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -89,63 +89,88 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
         requires { hasPermission(it, "commands.gradeway.role.attributes") }
 
         literal("set") {
+            requires { hasPermission(it, "commands.gradeway.role.attributes.set") }
+
             string("key") {
                 literal("string") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("char") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("boolean") {
-                    boolean("value") {}
+                    boolean("value") {
+                        execute {}
+                    }
                 }
                 literal("integer") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("long") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
                 literal("double") {
-                    double("value") {}
+                    double("value") {
+                        execute {}
+                    }
                 }
                 literal("float") {
-                    float("value") {}
+                    float("value") {
+                        execute {}
+                    }
                 }
                 literal("short") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("byte") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("uuid") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("instant") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
                 literal("duration") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
             }
         }
 
         literal("remove") {
-            string("key") {
-                execute {
+            requires { hasPermission(it, "commands.gradeway.role.attributes.remove") }
 
-                }
+            string("key") {
+                execute {}
             }
         }
 
-        literal("list") {}
-
-        execute {
-            // TODO: PROVIDE HELP
+        literal("list") {
+            requires { hasPermission(it, "commands.gradeway.role.attributes.list") }
+            execute {}
         }
     }
 }
 
-@Suppress("ForbiddenComment", "UnusedParameter", "LongMethod")
+@Suppress("UnusedParameter", "LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -155,28 +180,29 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
         requires { hasPermission(it, "commands.gradeway.role.permissions") }
 
         literal("set") {
+            requires { hasPermission(it, "commands.gradeway.role.permissions.set") }
+
             string("permission") {
                 boolean("status") {
                     execute {
                         val audience = sourceToAudience(source)
 
-                        val status = booleanParam("status")
-                        val permission = stringParam("permission")
                         val idOrName = stringParam("idOrName")
+                        val permission = stringParam("permission")
+                        val status = booleanParam("status")
 
-                        val entity = gradeway.roles.findByIdOrName(idOrName)
-                        if (entity == null) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.commands.role.notNound",
-                                    Component.text(idOrName)
-                                )
-                            )
-                            return@execute
-                        }
-
-                        gradeway.roles.setPermission(entity, permission, status)
+                        gradeway.roles.setPermission(idOrName, permission, status)
                             .onLeft { error ->
+                                if (error is SetPermissionError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.commands.role.setPermission.entityNotFound",
+                                            Component.text(idOrName),
+                                            Component.text(permission)
+                                        ),
+                                    )
+                                    return@execute
+                                }
                                 if (error is SetPermissionError.PermissionAlreadyEnabled) {
                                     audience.sendMessage(
                                         Component.translatable(
@@ -224,22 +250,21 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                 execute {
                     val audience = sourceToAudience(source)
 
-                    val permission = stringParam("permission")
                     val idOrName = stringParam("idOrName")
+                    val permission = stringParam("permission")
 
-                    val entity = gradeway.players.findByIdOrName(idOrName)
-                    if (entity == null) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.commands.role.notNound",
-                                Component.text(idOrName)
-                            )
-                        )
-                        return@execute
-                    }
-
-                    gradeway.players.setPermission(entity, permission, true)
+                    gradeway.players.setPermission(idOrName, permission, true)
                         .onLeft { error ->
+                            if (error is SetPermissionError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.setPermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permission)
+                                    ),
+                                )
+                                return@execute
+                            }
                             if (error is SetPermissionError.PermissionAlreadyEnabled) {
                                 audience.sendMessage(
                                     Component.translatable(
@@ -276,26 +301,27 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
         }
 
         literal("unset") {
+            requires { hasPermission(it, "commands.gradeway.role.permissions.unset") }
+
             string("permission") {
                 execute {
                     val audience = sourceToAudience(source)
 
-                    val permission = stringParam("permission")
                     val idOrName = stringParam("idOrName")
+                    val permission = stringParam("permission")
 
-                    val entity = gradeway.roles.findByIdOrName(idOrName)
-                    if (entity == null) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.commands.role.notNound",
-                                Component.text(idOrName)
-                            )
-                        )
-                        return@execute
-                    }
-
-                    gradeway.roles.unsetPermission(entity, permission)
+                    gradeway.roles.unsetPermission(idOrName, permission)
                         .onLeft { error ->
+                            if (error is UnsetPermissionError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.unsetPermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permission)
+                                    ),
+                                )
+                                return@execute
+                            }
                             if (error is UnsetPermissionError.PermissionNotFound) {
                                 audience.sendMessage(
                                     Component.translatable(
@@ -332,24 +358,24 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
         }
 
         literal("clear") {
+            requires { hasPermission(it, "commands.gradeway.role.permissions.clear") }
+
             execute {
                 val audience = sourceToAudience(source)
 
                 val idOrName = stringParam("idOrName")
 
-                val entity = gradeway.roles.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.commands.role.notNound",
-                            Component.text(idOrName)
-                        )
-                    )
-                    return@execute
-                }
-
-                gradeway.roles.clearPermissions(entity)
+                gradeway.roles.clearPermissions(idOrName)
                     .onLeft { error ->
+                        if (error is PermissionService.ClearPermissionError.EntityNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.commands.role.clearPermission.entityNotFound",
+                                    Component.text(idOrName)
+                                ),
+                            )
+                            return@execute
+                        }
                         if (error is PermissionService.ClearPermissionError.Unexpected) {
                             audience.sendMessage(
                                 Component.translatable(
@@ -373,6 +399,8 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
         }
 
         literal("list") {
+            requires { hasPermission(it, "commands.gradeway.role.permissions.list") }
+
             execute {
                 val audience = sourceToAudience(source)
 
@@ -389,10 +417,6 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                     return@execute
                 }
             }
-        }
-
-        execute {
-            // TODO: PROVIDE HELP
         }
     }
 }
@@ -437,7 +461,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
     }
 }
 
-@Suppress("ForbiddenComment", "UnusedParameter")
+@Suppress("UnusedParameter")
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -446,21 +470,35 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
     literal("roles") {
         requires { hasPermission(it, "commands.gradeway.player.roles") }
 
-        literal("add") {}
-        literal("remove") {}
-        literal("list") {}
+        literal("add") {
+            requires { hasPermission(it, "commands.gradeway.player.roles.add") }
+
+            string("id") {
+                execute {}
+            }
+        }
+
+        literal("remove") {
+            requires { hasPermission(it, "commands.gradeway.player.roles.remove") }
+
+            string("id") {
+                execute {}
+            }
+        }
+
+        literal("list") {
+            requires { hasPermission(it, "commands.gradeway.player.roles.list") }
+            execute {}
+        }
 
         literal("primary") {
             literal("set") {}
-        }
-
-        execute {
-            // TODO: PROVIDE HELP
+            execute {}
         }
     }
 }
 
-@Suppress("ForbiddenComment", "UnusedParameter")
+@Suppress("UnusedParameter", "LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -470,63 +508,88 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
         requires { hasPermission(it, "commands.gradeway.player.attributes") }
 
         literal("set") {
+            requires { hasPermission(it, "commands.gradeway.player.attributes.set") }
+
             string("key") {
                 literal("string") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("char") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("boolean") {
-                    boolean("value") {}
+                    boolean("value") {
+                        execute {}
+                    }
                 }
                 literal("integer") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("long") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
                 literal("double") {
-                    double("value") {}
+                    double("value") {
+                        execute {}
+                    }
                 }
                 literal("float") {
-                    float("value") {}
+                    float("value") {
+                        execute {}
+                    }
                 }
                 literal("short") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("byte") {
-                    integer("value") {}
+                    integer("value") {
+                        execute {}
+                    }
                 }
                 literal("uuid") {
-                    string("value") {}
+                    string("value") {
+                        execute {}
+                    }
                 }
                 literal("instant") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
                 literal("duration") {
-                    long("value") {}
+                    long("value") {
+                        execute {}
+                    }
                 }
             }
         }
 
         literal("remove") {
-            string("key") {
-                execute {
+            requires { hasPermission(it, "commands.gradeway.player.attributes.remove") }
 
-                }
+            string("key") {
+                execute {}
             }
         }
 
-        literal("list") {}
-
-        execute {
-            // TODO: PROVIDE HELP
+        literal("list") {
+            requires { hasPermission(it, "commands.gradeway.player.attributes.list") }
+            execute {}
         }
     }
 }
 
-@Suppress("ForbiddenComment", "UnusedParameter", "LongMethod")
+@Suppress("UnusedParameter", "LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -536,28 +599,29 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
         requires { hasPermission(it, "commands.gradeway.player.permissions") }
 
         literal("set") {
+            requires { hasPermission(it, "commands.gradeway.player.permissions.set") }
+
             string("permission") {
                 boolean("status") {
                     execute {
                         val audience = sourceToAudience(source)
 
-                        val status = booleanParam("status")
-                        val permission = stringParam("permission")
                         val idOrName = stringParam("idOrName")
+                        val permission = stringParam("permission")
+                        val status = booleanParam("status")
 
-                        val entity = gradeway.players.findByIdOrName(idOrName)
-                        if (entity == null) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.commands.player.notNound",
-                                    Component.text(idOrName)
-                                )
-                            )
-                            return@execute
-                        }
-
-                        gradeway.players.setPermission(entity, permission, status)
+                        gradeway.players.setPermission(idOrName, permission, status)
                             .onLeft { error ->
+                                if (error is SetPermissionError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.commands.player.setPermission.entityNotFound",
+                                            Component.text(idOrName),
+                                            Component.text(permission)
+                                        ),
+                                    )
+                                    return@execute
+                                }
                                 if (error is SetPermissionError.PermissionAlreadyEnabled) {
                                     audience.sendMessage(
                                         Component.translatable(
@@ -605,22 +669,21 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                 execute {
                     val audience = sourceToAudience(source)
 
-                    val permission = stringParam("permission")
                     val idOrName = stringParam("idOrName")
+                    val permission = stringParam("permission")
 
-                    val entity = gradeway.players.findByIdOrName(idOrName)
-                    if (entity == null) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.commands.player.notNound",
-                                Component.text(idOrName)
-                            )
-                        )
-                        return@execute
-                    }
-
-                    gradeway.players.setPermission(entity, permission, true)
+                    gradeway.players.setPermission(idOrName, permission, true)
                         .onLeft { error ->
+                            if (error is SetPermissionError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.player.setPermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permission)
+                                    ),
+                                )
+                                return@execute
+                            }
                             if (error is SetPermissionError.PermissionAlreadyEnabled) {
                                 audience.sendMessage(
                                     Component.translatable(
@@ -657,26 +720,27 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
         }
 
         literal("unset") {
+            requires { hasPermission(it, "commands.gradeway.player.permissions.unset") }
+
             string("permission") {
                 execute {
                     val audience = sourceToAudience(source)
 
-                    val permission = stringParam("permission")
                     val idOrName = stringParam("idOrName")
+                    val permission = stringParam("permission")
 
-                    val entity = gradeway.players.findByIdOrName(idOrName)
-                    if (entity == null) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.commands.player.notNound",
-                                Component.text(idOrName)
-                            )
-                        )
-                        return@execute
-                    }
-
-                    gradeway.players.unsetPermission(entity, permission)
+                    gradeway.players.unsetPermission(idOrName, permission)
                         .onLeft { error ->
+                            if (error is UnsetPermissionError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.player.unsetPermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permission)
+                                    ),
+                                )
+                                return@execute
+                            }
                             if (error is UnsetPermissionError.PermissionNotFound) {
                                 audience.sendMessage(
                                     Component.translatable(
@@ -713,24 +777,24 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
         }
 
         literal("clear") {
+            requires { hasPermission(it, "commands.gradeway.player.permissions.clear") }
+
             execute {
                 val audience = sourceToAudience(source)
 
                 val idOrName = stringParam("idOrName")
 
-                val entity = gradeway.players.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.commands.player.notNound",
-                            Component.text(idOrName)
-                        )
-                    )
-                    return@execute
-                }
-
-                gradeway.players.clearPermissions(entity)
+                gradeway.players.clearPermissions(idOrName)
                     .onLeft { error ->
+                        if (error is PermissionService.ClearPermissionError.EntityNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.commands.player.clearPermission.entityNotFound",
+                                    Component.text(idOrName),
+                                ),
+                            )
+                            return@execute
+                        }
                         if (error is PermissionService.ClearPermissionError.Unexpected) {
                             audience.sendMessage(
                                 Component.translatable(
@@ -754,6 +818,8 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
         }
 
         literal("list") {
+            requires { hasPermission(it, "commands.gradeway.player.permissions.list") }
+
             execute {
                 val audience = sourceToAudience(source)
 
@@ -770,10 +836,6 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                     return@execute
                 }
             }
-        }
-
-        execute {
-            // TODO: PROVIDE HELP
         }
     }
 }
@@ -799,7 +861,6 @@ internal fun suggestPlayers(builder: SuggestionsBuilder, gradeway: CommonGradewa
         builder.suggest(entity.id.toString(), LiteralMessage(entity.name))
     }
 }
-
 
 internal fun suggestRoles(builder: SuggestionsBuilder, gradeway: CommonGradeway, remaining: String) {
     val entities = transaction(gradeway.database) {
