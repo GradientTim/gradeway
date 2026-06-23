@@ -88,6 +88,11 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
         }
     }
 
+    override fun setWeight(idOrName: String, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
+        val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetWeightError.EntityNotFound)
+        return setWeight(entity, weight)
+    }
+
     override fun findById(id: UUID): RoleEntity? {
         return transaction {
             RoleEntity.findById(id)

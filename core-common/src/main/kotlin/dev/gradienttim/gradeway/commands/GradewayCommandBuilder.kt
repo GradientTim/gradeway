@@ -16,6 +16,7 @@ import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.likeAsStr
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
+import dev.gradienttim.gradeway.services.RoleService.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
@@ -54,6 +55,121 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
     sourceToAudience: (source: TSource) -> Audience,
 ) {
     literal("role") {
+        literal("create") {
+            requires { hasPermission(it, "gradeway.role.create") }
+
+            string("name") {
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val name = stringParam("name")
+
+                    gradeway.roles.create(name)
+                        .onLeft { error ->
+                            if (error is CreateRoleError.EntityAlreadyExists) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.create.entityAlreadyExists",
+                                        Component.text(name)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is CreateRoleError.InvalidName) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.create.invalidName",
+                                        Component.text(name)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is CreateRoleError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.create.unexpectedError",
+                                        Component.text(name),
+                                        Component.text(error.throwable.localizedMessage)
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.commands.role.create.success",
+                                    Component.text(name)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("delete") {
+            requires { hasPermission(it, "gradeway.role.delete") }
+
+            string("id") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        suggestRoles(builder, gradeway, remaining)
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val id = stringParam("id")
+                    val uuid = runCatching {
+                        UUID.fromString(id)
+                    }.getOrNull()
+
+                    if (uuid == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.commands.role.delete.invalidUuid",
+                                Component.text(id)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.roles.delete(uuid)
+                        .onLeft { error ->
+                            if (error is DeleteRoleError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.create.entityNotFound",
+                                        Component.text(id)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is DeleteRoleError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.delete.unexpectedError",
+                                        Component.text(id),
+                                        Component.text(error.throwable.localizedMessage)
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.commands.role.delete.success",
+                                    Component.text(id)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
         string("idOrName") {
             suggestsDebounced { builder ->
                 val remaining = builder.remaining
@@ -64,6 +180,51 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
 
             roleAttributesBuilder(gradeway, hasPermission, sourceToAudience)
             rolePermissionsBuilder(gradeway, hasPermission, sourceToAudience)
+
+            literal("setWeight") {
+                requires { hasPermission(it, "gradeway.role.setWeight") }
+
+                integer("value") {
+                    execute {
+                        val audience = sourceToAudience(source)
+
+                        val idOrName = stringParam("idOrName")
+                        val weight = intParam("value")
+
+                        gradeway.roles.setWeight(idOrName, weight)
+                            .onLeft { error ->
+                                if (error is SetWeightError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.commands.role.setWeight.entityNotFound",
+                                            Component.text(idOrName),
+                                        )
+                                    )
+                                    return@execute
+                                }
+                                if (error is SetWeightError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.commands.role.setWeight.unexpectedError",
+                                            Component.text(idOrName),
+                                            Component.text(error.throwable.localizedMessage)
+                                        )
+                                    )
+                                    return@execute
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.commands.role.setWeight.success",
+                                        Component.text(idOrName),
+                                        Component.text(weight)
+                                    )
+                                )
+                            }
+                    }
+                }
+            }
 
             execute {
                 val audience = sourceToAudience(source)
@@ -1012,10 +1173,10 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
     }
 
     literal("attributes") {
-        requires { hasPermission(it, "gradeway.role.attributes") }
+        requires { hasPermission(it, "gradeway.player.attributes") }
 
         literal("add") {
-            requires { hasPermission(it, "gradeway.role.attributes.set") }
+            requires { hasPermission(it, "gradeway.player.attributes.set") }
 
             string("key") {
                 literal("string") {
@@ -1171,7 +1332,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
         }
 
         literal("update") {
-            requires { hasPermission(it, "gradeway.role.attributes.update") }
+            requires { hasPermission(it, "gradeway.player.attributes.update") }
 
             string("key") {
                 literal("string") {
@@ -1319,7 +1480,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
         }
 
         literal("remove") {
-            requires { hasPermission(it, "gradeway.role.attributes.remove") }
+            requires { hasPermission(it, "gradeway.player.attributes.remove") }
 
             string("key") {
                 execute {
@@ -1376,7 +1537,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
         }
 
         literal("list") {
-            requires { hasPermission(it, "gradeway.role.attributes.list") }
+            requires { hasPermission(it, "gradeway.player.attributes.list") }
 
             execute {
                 val audience = sourceToAudience(source)

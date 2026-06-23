@@ -54,6 +54,16 @@ interface RoleService : SharedAttributeService<RoleEntity>, SharedPermissionServ
     fun setWeight(entity: RoleEntity, weight: Int): Either<SetWeightError, Boolean>
 
     /**
+     * Updates the weight of a role identified by its unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the role whose weight needs to be updated.
+     * @param weight The new weight to assign to the role entity.
+     * @return An instance of [Either] containing [SetWeightError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
+
+    /**
      * Updates the name of a role identified by the specified unique identifier.
      *
      * @param id The unique identifier of the role whose name is to be updated.
