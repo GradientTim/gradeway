@@ -45,12 +45,6 @@ sealed class Attribute<TValue : Any> {
     val isString: Boolean get() = this is StringAttribute
 
     /**
-     * Indicates whether the current attribute is an instance of [CharAttribute].
-     * Returns true if the attribute represents a [Char] value, false otherwise.
-     */
-    val isChar: Boolean get() = this is CharAttribute
-
-    /**
      * Indicates whether the current attribute is an instance of [BooleanAttribute].
      * Returns true if the attribute represents a [Boolean] value, false otherwise.
      */
@@ -79,18 +73,6 @@ sealed class Attribute<TValue : Any> {
      * Returns true if the attribute represents a [Float] value, false otherwise.
      */
     val isFloat: Boolean get() = this is FloatAttribute
-
-    /**
-     * Indicates whether the current attribute is an instance of [ShortAttribute].
-     * Returns true if the attribute represents a [Short] value, false otherwise.
-     */
-    val isShort: Boolean get() = this is ShortAttribute
-
-    /**
-     * Indicates whether the current attribute is an instance of [ByteAttribute].
-     * Returns true if the attribute represents a [Byte] value, false otherwise.
-     */
-    val isByte: Boolean get() = this is ByteAttribute
 
     /**
      * Indicates whether the current attribute is an instance of [UuidAttribute].
@@ -122,7 +104,7 @@ sealed class Attribute<TValue : Any> {
      * - ByteAttribute
      */
     val isNumber: Boolean
-        get() = isInteger || isLong || isDouble || isFloat || isShort || isByte
+        get() = isInteger || isLong || isDouble || isFloat
 
     /**
      * Indicates whether the current attribute represents a special type.
@@ -159,19 +141,6 @@ sealed class Attribute<TValue : Any> {
     ) : Attribute<String>() {
         override fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean {
             if (fromValue !is String) return false
-            value = fromValue
-            return true
-        }
-    }
-
-    @Serializable
-    @SerialName("char")
-    class CharAttribute(
-        @Contextual override val key: Key,
-        override var value: Char,
-    ) : Attribute<Char>() {
-        override fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean {
-            if (fromValue !is Char) return false
             value = fromValue
             return true
         }
@@ -237,32 +206,6 @@ sealed class Attribute<TValue : Any> {
     ) : Attribute<Float>() {
         override fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean {
             if (fromValue !is Float) return false
-            value = fromValue
-            return true
-        }
-    }
-
-    @Serializable
-    @SerialName("short")
-    class ShortAttribute(
-        @Contextual override val key: Key,
-        override var value: Short,
-    ) : Attribute<Short>() {
-        override fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean {
-            if (fromValue !is Short) return false
-            value = fromValue
-            return true
-        }
-    }
-
-    @Serializable
-    @SerialName("byte")
-    class ByteAttribute(
-        @Contextual override val key: Key,
-        override var value: Byte,
-    ) : Attribute<Byte>() {
-        override fun <TFromValue : Any> updateFrom(fromValue: TFromValue): Boolean {
-            if (fromValue !is Byte) return false
             value = fromValue
             return true
         }

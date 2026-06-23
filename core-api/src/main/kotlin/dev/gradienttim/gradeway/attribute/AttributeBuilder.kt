@@ -29,14 +29,11 @@ internal interface AttributeBuilder {
     fun <TValue : Any> of(key: Key, value: TValue): Attribute<TValue>? {
         val attribute = when (value) {
             is String -> string(key, value)
-            is Char -> char(key, value)
             is Boolean -> boolean(key, value)
             is Int -> integer(key, value)
             is Long -> long(key, value)
             is Double -> double(key, value)
             is Float -> float(key, value)
-            is Short -> short(key, value)
-            is Byte -> byte(key, value)
             is UUID -> uuid(key, value)
             is Instant -> instant(key, value)
             is Duration -> duration(key, value)
@@ -66,15 +63,6 @@ internal interface AttributeBuilder {
      * @return A `StringAttribute` containing the given key and value.
      */
     fun string(key: Key, value: String) = StringAttribute(key, value)
-
-    /**
-     * Creates a `CharAttribute` instance with the specified key and character value.
-     *
-     * @param key The key associated with the attribute.
-     * @param value The character value to be stored in the attribute.
-     * @return A `CharAttribute` containing the given key and value.
-     */
-    fun char(key: Key, value: Char) = CharAttribute(key, value)
 
     /**
      * Creates a `BooleanAttribute` instance with the specified key and boolean value.
@@ -120,24 +108,6 @@ internal interface AttributeBuilder {
      * @return A `FloatAttribute` containing the given key and value.
      */
     fun float(key: Key, value: Float) = FloatAttribute(key, value)
-
-    /**
-     * Creates a `ShortAttribute` instance with the specified key and short value.
-     *
-     * @param key The key associated with the attribute.
-     * @param value The short value to be stored in the attribute.
-     * @return A `ShortAttribute` containing the given key and value.
-     */
-    fun short(key: Key, value: Short) = ShortAttribute(key, value)
-
-    /**
-     * Creates a `ByteAttribute` instance with the specified key and byte value.
-     *
-     * @param key The key associated with the attribute.
-     * @param value The byte value to be stored in the attribute.
-     * @return A `ByteAttribute` containing the given key and value.
-     */
-    fun byte(key: Key, value: Byte) = ByteAttribute(key, value)
 
     /**
      * Creates a `UuidAttribute` instance with the specified key and UUID value.

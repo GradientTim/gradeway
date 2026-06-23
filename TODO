@@ -1,6 +1,6 @@
 Models:
 - Move Database Models to the Common module and only use Entity classes in API module.
-- Maybe(?) move attributes in separate tables (size limit on table field).
+- Maybe(?) move attributes in separate tables (size limit on table field an better indexing support).
 - Complete pausing and time-based roles implementation.
 
 Permissions:

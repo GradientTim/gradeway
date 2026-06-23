@@ -31,14 +31,11 @@ object SerializationConstants {
 
             polymorphic(Attribute::class) {
                 subclass(Attribute.StringAttribute::class)
-                subclass(Attribute.CharAttribute::class)
                 subclass(Attribute.BooleanAttribute::class)
                 subclass(Attribute.IntegerAttribute::class)
                 subclass(Attribute.LongAttribute::class)
                 subclass(Attribute.DoubleAttribute::class)
                 subclass(Attribute.FloatAttribute::class)
-                subclass(Attribute.ShortAttribute::class)
-                subclass(Attribute.ByteAttribute::class)
                 subclass(Attribute.UuidAttribute::class)
                 subclass(Attribute.InstantAttribute::class)
                 subclass(Attribute.DurationAttribute::class)
