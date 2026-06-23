@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.database.models.role
 
 import dev.gradienttim.gradeway.constants.TableConstants
+import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
@@ -23,12 +24,12 @@ object RoleParentsTable : CompositeIdTable(name = TableConstants.ROLE_PARENTS_TA
     }
 }
 
-class RoleParentEntity(id: EntityID<CompositeID>) : CompositeEntity(id) {
-    companion object : CompositeEntityClass<RoleParentEntity>(RoleParentsTable)
+class DatabaseRoleParentEntity(id: EntityID<CompositeID>) : CompositeEntity(id), RoleParentEntity {
+    companion object : CompositeEntityClass<DatabaseRoleParentEntity>(RoleParentsTable)
 
-    var parentId by RoleParentsTable.parentId
-    var childId by RoleParentsTable.childId
+    override var parentId by RoleParentsTable.parentId
+    override var childId by RoleParentsTable.childId
 
-    val parent by RoleEntity referencedOn RoleParentsTable.parentId
-    val child by RoleEntity referencedOn RoleParentsTable.childId
+    override val parent by DatabaseRoleEntity referencedOn RoleParentsTable.parentId
+    override val child by DatabaseRoleEntity referencedOn RoleParentsTable.childId
 }

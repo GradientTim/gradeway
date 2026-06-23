@@ -6,7 +6,6 @@ package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.database.entities.AttributeEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
 import java.util.*
@@ -16,7 +15,7 @@ import java.util.*
  *
  * @param TEntity The type of the entity to which the attributes belong.
  */
-interface SharedAttributeService<TEntity : AttributeEntity> {
+interface SharedAttributeService<TEntity> {
     /**
      * Adds an attribute to an entity identified by the given UUID.
      *

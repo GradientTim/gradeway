@@ -2,18 +2,16 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.database.models.player
+package dev.gradienttim.gradeway.database.models.role
 
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.SerializationConstants
 import dev.gradienttim.gradeway.constants.TableConstants
-import dev.gradienttim.gradeway.database.entities.AttributeEntity
-import dev.gradienttim.gradeway.database.entities.PermissionEntity
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
-import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.services.RoleService
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.builtins.SetSerializer
-import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
 import org.jetbrains.exposed.v1.dao.EntityBatchUpdate
@@ -26,8 +24,9 @@ import org.koin.core.component.inject
 import java.time.Instant
 import java.util.*
 
-object PlayersTable : UUIDTable(name = TableConstants.PLAYERS_TABLE_NAME) {
-    val name = varchar("name", TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH).uniqueIndex()
+object RolesTable : UUIDTable(name = TableConstants.ROLES_TABLE_NAME) {
+    val name = varchar("name", TableConstants.ROLES_TABLE_MAX_NAME_LENGTH).uniqueIndex()
+    val weight = integer("weight").default(0)
 
     val attributes = json<Set<Attribute<*>>>(
         name = "attributes",
@@ -42,39 +41,30 @@ object PlayersTable : UUIDTable(name = TableConstants.PLAYERS_TABLE_NAME) {
 
     init {
         uniqueIndex(id)
-        uniqueIndex(id, name)
     }
 }
 
-class PlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), AttributeEntity, PermissionEntity, KoinComponent {
-    companion object : UUIDEntityClass<PlayerEntity>(PlayersTable)
+class DatabaseRoleEntity(id: EntityID<UUID> ) : UUIDEntity(id), RoleEntity, KoinComponent {
+    companion object : UUIDEntityClass<DatabaseRoleEntity>(RolesTable)
 
-    internal val playerService by inject<PlayerService>()
+    internal val roleService by inject<RoleService>()
     internal val attributeService by inject<AttributeService>()
 
-    var name by PlayersTable.name
-    override var attributes by PlayersTable.attributes
-    override var permissions by PlayersTable.permissions
+    override var name by RolesTable.name
+    override var weight by RolesTable.weight
+    override var attributes by RolesTable.attributes
+    override var permissions by RolesTable.permissions
 
-    val createdAt by PlayersTable.createdAt
-    var updatedAt by PlayersTable.updatedAt
+    override val createdAt by RolesTable.createdAt
+    override var updatedAt by RolesTable.updatedAt
 
-    val roles by PlayerRoleEntity referrersOn PlayerRolesTable.playerId
-
-    fun setName(name: String) = playerService.setName(this, name)
-
-    fun <TValue : Any> addAttribute(attribute: Attribute<TValue>) =
-        attributeService.addPlayerAttribute(this, attribute)
-
-    fun <TValue : Any> updateAttribute(key: Key, value: TValue) =
-        attributeService.updatePlayerAttribute(this, key, value)
-
-    fun removeAttribute(key: Key) = attributeService.removePlayerAttribute(this, key)
-    fun hasAttribute(key: Key) = attributeService.hasPlayerAttribute(this, key)
-    fun getAttribute(key: Key) = attributeService.getPlayerAttribute(this, key)
+    override fun setName(name: String) = roleService.setName(this, name)
+    override fun setWeight(weight: Int) = roleService.setWeight(this, weight)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
     }
+
+    override fun flush(): Boolean = flush(null)
 }

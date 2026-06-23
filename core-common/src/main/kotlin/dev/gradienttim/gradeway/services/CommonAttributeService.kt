@@ -8,9 +8,9 @@ import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.database.entities.AttributeEntity
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
-import dev.gradienttim.gradeway.database.models.role.RoleEntity
+import dev.gradienttim.gradeway.entity.AttributeEntity
+import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
@@ -260,7 +260,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         try {
             transaction(gradeway.database) {
                 entity.attributes = attributes
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(AttributeService.AddAttributeError.Unexpected(throwable))
@@ -283,7 +283,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         try {
             transaction(gradeway.database) {
                 entity.attributes = attributes
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
@@ -303,7 +303,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         try {
             transaction(gradeway.database) {
                 entity.attributes = attributes
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
@@ -319,7 +319,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         try {
             transaction(gradeway.database) {
                 entity.attributes = emptySet()
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(AttributeService.ClearAttributesError.Unexpected(throwable))

@@ -9,8 +9,9 @@ import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
-import dev.gradienttim.gradeway.database.models.role.RoleEntity
+import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
@@ -24,7 +25,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
 
-    override fun create(name: String): Either<RoleService.CreateRoleError, RoleEntity> = either {
+    override fun create(name: String): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = either {
         if (!isNameValid(name)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
@@ -33,7 +34,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
         }
         try {
             transaction(gradeway.database) {
-                RoleEntity.new {
+                DatabaseRoleEntity.new {
                     this.name = name
                 }
             }
@@ -93,27 +94,27 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
         return setWeight(entity, weight)
     }
 
-    override fun findById(id: UUID): RoleEntity? {
+    override fun findById(id: UUID): DatabaseRoleEntity? {
         return transaction {
-            RoleEntity.findById(id)
+            DatabaseRoleEntity.findById(id)
         }
     }
 
-    override fun findByName(name: String): RoleEntity? {
+    override fun findByName(name: String): DatabaseRoleEntity? {
         if (!isNameValid(name)) {
             return null
         }
         return transaction(gradeway.database) {
-            RoleEntity.find { RolesTable.name eq name }.limit(1).firstOrNull()
+            DatabaseRoleEntity.find { RolesTable.name eq name }.limit(1).firstOrNull()
         }
     }
 
-    override fun findByIdOrName(value: String): RoleEntity? {
+    override fun findByIdOrName(value: String): DatabaseRoleEntity? {
         if (value.length <= TableConstants.ROLES_TABLE_MAX_NAME_LENGTH && !isNameValid(value)) {
             return null
         }
         return transaction(gradeway.database) {
-            RoleEntity.find {
+            DatabaseRoleEntity.find {
                 (RolesTable.id eqAsStr value) or (RolesTable.name eq value)
             }.limit(1).firstOrNull()
         }

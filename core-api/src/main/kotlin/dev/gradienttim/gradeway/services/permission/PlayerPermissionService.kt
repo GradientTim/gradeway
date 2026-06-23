@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import java.util.*
 

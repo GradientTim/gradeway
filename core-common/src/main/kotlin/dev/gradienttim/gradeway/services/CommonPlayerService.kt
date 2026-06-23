@@ -9,8 +9,9 @@ import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
+import dev.gradienttim.gradeway.database.models.player.DatabasePlayerEntity
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
+import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
@@ -24,23 +25,24 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
 
-    override fun create(id: UUID, name: String): Either<PlayerService.CreatePlayerError, PlayerEntity> = either {
-        if (!isNameValid(name)) {
-            raise(PlayerService.CreatePlayerError.InvalidName)
-        }
-        if (existsById(id)) {
-            raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
-        }
-        try {
-            transaction(gradeway.database) {
-                PlayerEntity.new(id) {
-                    this.name = name
-                }
+    override fun create(id: UUID, name: String): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> =
+        either {
+            if (!isNameValid(name)) {
+                raise(PlayerService.CreatePlayerError.InvalidName)
             }
-        } catch (throwable: Throwable) {
-            raise(PlayerService.CreatePlayerError.Unexpected(throwable))
+            if (existsById(id)) {
+                raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
+            }
+            try {
+                transaction(gradeway.database) {
+                    DatabasePlayerEntity.new(id) {
+                        this.name = name
+                    }
+                }
+            } catch (throwable: Throwable) {
+                raise(PlayerService.CreatePlayerError.Unexpected(throwable))
+            }
         }
-    }
 
     override fun delete(id: UUID): Either<PlayerService.DeletePlayerError, Unit> = either {
         val entity = findById(id) ?: raise(PlayerService.DeletePlayerError.EntityNotFound)
@@ -58,41 +60,42 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         return setName(entity, name)
     }
 
-    override fun setName(entity: PlayerEntity, name: String): Either<PlayerService.SetNameError, Boolean> = either {
-        if (!isNameValid(name)) {
-            raise(PlayerService.SetNameError.InvalidName)
-        }
-        try {
-            transaction(gradeway.database) {
-                entity.name = name
-                entity.flush()
+    override fun setName(entity: PlayerEntity, name: String): Either<PlayerService.SetNameError, Boolean> =
+        either {
+            if (!isNameValid(name)) {
+                raise(PlayerService.SetNameError.InvalidName)
             }
-        } catch (throwable: Throwable) {
-            raise(PlayerService.SetNameError.Unexpected(throwable))
+            try {
+                transaction(gradeway.database) {
+                    entity.name = name
+                    entity.flush()
+                }
+            } catch (throwable: Throwable) {
+                raise(PlayerService.SetNameError.Unexpected(throwable))
+            }
         }
-    }
 
-    override fun findById(id: UUID): PlayerEntity? {
+    override fun findById(id: UUID): DatabasePlayerEntity? {
         return transaction(gradeway.database) {
-            PlayerEntity.findById(id)
+            DatabasePlayerEntity.findById(id)
         }
     }
 
-    override fun findByName(name: String): PlayerEntity? {
+    override fun findByName(name: String): DatabasePlayerEntity? {
         if (!isNameValid(name)) {
             return null
         }
         return transaction(gradeway.database) {
-            PlayerEntity.find { PlayersTable.name eq name }.limit(1).firstOrNull()
+            DatabasePlayerEntity.find { PlayersTable.name eq name }.limit(1).firstOrNull()
         }
     }
 
-    override fun findByIdOrName(value: String): PlayerEntity? {
+    override fun findByIdOrName(value: String): DatabasePlayerEntity? {
         if (value.length <= TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH && !isNameValid(value)) {
             return null
         }
         return transaction(gradeway.database) {
-            PlayerEntity.find {
+            DatabasePlayerEntity.find {
                 (PlayersTable.id eqAsStr value) or (PlayersTable.name eq value)
             }.limit(1).firstOrNull()
         }

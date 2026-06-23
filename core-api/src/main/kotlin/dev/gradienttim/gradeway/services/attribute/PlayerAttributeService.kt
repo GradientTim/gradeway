@@ -6,7 +6,7 @@ package dev.gradienttim.gradeway.services.attribute
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
 import java.util.*

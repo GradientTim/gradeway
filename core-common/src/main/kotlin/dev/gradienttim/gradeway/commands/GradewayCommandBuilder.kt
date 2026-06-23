@@ -49,6 +49,7 @@ fun <TSource> gradewayCommandBuilder(
     }
 }
 
+@Suppress("LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -229,7 +230,9 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
             execute {
                 val audience = sourceToAudience(source)
 
-                val (idOrName, entity) = roleEntityParam("idOrName", gradeway)
+                val idOrName = stringParam("idOrName")
+
+                val entity = gradeway.roles.findByIdOrName(idOrName)
                 if (entity == null) {
                     audience.sendMessage(
                         Component.translatable(

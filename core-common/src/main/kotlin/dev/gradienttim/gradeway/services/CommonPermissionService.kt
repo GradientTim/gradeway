@@ -7,9 +7,9 @@ package dev.gradienttim.gradeway.services
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.database.entities.PermissionEntity
-import dev.gradienttim.gradeway.database.models.player.PlayerEntity
-import dev.gradienttim.gradeway.database.models.role.RoleEntity
+import dev.gradienttim.gradeway.entity.PermissionEntity
+import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -399,7 +399,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         try {
             transaction(gradeway.database) {
                 entity.permissions = entityPermissions
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.SetPermissionError.Unexpected(throwable))
@@ -417,7 +417,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         try {
             transaction(gradeway.database) {
                 entity.permissions = entityPermissions
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkSetPermissionError.Unexpected(throwable))
@@ -436,7 +436,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         try {
             transaction(gradeway.database) {
                 entity.permissions = entityPermissions
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.UnsetPermissionError.Unexpected(throwable))
@@ -454,7 +454,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         try {
             transaction(gradeway.database) {
                 entity.permissions = entityPermissions
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkUnsetPermissionError.Unexpected(throwable))
@@ -467,7 +467,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         try {
             transaction(gradeway.database) {
                 entity.permissions = emptyMap()
-                entity.flush(null)
+                entity.flush()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.ClearPermissionError.Unexpected(throwable))

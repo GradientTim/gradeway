@@ -5,8 +5,6 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.command
 
 import com.mojang.brigadier.context.CommandContext
-import dev.gradienttim.gradeway.Gradeway
-import dev.gradienttim.gradeway.database.models.role.RoleEntity
 
 fun <TCommandSource> CommandContext<TCommandSource>.stringParam(
     name: String,
@@ -31,11 +29,3 @@ fun <TCommandSource> CommandContext<TCommandSource>.doubleParam(
 fun <TCommandSource> CommandContext<TCommandSource>.booleanParam(
     name: String,
 ) = param(name, Boolean::class)
-
-fun <TCommandSource> CommandContext<TCommandSource>.roleEntityParam(
-    name: String,
-    gradeway: Gradeway,
-): Pair<String, RoleEntity?> {
-    val idOrName = stringParam(name)
-    return idOrName to gradeway.roles.findByIdOrName(idOrName)
-}

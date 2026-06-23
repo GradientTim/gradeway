@@ -5,7 +5,6 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.database.entities.PermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import java.util.*
 
@@ -14,7 +13,7 @@ import java.util.*
  *
  * @param TEntity The type of entity for which permissions are managed.
  */
-interface SharedPermissionService<TEntity : PermissionEntity> {
+interface SharedPermissionService<TEntity> {
     /**
      * Sets the specified permission for the entity identified by the given ID.
      *
