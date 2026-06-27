@@ -6,7 +6,9 @@ package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import net.kyori.adventure.util.TriState
 import java.util.*
 
 /**
@@ -29,7 +31,7 @@ interface RolePermissionService {
         id: UUID,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a role entity. The permission can be enabled or disabled
@@ -45,7 +47,7 @@ interface RolePermissionService {
         entity: RoleEntity,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a role identified by its unique identifier or name.
@@ -61,7 +63,7 @@ interface RolePermissionService {
         idOrName: String,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a role identified by its UUID.
@@ -76,7 +78,7 @@ interface RolePermissionService {
     fun setRolePermissions(
         id: UUID,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a given role entity.
@@ -91,7 +93,7 @@ interface RolePermissionService {
     fun setRolePermissions(
         entity: RoleEntity,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a role identified by its unique identifier or name.
@@ -106,7 +108,7 @@ interface RolePermissionService {
     fun setRolePermissions(
         idOrName: String,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Removes a specific permission from a role identified by its UUID.
@@ -117,7 +119,7 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.UnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetRolePermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Boolean>
+    fun unsetRolePermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes a specific permission from the given role entity.
@@ -131,7 +133,7 @@ interface RolePermissionService {
     fun unsetRolePermission(
         entity: RoleEntity,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean>
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes a specific permission from a role identified by its unique identifier or name.
@@ -145,7 +147,7 @@ interface RolePermissionService {
     fun unsetRolePermission(
         idOrName: String,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean>
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from a role identified by its UUID.
@@ -159,7 +161,7 @@ interface RolePermissionService {
     fun unsetRolePermissions(
         id: UUID,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from the given role entity.
@@ -173,7 +175,7 @@ interface RolePermissionService {
     fun unsetRolePermissions(
         entity: RoleEntity,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from a role identified by its unique identifier or name.
@@ -187,7 +189,7 @@ interface RolePermissionService {
     fun unsetRolePermissions(
         idOrName: String,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique UUID.
@@ -196,7 +198,7 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Clears all permissions associated with the provided role entity.
@@ -205,7 +207,7 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique identifier or name.
@@ -214,188 +216,113 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
-     * Checks if a role identified by its unique UUID has a specific permission.
+     * Checks whether an entity with the given ID has the specified role permission.
      *
-     * @param id The unique identifier of the role.
-     * @param permission The name of the permission to check.
-     * @return `true` if the role has the specified permission, otherwise `false`.
+     * @param id The unique identifier of the entity whose permissions are being checked.
+     * @param permission The name of the permission to be verified.
+     * @return A TriState value indicating whether the permission is granted (true), denied (false),
+     *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(id: UUID, permission: String): Boolean
+    fun hasRolePermission(id: UUID, permission: String): TriState
 
     /**
-     * Checks if the given role entity has the specified permission.
+     * Checks whether an entity with the given ID has the specified role permission.
      *
      * @param entity The role entity to check for permissions.
-     * @param permission The permission to verify against the role entity.
-     * @return `true` if the role entity has the specified permission, `false` otherwise.
+     * @param permission The name of the permission to be verified.
+     * @return A TriState value indicating whether the permission is granted (true), denied (false),
+     *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(entity: RoleEntity, permission: String): Boolean
+    fun hasRolePermission(entity: RoleEntity, permission: String): TriState
 
     /**
-     * Checks if a role identified by its unique identifier or name has the specified permission.
+     * Checks whether an entity with the given ID or Name has the specified role permission.
      *
      * @param idOrName The unique identifier or name of the role.
-     * @param permission The name of the permission to check.
-     * @return `true` if the role has the specified permission, otherwise `false`.
+     * @param permission The name of the permission to be verified.
+     * @return A TriState value indicating whether the permission is granted (true), denied (false),
+     *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(idOrName: String, permission: String): Boolean
+    fun hasRolePermission(idOrName: String, permission: String): TriState
 
     /**
      * Checks if a role identified by its unique UUID has at least one of the specified permissions.
      *
      * @param id The unique identifier of the role.
-     * @param permissions A list of permission names to check.
+     * @param permissions A collection of permission names to check.
      * @return `true` if the role has any of the specified permissions, otherwise `false`.
      */
-    fun hasRoleAnyPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasRoleAnyPermissions(id: UUID, permissions: Collection<String>): TriState
 
     /**
      * Checks if the given role entity has any of the specified permissions.
      *
      * @param entity The role entity to be checked for permissions.
-     * @param permissions A list of permission identifiers to check against.
+     * @param permissions A collection of permission identifiers to check against.
      * @return True if the role entity has at least one of the specified permissions, otherwise false.
      */
-    fun hasRoleAnyPermissions(entity: RoleEntity, permissions: List<String>): Boolean
+    fun hasRoleAnyPermissions(entity: RoleEntity, permissions: Collection<String>): TriState
 
     /**
      * Checks if a role identified by its unique identifier or name has at least one of the specified permissions.
      *
      * @param idOrName The unique identifier or name of the role.
-     * @param permissions A list of permission names to check.
+     * @param permissions A collection of permission names to check.
      * @return `true` if the role has any of the specified permissions, otherwise `false`.
      */
-    fun hasRoleAnyPermissions(idOrName: String, permissions: List<String>): Boolean
+    fun hasRoleAnyPermissions(idOrName: String, permissions: Collection<String>): TriState
 
     /**
      * Verifies if the given role, identified by its unique ID, possesses all the specified permissions.
      *
      * @param id The unique identifier of the role.
-     * @param permissions A list of permissions to check against the role.
+     * @param permissions A collection of permissions to check against the role.
      * @return True if the role has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasRoleAllPermissions(id: UUID, permissions: Collection<String>): TriState
 
     /**
      * Checks if the provided role entity has all the specified permissions.
      *
      * @param entity The role entity being evaluated.
-     * @param permissions A list of permissions to check against the role entity.
+     * @param permissions A collection of permissions to check against the role entity.
      * @return True if the role entity has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(entity: RoleEntity, permissions: List<String>): Boolean
+    fun hasRoleAllPermissions(entity: RoleEntity, permissions: Collection<String>): TriState
 
     /**
      * Verifies if the given role, identified by its unique identifier or name, possesses all the specified permissions.
      *
      * @param idOrName The unique identifier or name of the role.
-     * @param permissions A list of permissions to check against the role.
+     * @param permissions A collection of permissions to check against the role.
      * @return True if the role has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(idOrName: String, permissions: List<String>): Boolean
-
-    /**
-     * Retrieves the permissions associated with a specific role.
-     *
-     * @param id The unique identifier of the role for which permissions are to be retrieved.
-     * @return A map where the keys represent permission names as strings,
-     *         and the values indicate whether the permission is granted (true) or not (false).
-     */
-    fun getRolePermissions(id: UUID): Map<String, Boolean>
-
-    /**
-     * Retrieves the permissions associated with a given role.
-     *
-     * @param entity The role entity for which permissions are being fetched.
-     * @return A map where the keys represent permission names and the values indicate
-     *         whether the permission is granted (true) or denied (false).
-     */
-    fun getRolePermissions(entity: RoleEntity): Map<String, Boolean>
-
-    /**
-     * Retrieves the permissions associated with a role identified by its unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the role for which permissions are to be retrieved.
-     * @return A map where the keys represent permission names as strings,
-     *         and the values indicate whether the permission is granted (true) or not (false).
-     */
-    fun getRolePermissions(idOrName: String): Map<String, Boolean>
+    fun hasRoleAllPermissions(idOrName: String, permissions: Collection<String>): TriState
 
     /**
      * Retrieves the set of permissions associated with a specific role.
      *
-     * @param id The unique identifier of the role.
-     * @param status A boolean indicating whether to include permissions based on their active status.
-     * @return A set of permission strings associated with the specified role.
+     * @param id The unique identifier of the role for which permissions are to be retrieved.
+     * @return A set of RolePermissionEntity objects representing the permissions linked to the specified role.
      */
-    fun getRolePermissions(id: UUID, status: Boolean): Set<String>
+    fun getRolePermissions(id: UUID): Set<RolePermissionEntity>
 
     /**
-     * Retrieves the set of permissions associated with a given role entity based on its status.
+     * Retrieves the set of permissions associated with a given role.
      *
-     * @param entity The role entity for which permissions are to be retrieved.
-     * @param status A boolean value indicating the status that can influence the permissions.
-     * @return A set of permissions corresponding to the role entity and status.
+     * @param entity The role entity for which permissions are being retrieved.
+     * @return A set of RolePermissionEntity objects representing the permissions linked to the specified role.
      */
-    fun getRolePermissions(entity: RoleEntity, status: Boolean): Set<String>
+    fun getRolePermissions(entity: RoleEntity): Set<RolePermissionEntity>
 
     /**
      * Retrieves the set of permissions associated with a role identified by its unique identifier or name.
      *
-     * @param idOrName The unique identifier or name of the role.
-     * @param status A boolean indicating whether to include permissions based on their active status.
-     * @return A set of permission strings associated with the specified role.
+     * @param idOrName The unique identifier or name of the role for which permissions are to be retrieved.
+     * @return A set of RolePermissionEntity objects representing the permissions linked to the specified role.
      */
-    fun getRolePermissions(idOrName: String, status: Boolean): Set<String>
-
-    /**
-     * Retrieves the set of permissions enabled for a given role.
-     *
-     * @param id The unique identifier of the role for which enabled permissions are being fetched.
-     * @return A set of strings representing the permissions enabled for the specified role.
-     */
-    fun getRoleEnabledPermissions(id: UUID): Set<String> = getRolePermissions(id, true)
-
-    /**
-     * Retrieves the set of permissions enabled for a specific role.
-     *
-     * @param entity The RoleEntity instance representing the role for which permissions are to be retrieved.
-     * @return A set of enabled permissions associated with the given role.
-     */
-    fun getRoleEnabledPermissions(entity: RoleEntity): Set<String> = getRolePermissions(entity, true)
-
-    /**
-     * Retrieves the set of permissions enabled for a role identified by its unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the role for which enabled permissions are being fetched.
-     * @return A set of strings representing the permissions enabled for the specified role.
-     */
-    fun getRoleEnabledPermissions(idOrName: String): Set<String> = getRolePermissions(idOrName, true)
-
-    /**
-     * Retrieves a set of disabled permissions associated with a specific role.
-     *
-     * @param id The unique identifier of the role for which disabled permissions are to be retrieved.
-     * @return A set of permission strings that are disabled for the specified role.
-     */
-    fun getRoleDisabledPermissions(id: UUID): Set<String> = getRolePermissions(id, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for the given role entity.
-     *
-     * @param entity The role entity whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the disabled permissions for the specified role entity.
-     */
-    fun getRoleDisabledPermissions(entity: RoleEntity): Set<String> = getRolePermissions(entity, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for a role identified by its unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the role whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the disabled permissions for the specified role.
-     */
-    fun getRoleDisabledPermissions(idOrName: String): Set<String> = getRolePermissions(idOrName, false)
+    fun getRolePermissions(idOrName: String): Set<RolePermissionEntity>
 }

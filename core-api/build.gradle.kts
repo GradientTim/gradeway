@@ -16,3 +16,11 @@ dependencies {
     api(libs.bundles.arrow)
     compileOnly(libs.bundles.ktoml)
 }
+
+tasks {
+    compileKotlin {
+        compilerOptions {
+            freeCompilerArgs.set(listOf("-Xexplicit-backing-fields"))
+        }
+    }
+}

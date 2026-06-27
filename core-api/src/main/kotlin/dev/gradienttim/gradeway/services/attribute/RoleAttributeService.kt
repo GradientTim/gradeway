@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.attribute
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
@@ -28,7 +29,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Boolean>
+    ): Either<AttributeService.AddAttributeError, Unit>
 
     /**
      * Adds an attribute to a specific role entity.
@@ -41,7 +42,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         entity: RoleEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Boolean>
+    ): Either<AttributeService.AddAttributeError, Unit>
 
     /**
      * Adds an attribute to a role identified by its unique ID or name.
@@ -54,7 +55,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Boolean>
+    ): Either<AttributeService.AddAttributeError, Unit>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID.
@@ -69,7 +70,7 @@ interface RoleAttributeService {
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Boolean>
+    ): Either<AttributeService.UpdateAttributeError, Unit>
 
     /**
      * Updates the value of an existing attribute for a specific role entity.
@@ -84,7 +85,7 @@ interface RoleAttributeService {
         entity: RoleEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Boolean>
+    ): Either<AttributeService.UpdateAttributeError, Unit>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID or name.
@@ -99,7 +100,7 @@ interface RoleAttributeService {
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Boolean>
+    ): Either<AttributeService.UpdateAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID.
@@ -109,7 +110,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Boolean>
+    fun removeRoleAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a specific role entity.
@@ -119,7 +120,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(entity: RoleEntity, key: Key): Either<AttributeService.RemoveAttributeError, Boolean>
+    fun removeRoleAttribute(entity: RoleEntity, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID or name.
@@ -129,7 +130,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Boolean>
+    fun removeRoleAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID.
@@ -138,7 +139,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Boolean>
+    fun clearRoleAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a specific role entity.
@@ -147,7 +148,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(entity: RoleEntity): Either<AttributeService.ClearAttributesError, Boolean>
+    fun clearRoleAttributes(entity: RoleEntity): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID or name.
@@ -156,7 +157,7 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Boolean>
+    fun clearRoleAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Determines if a role, identified by its unique ID, has an attribute associated with the specified key.
@@ -185,30 +186,9 @@ interface RoleAttributeService {
      */
     fun hasRoleAttribute(idOrName: String, key: Key): Boolean
 
-    /**
-     * Retrieves the attribute associated with a specific role, identified by its unique ID and the given key.
-     *
-     * @param id The unique identifier of the role whose attribute needs to be retrieved.
-     * @param key The key representing the attribute to retrieve for the specified role.
-     * @return The attribute of the specified key associated with the role, or null if no such attribute exists.
-     */
-    fun getRoleAttribute(id: UUID, key: Key): Attribute<*>?
+    fun getRoleAttribute(id: UUID, key: Key): RoleAttributeEntity?
 
-    /**
-     * Retrieves the attribute associated with a specific role entity, identified by the given key.
-     *
-     * @param entity The [RoleEntity] instance representing the role from which the attribute will be retrieved.
-     * @param key The [Key] representing the attribute to retrieve for the specified role entity.
-     * @return The attribute of the specified key associated with the role entity, or null if no such attribute exists.
-     */
-    fun getRoleAttribute(entity: RoleEntity, key: Key): Attribute<*>?
+    fun getRoleAttribute(entity: RoleEntity, key: Key): RoleAttributeEntity?
 
-    /**
-     * Retrieves the attribute associated with a specific role, identified by its unique ID or name and the given key.
-     *
-     * @param idOrName The unique identifier or name of the role whose attribute needs to be retrieved.
-     * @param key The key representing the attribute to retrieve for the specified role.
-     * @return The attribute of the specified key associated with the role, or null if no such attribute exists.
-     */
-    fun getRoleAttribute(idOrName: String, key: Key): Attribute<*>?
+    fun getRoleAttribute(idOrName: String, key: Key): RoleAttributeEntity?
 }

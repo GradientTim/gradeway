@@ -1,0 +1,50 @@
+/*
+MIT License
+Copyright (c) 2026 GradientTim
+*/
+package dev.gradienttim.gradeway.database.models.permission
+
+import dev.gradienttim.gradeway.constants.TableConstants
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplatePermissionEntity
+import dev.gradienttim.gradeway.services.PermissionService
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
+import org.jetbrains.exposed.v1.dao.java.UUIDEntity
+import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import org.jetbrains.exposed.v1.javatime.timestamp
+import org.jetbrains.exposed.v1.jdbc.SizedIterable
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import java.time.Instant
+import java.util.*
+
+object PermissionTemplatesTable : UUIDTable(name = TableConstants.PERMISSION_TEMPLATES_TABLE_NAME) {
+    val name = varchar("name", TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)
+    val assignedTo =
+        enumeration<PermissionTemplateEntity.AssignedTo>("assigned_to").default(PermissionTemplateEntity.AssignedTo.ALL)
+
+    val createdAt = timestamp("created_at").default(Instant.now())
+    val updatedAt = timestamp("updated_at").default(Instant.now())
+}
+
+class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionTemplateEntity, KoinComponent {
+    companion object : UUIDEntityClass<DatabasePermissionTemplateEntity>(PermissionTemplatesTable)
+
+    internal val permissionService: PermissionService by inject()
+
+    override var name by PermissionTemplatesTable.name
+    override var assignedTo by PermissionTemplatesTable.assignedTo
+
+    override val createdAt by PermissionTemplatesTable.createdAt
+    override val updatedAt by PermissionTemplatesTable.updatedAt
+
+    override val permissions: SizedIterable<PermissionTemplatePermissionEntity>
+        get() = TODO("Not yet implemented")
+
+    override fun setName(name: String) =
+        permissionService.setTemplateName(this, name)
+
+    override fun setAssignedTo(assignedTo: PermissionTemplateEntity.AssignedTo) =
+        permissionService.setTemplateAssignedTo(this, assignedTo)
+}

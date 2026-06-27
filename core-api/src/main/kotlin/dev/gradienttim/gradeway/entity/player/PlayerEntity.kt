@@ -5,9 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.entity.AttributeEntity
-import dev.gradienttim.gradeway.entity.PermissionEntity
+import dev.gradienttim.gradeway.reference.AttributeReference
+import dev.gradienttim.gradeway.reference.PermissionReference
+import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.services.PlayerService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -21,7 +21,9 @@ import java.util.*
  * It also extends the shared services `SharedAttributeService` and `SharedPermissionService` specific
  * to `PlayerEntity` types.
  */
-interface PlayerEntity : AttributeEntity, PermissionEntity {
+interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
+    PermissionReference<PlayerPermissionEntity>,
+    PermissionTemplateReference<PlayerPermissionTemplateEntity> {
     /**
      * The unique identifier for the entity. This value is immutable and is used to distinctly identify
      * the entity instance across systems or databases. It is typically generated as a UUID, ensuring
@@ -34,29 +36,6 @@ interface PlayerEntity : AttributeEntity, PermissionEntity {
      * unique display name or identifier associated with a `PlayerEntity`.
      */
     var name: String
-
-    /**
-     * A collection of attributes associated with the player entity.
-     *
-     * Each attribute is represented as an instance of `Attribute<*>`, allowing for
-     * a flexible and type-safe way to store and manage diverse attributes for the player.
-     *
-     * The set of attributes can be modified to add or remove attributes as needed,
-     * enabling dynamic and customizable configurations for different player entities.
-     *
-     * Overrides the `attributes` property from the `AttributeEntity` interface.
-     */
-    override var attributes: Set<Attribute<*>>
-
-    /**
-     * A map containing key-value pairs representing the permission states associated with the player.
-     *
-     * The key is a string that identifies the specific permission, and the value is a boolean indicating
-     * whether the permission is granted (`true`) or denied (`false`). This property allows managing the
-     * permissions specific to the player entity, providing fine-grained control over access levels
-     * and capabilities.
-     */
-    override var permissions: Map<String, Boolean>
 
     /**
      * The timestamp representing when this player entity was created.
@@ -85,6 +64,41 @@ interface PlayerEntity : AttributeEntity, PermissionEntity {
      * This property serves as a reference to list or manipulate the roles assigned to a player entity.
      */
     val roles: SizedIterable<PlayerRoleEntity>
+
+    /**
+     * Represents a collection of attribute entities associated with the player.
+     *
+     * This property provides a navigable and queryable iterable of [PlayerAttributeEntity] objects
+     * that belong to the player. These attributes are key-value pairs that convey additional metadata
+     * or properties related to the player, such as configuration details or contextual information.
+     *
+     * The attributes are stored as entities, enabling database persistence and retrieval,
+     * and can be used to extend the player's functionality or to define custom behavior.
+     */
+    override val attributes: SizedIterable<PlayerAttributeEntity>
+
+    /**
+     * Represents the collection of permissions associated with the player.
+     *
+     * This property retrieves or modifies a set of `PlayerPermissionEntity` objects
+     * linked to the current player. Permissions define the actions or access levels
+     * granted to the player, shaping its capabilities within the system.
+     *
+     * The `permissions` property can be used to dynamically manage and query the
+     * permissions associated with the player, enabling fine-grained control of access
+     * rights in a player-based access control system.
+     */
+    override val permissions: SizedIterable<PlayerPermissionEntity>
+
+    /**
+     * Represents a collection of permission templates associated with the player entity.
+     *
+     * Each permission template defines a predefined set of permissions that can be
+     * applied to the player. This property enables the player to manage its permissions
+     * in bulk by referencing these templates. It supports lazy querying, allowing
+     * efficient access to the underlying data when needed.
+     */
+    override val permissionTemplates: SizedIterable<PlayerPermissionTemplateEntity>
 
     /**
      * Updates the name of this player entity.

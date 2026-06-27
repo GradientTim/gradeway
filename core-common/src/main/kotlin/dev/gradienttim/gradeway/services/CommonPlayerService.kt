@@ -245,15 +245,6 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun getPermissions(idOrName: String) =
         permissionService.getPlayerPermissions(idOrName)
 
-    override fun getPermissions(id: UUID, enabled: Boolean) =
-        permissionService.getPlayerPermissions(id, enabled)
-
-    override fun getPermissions(entity: PlayerEntity, enabled: Boolean) =
-        permissionService.getPlayerPermissions(entity, enabled)
-
-    override fun getPermissions(idOrName: String, enabled: Boolean) =
-        permissionService.getPlayerPermissions(idOrName, enabled)
-
     private fun isNameValid(name: String): Boolean {
         if (name.isNotBlank()) return true
         if (name.none { it.isWhitespace() }) return true

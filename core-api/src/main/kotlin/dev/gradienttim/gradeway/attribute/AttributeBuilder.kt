@@ -4,135 +4,154 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.attribute
 
-import dev.gradienttim.gradeway.attribute.Attribute.*
+import dev.gradienttim.gradeway.attribute.types.*
+import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-/**
- * Defines a builder interface for creating various types of attributes based on the key-value pair provided.
- * This builder supports multiple primitive types, collections, and custom types like `UUID`, `Instant`, and `Duration`.
- * It also handles the creation of attributes for `Enum` values.
- */
-internal interface AttributeBuilder {
+interface AttributeBuilder {
     /**
-     * Creates an instance of [Attribute] for the given key and value based on the value type.
-     * Returns null if the value type is unsupported.
+     * Creates an instance of `Attribute` for the specified key and value if a matching attribute type is registered.
      *
      * @param key The key associated with the attribute.
-     * @param value The value to be stored in the attribute.
-     * @return An instance of [Attribute] encapsulating the given key and value,
-     * or null if the value type is unsupported.
+     * @param value The value to associate with the key.
+     * @return An instance of `Attribute` if the attribute type for the value's class is found, or `null` otherwise.
      */
-    @Suppress("UNCHECKED_CAST")
     fun <TValue : Any> of(key: Key, value: TValue): Attribute<TValue>? {
-        val attribute = when (value) {
-            is String -> string(key, value)
-            is Boolean -> boolean(key, value)
-            is Int -> integer(key, value)
-            is Long -> long(key, value)
-            is Double -> double(key, value)
-            is Float -> float(key, value)
-            is UUID -> uuid(key, value)
-            is Instant -> instant(key, value)
-            is Duration -> duration(key, value)
-            else -> null
+        @Suppress("UNCHECKED_CAST")
+        val type = AttributeTypeRegistry.findByKlass(value::class) as? AttributeType<TValue> ?: return null
+        return create(type, key, value)
+    }
+
+    /**
+     * Creates an instance of `Attribute` for the specified key and value, throwing an exception if no matching
+     * attribute type is registered for the value's class.
+     *
+     * @param key The key associated with the attribute.
+     * @param value The value to associate with the key.
+     * @return An instance of `Attribute` with the specified key and value.
+     * @throws IllegalStateException if no matching attribute type is registered for the value's class.
+     */
+    fun <TValue : Any> ofOrThrow(key: Key, value: TValue): Attribute<TValue> =
+        of(key, value) ?: error("Attribute type for '${value::class.simpleName}' is not registered.")
+
+    /**
+     * Creates an instance of `Attribute` for the specified type, key, and value.
+     *
+     * @param type The attribute type that defines the value's class and serialization/deserialization behavior.
+     * @param key The key associated with the attribute.
+     * @param value The value to associate with the attribute.
+     * @return An instance of `Attribute` with the specified type, key, and value.
+     */
+    fun <TValue : Any> create(type: AttributeType<TValue>, key: Key, value: TValue) = Attribute(type, key, value)
+
+    /**
+     * Creates an `Attribute` instance for the specified type key, key, and value.
+     * Validates that the `AttributeType` associated with the `typeKey` matches the runtime type of the provided `value`.
+     *
+     * @param typeKey The key identifying the attribute type to be used.
+     * @param key The key associated with the attribute.
+     * @param value The value to associate with the attribute. Must match the type defined by the attribute type.
+     * @return An instance of `Attribute` with the specified type key, key, and value.
+     * @throws IllegalStateException if no `AttributeType` is registered for the provided `typeKey` or
+     *                               if the runtime type of `value` does not match the expected type of the `AttributeType`.
+     */
+    fun <TValue : Any> create(
+        typeKey: Key,
+        key: Key,
+        value: TValue
+    ): Attribute<TValue> {
+        val type = AttributeTypeRegistry.find(typeKey)
+            ?: error("Attribute type with key '${typeKey.asString()}' is not registered.")
+
+        if (type.klass != value::class) {
+            error("Attribute type '${type::class.simpleName}' cannot be used for value '$value'.")
         }
-        return attribute as? Attribute<TValue>
+
+        @Suppress("UNCHECKED_CAST")
+        return create(type as AttributeType<TValue>, key, value)
     }
 
     /**
-     * Creates an instance of [Attribute] for the given key and value. If the value type is unsupported,
-     * throws an [IllegalStateException] with a message indicating the unsupported type.
+     * Creates an `Attribute` instance for the given key and string value.
      *
      * @param key The key associated with the attribute.
-     * @param value The value to be stored in the attribute.
-     * @return An instance of [Attribute] encapsulating the given key and value.
-     * @throws IllegalStateException If the value type is not supported.
+     * @param value The string value to associate with the key.
+     * @return An instance of `Attribute` with the specified key and string value.
      */
-    fun <TValue : Any> ofOrThrow(key: Key, value: TValue): Attribute<TValue> {
-        return of(key, value) ?: error("Unsupported attribute type: ${value::class.simpleName}")
-    }
+    fun string(key: Key, value: String): Attribute<String> = create(StringAttributeType, key, value)
 
     /**
-     * Creates a `StringAttribute` instance with the specified key and string value.
+     * Creates a boolean `Attribute` instance for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The string value to be stored in the attribute.
-     * @return A `StringAttribute` containing the given key and value.
+     * @param value The boolean value to associate with the key.
+     * @return An instance of `Attribute` with the specified key and boolean value.
      */
-    fun string(key: Key, value: String) = StringAttribute(key, value)
+    fun boolean(key: Key, value: Boolean): Attribute<Boolean> = create(BooleanAttributeType, key, value)
 
     /**
-     * Creates a `BooleanAttribute` instance with the specified key and boolean value.
+     * Creates an integer `Attribute` instance for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The boolean value to be stored in the attribute.
-     * @return A `BooleanAttribute` containing the given key and value.
+     * @param value The integer value to associate with the key.
+     * @return An instance of `Attribute` with the specified key and integer value.
      */
-    fun boolean(key: Key, value: Boolean) = BooleanAttribute(key, value)
+    fun integer(key: Key, value: Int): Attribute<Int> = create(IntegerAttributeType, key, value)
 
     /**
-     * Creates an `IntegerAttribute` instance with the specified key and integer value.
+     * Creates a `Long` attribute for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The integer value to be stored in the attribute.
-     * @return An `IntegerAttribute` containing the given key and value.
+     * @param value The long value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and long value.
      */
-    fun integer(key: Key, value: Int) = IntegerAttribute(key, value)
+    fun long(key: Key, value: Long): Attribute<Long> = create(LongAttributeType, key, value)
 
     /**
-     * Creates a `LongAttribute` instance with the specified key and long value.
+     * Creates a `Double` attribute for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The long value to be stored in the attribute.
-     * @return A `LongAttribute` containing the given key and value.
+     * @param value The double value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and double value.
      */
-    fun long(key: Key, value: Long) = LongAttribute(key, value)
+    fun double(key: Key, value: Double): Attribute<Double> = create(DoubleAttributeType, key, value)
 
     /**
-     * Creates a `DoubleAttribute` instance with the specified key and double value.
+     * Creates a `Float` attribute for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The double value to be stored in the attribute.
-     * @return A `DoubleAttribute` containing the given key and value.
+     * @param value The float value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and float value.
      */
-    fun double(key: Key, value: Double) = DoubleAttribute(key, value)
+    fun float(key: Key, value: Float): Attribute<Float> = create(FloatAttributeType, key, value)
 
     /**
-     * Creates a `FloatAttribute` instance with the specified key and float value.
+     * Creates a UUID-based `Attribute` instance for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The float value to be stored in the attribute.
-     * @return A `FloatAttribute` containing the given key and value.
+     * @param value The UUID value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and UUID value.
      */
-    fun float(key: Key, value: Float) = FloatAttribute(key, value)
+    fun uuid(key: Key, value: UUID): Attribute<UUID> = create(UUIDAttributeType, key, value)
 
     /**
-     * Creates a `UuidAttribute` instance with the specified key and UUID value.
+     * Creates an `Attribute` instance for the specified key and `Instant` value.
      *
      * @param key The key associated with the attribute.
-     * @param value The UUID value to be stored in the attribute.
-     * @return A `UuidAttribute` containing the given key and value.
+     * @param value The `Instant` value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and `Instant` value.
      */
-    fun uuid(key: Key, value: UUID) = UuidAttribute(key, value)
+    fun instant(key: Key, value: Instant): Attribute<Instant> = create(InstantAttributeType, key, value)
 
     /**
-     * Creates an `InstantAttribute` instance with the specified key and instant value.
+     * Creates a `Duration` attribute for the specified key and value.
      *
      * @param key The key associated with the attribute.
-     * @param value The instant value to be stored in the attribute.
-     * @return An `InstantAttribute` containing the given key and value.
+     * @param value The `Duration` value to associate with the specified key.
+     * @return An instance of `Attribute` with the specified key and `Duration` value.
      */
-    fun instant(key: Key, value: Instant) = InstantAttribute(key, value)
-
-    /**
-     * Creates a `DurationAttribute` instance with the specified key and duration value.
-     *
-     * @param key The key associated with the attribute.
-     * @param value The duration value to be stored in the attribute.
-     * @return A `DurationAttribute` containing the given key and value.
-     */
-    fun duration(key: Key, value: Duration) = DurationAttribute(key, value)
+    fun duration(key: Key, value: Duration): Attribute<Duration> = create(DurationAttributeType, key, value)
 }

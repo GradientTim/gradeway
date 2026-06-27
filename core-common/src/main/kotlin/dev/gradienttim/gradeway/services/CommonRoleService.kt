@@ -264,15 +264,6 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun getPermissions(idOrName: String) =
         permissionService.getRolePermissions(idOrName)
 
-    override fun getPermissions(id: UUID, enabled: Boolean) =
-        permissionService.getRolePermissions(id, enabled)
-
-    override fun getPermissions(entity: RoleEntity, enabled: Boolean) =
-        permissionService.getRolePermissions(entity, enabled)
-
-    override fun getPermissions(idOrName: String, enabled: Boolean) =
-        permissionService.getRolePermissions(idOrName, enabled)
-
     private fun isNameValid(name: String): Boolean {
         if (name.isNotBlank()) return true
         if (name.none { it.isWhitespace() }) return true

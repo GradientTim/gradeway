@@ -5,9 +5,13 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.database.models.player.PlayerRolesTable
-import dev.gradienttim.gradeway.database.models.player.PlayersTable
+import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatePermissionsTable
+import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
+import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
+import dev.gradienttim.gradeway.database.models.player.*
+import dev.gradienttim.gradeway.database.models.role.RoleAttributesTable
 import dev.gradienttim.gradeway.database.models.role.RoleParentsTable
+import dev.gradienttim.gradeway.database.models.role.RolePermissionsTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.driver.adapters.DatabaseAdapter
 import dev.gradienttim.gradeway.driver.meta.DriverType
@@ -34,10 +38,25 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
 
         transaction(gradeway.database) {
             SchemaUtils.create(
+                PermissionsTable,
+                PermissionTemplatePermissionsTable,
+                PermissionTemplatesTable
+            )
+
+            SchemaUtils.create(
                 PlayersTable,
                 PlayerRolesTable,
+                PlayerAttributesTable,
+                PlayerPermissionsTable,
+                PlayerPermissionTemplatesTable,
+            )
+
+            SchemaUtils.create(
                 RolesTable,
-                RoleParentsTable
+                RoleParentsTable,
+                RoleAttributesTable,
+                RolePermissionsTable,
+                PlayerPermissionTemplatesTable
             )
         }
     }

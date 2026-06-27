@@ -6,7 +6,9 @@ package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import net.kyori.adventure.util.TriState
 import java.util.*
 
 /**
@@ -28,7 +30,7 @@ interface PlayerPermissionService {
         id: UUID,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a player, identified by their associated [PlayerEntity], to either enable or disabled.
@@ -43,7 +45,7 @@ interface PlayerPermissionService {
         entity: PlayerEntity,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a player, identified by their unique identifier or name, to either enable or disabled.
@@ -58,7 +60,7 @@ interface PlayerPermissionService {
         idOrName: String,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their unique identifier.
@@ -72,7 +74,7 @@ interface PlayerPermissionService {
     fun setPlayerPermissions(
         id: UUID,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their associated [PlayerEntity].
@@ -86,7 +88,7 @@ interface PlayerPermissionService {
     fun setPlayerPermissions(
         entity: PlayerEntity,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their unique identifier or name.
@@ -100,7 +102,7 @@ interface PlayerPermissionService {
     fun setPlayerPermissions(
         idOrName: String,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their unique identifier.
@@ -110,7 +112,7 @@ interface PlayerPermissionService {
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetPlayerPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Boolean>
+    fun unsetPlayerPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their associated [PlayerEntity].
@@ -123,7 +125,7 @@ interface PlayerPermissionService {
     fun unsetPlayerPermission(
         entity: PlayerEntity,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean>
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their unique identifier or name.
@@ -136,7 +138,7 @@ interface PlayerPermissionService {
     fun unsetPlayerPermission(
         idOrName: String,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean>
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their unique identifier.
@@ -149,7 +151,7 @@ interface PlayerPermissionService {
     fun unsetPlayerPermissions(
         id: UUID,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their associated [PlayerEntity].
@@ -162,7 +164,7 @@ interface PlayerPermissionService {
     fun unsetPlayerPermissions(
         entity: PlayerEntity,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their unique identifier or name.
@@ -175,115 +177,124 @@ interface PlayerPermissionService {
     fun unsetPlayerPermissions(
         idOrName: String,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
-     *         or `true` if the update succeeds.
+     *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Removes all permissions associated with the specified player.
      *
      * @param entity The [PlayerEntity] representing the player whose permissions should be cleared.
      * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
-     *         or `true` if the update succeeds.
+     *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the player whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
-     *         or `true` if the update succeeds.
+     *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Checks if a player, identified by their unique identifier, has a specific permission.
      *
      * @param id The unique identifier of the player.
      * @param permission The name of the permission to check.
-     * @return `true` if the player has the specified permission, otherwise `false`.
+     * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or the player
+     *         is not found, [TriState.FALSE] if the permission is explicitly disabled.
      */
-    fun hasPlayerPermission(id: UUID, permission: String): Boolean
+    fun hasPlayerPermission(id: UUID, permission: String): TriState
 
     /**
      * Checks if a player, represented by their [PlayerEntity], has a specific permission.
      *
      * @param entity The [PlayerEntity] representing the player whose permission is being checked.
      * @param permission The name of the permission to verify.
-     * @return `true` if the player has the specified permission; otherwise, `false`.
+     * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or disabled,
+     *         [TriState.FALSE] if the player entity is not found.
      */
-    fun hasPlayerPermission(entity: PlayerEntity, permission: String): Boolean
+    fun hasPlayerPermission(entity: PlayerEntity, permission: String): TriState
 
     /**
      * Checks if a player, identified by their unique identifier or name, has a specific permission.
      *
      * @param idOrName The unique identifier or name of the player.
      * @param permission The name of the permission to check.
-     * @return `true` if the player has the specified permission, otherwise `false`.
+     * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or the player
+     *         is not found, [TriState.FALSE] if the permission is explicitly disabled.
      */
-    fun hasPlayerPermission(idOrName: String, permission: String): Boolean
+    fun hasPlayerPermission(idOrName: String, permission: String): TriState
 
     /**
      * Checks if a player, identified by their UUID, has at least one of the specified permissions.
      *
      * @param id The unique identifier (UUID) of the player whose permissions are being checked.
-     * @param permissions A list of permission strings to check against the player's permissions.
-     * @return `true` if the player has at least one of the permissions in the list, `false` otherwise.
+     * @param permissions A collection of permission strings to check against the player's permissions.
+     * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
+     *         none enabled, [TriState.NOT_SET] if none of the permissions are configured or the player is not found.
      */
-    fun hasPlayerAnyPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasPlayerAnyPermissions(id: UUID, permissions: Collection<String>): TriState
 
     /**
      * Checks if the given player entity has any of the specified permissions.
      *
      * @param entity The player entity to check for permissions.
-     * @param permissions A list of permission strings to verify against the player entity.
-     * @return True if the player entity has at least one of the specified permissions, false otherwise.
+     * @param permissions A collection of permission strings to verify against the player entity.
+     * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
+     *         none enabled, [TriState.NOT_SET] if none of the permissions are configured.
      */
-    fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: List<String>): Boolean
+    fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: Collection<String>): TriState
 
     /**
      * Checks if a player, identified by their unique identifier or name, has at least one of the specified permissions.
      *
      * @param idOrName The unique identifier or name of the player whose permissions are being checked.
-     * @param permissions A list of permission strings to check against the player's permissions.
-     * @return `true` if the player has at least one of the permissions in the list, `false` otherwise.
+     * @param permissions A collection of permission strings to check against the player's permissions.
+     * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
+     *         none enabled, [TriState.NOT_SET] if none of the permissions are configured or the player is not found.
      */
-    fun hasPlayerAnyPermissions(idOrName: String, permissions: List<String>): Boolean
+    fun hasPlayerAnyPermissions(idOrName: String, permissions: Collection<String>): TriState
 
     /**
      * Checks if a player identified by their UUID has all the specified permissions.
      *
      * @param id The unique identifier (UUID) of the player whose permissions are being checked.
-     * @param permissions The list of permissions to verify against the player's assigned permissions.
-     * @return `true` if the player has all the specified permissions, `false` otherwise.
+     * @param permissions The collection of permissions to verify against the player's assigned permissions.
+     * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
+     *         [TriState.NOT_SET] if any permission is not configured or the player is not found.
      */
-    fun hasPlayerAllPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasPlayerAllPermissions(id: UUID, permissions: Collection<String>): TriState
 
     /**
      * Checks if a player entity has all the specified permissions.
      *
      * @param entity The player entity to check.
-     * @param permissions The list of permissions to validate against the player's permissions.
-     * @return `true` if the player has all the specified permissions; `false` otherwise.
+     * @param permissions The collection of permissions to validate against the player's permissions.
+     * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
+     *         [TriState.NOT_SET] if any permission is not configured.
      */
-    fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: List<String>): Boolean
+    fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: Collection<String>): TriState
 
     /**
      * Checks if a player, identified by their unique identifier or name, has all the specified permissions.
      *
      * @param idOrName The unique identifier or name of the player whose permissions are being checked.
-     * @param permissions The list of permissions to verify against the player's assigned permissions.
-     * @return `true` if the player has all the specified permissions, `false` otherwise.
+     * @param permissions The collection of permissions to verify against the player's assigned permissions.
+     * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
+     *         [TriState.NOT_SET] if any permission is not configured or the player is not found.
      */
-    fun hasPlayerAllPermissions(idOrName: String, permissions: List<String>): Boolean
+    fun hasPlayerAllPermissions(idOrName: String, permissions: Collection<String>): TriState
 
     /**
      * Retrieves the permissions assigned to a player identified by their unique identifier.
@@ -292,7 +303,7 @@ interface PlayerPermissionService {
      * @return A map where the keys represent permission names and the values are booleans
      * indicating whether the permission is granted (true) or denied (false).
      */
-    fun getPlayerPermissions(id: UUID): Map<String, Boolean>
+    fun getPlayerPermissions(id: UUID): Set<PlayerPermissionEntity>
 
     /**
      * Retrieves the permission mapping for a given player.
@@ -301,7 +312,7 @@ interface PlayerPermissionService {
      * @return a map where the keys represent permission names and the values indicate
      * whether the player has the corresponding permission (true) or not (false).
      */
-    fun getPlayerPermissions(entity: PlayerEntity): Map<String, Boolean>
+    fun getPlayerPermissions(entity: PlayerEntity): Set<PlayerPermissionEntity>
 
     /**
      * Retrieves the permissions assigned to a player identified by their unique identifier or name.
@@ -310,80 +321,5 @@ interface PlayerPermissionService {
      * @return A map where the keys represent permission names and the values are booleans
      * indicating whether the permission is granted (true) or denied (false).
      */
-    fun getPlayerPermissions(idOrName: String): Map<String, Boolean>
-
-    /**
-     * Retrieves a set of permissions associated with a player based on their unique identifier and status.
-     *
-     * @param id The unique identifier of the player.
-     * @param status The status of the player, which may influence the permissions returned.
-     * @return A set of permissions associated with the player.
-     */
-    fun getPlayerPermissions(id: UUID, status: Boolean): Set<String>
-
-    /**
-     * Retrieves the set of permissions assigned to a player entity based on the provided status.
-     *
-     * @param entity The player entity whose permissions are being queried.
-     * @param status A boolean flag indicating the specific condition or context for which permissions should be retrieved.
-     * @return A set of strings representing the permissions associated with the given player entity and status.
-     */
-    fun getPlayerPermissions(entity: PlayerEntity, status: Boolean): Set<String>
-
-    /**
-     * Retrieves a set of permissions associated with a player based on their unique identifier or name and status.
-     *
-     * @param idOrName The unique identifier or name of the player.
-     * @param status The status of the player, which may influence the permissions returned.
-     * @return A set of permissions associated with the player.
-     */
-    fun getPlayerPermissions(idOrName: String, status: Boolean): Set<String>
-
-    /**
-     * Retrieves the set of permissions enabled for a specific player.
-     *
-     * @param id The unique identifier of the player whose enabled permissions are to be retrieved.
-     * @return A set of strings representing the enabled permissions for the specified player.
-     */
-    fun getPlayerEnabledPermissions(id: UUID): Set<String> = getPlayerPermissions(id, true)
-
-    /**
-     * Retrieves the set of enabled permissions for a given player entity.
-     *
-     * @param entity The player entity for which to retrieve the enabled permissions.
-     * @return A set of strings representing the enabled permissions for the specified player entity.
-     */
-    fun getPlayerEnabledPermissions(entity: PlayerEntity): Set<String> = getPlayerPermissions(entity, true)
-
-    /**
-     * Retrieves the set of permissions enabled for a player identified by their unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the player whose enabled permissions are to be retrieved.
-     * @return A set of strings representing the enabled permissions for the specified player.
-     */
-    fun getPlayerEnabledPermissions(idOrName: String): Set<String> = getPlayerPermissions(idOrName, true)
-
-    /**
-     * Retrieves a set of permissions that are disabled for a specific player.
-     *
-     * @param id The unique identifier of the player whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the disabled permissions for the specified player.
-     */
-    fun getPlayerDisabledPermissions(id: UUID): Set<String> = getPlayerPermissions(id, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for a specific player.
-     *
-     * @param entity The player entity whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the permissions that are disabled for the provided player.
-     */
-    fun getPlayerDisabledPermissions(entity: PlayerEntity): Set<String> = getPlayerPermissions(entity, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for a player identified by their unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the player whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the disabled permissions for the specified player.
-     */
-    fun getPlayerDisabledPermissions(idOrName: String): Set<String> = getPlayerPermissions(idOrName, false)
+    fun getPlayerPermissions(idOrName: String): Set<PlayerPermissionEntity>
 }

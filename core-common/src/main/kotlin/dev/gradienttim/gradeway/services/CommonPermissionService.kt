@@ -7,23 +7,707 @@ package dev.gradienttim.gradeway.services
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.entity.PermissionEntity
+import dev.gradienttim.gradeway.constants.TableConstants
+import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
+import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTemplateEntity
+import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
+import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
+import dev.gradienttim.gradeway.database.models.player.DatabasePlayerPermissionEntity
+import dev.gradienttim.gradeway.database.models.player.DatabasePlayerPermissionTemplateEntity
+import dev.gradienttim.gradeway.database.models.player.PlayerPermissionTemplatesTable
+import dev.gradienttim.gradeway.database.models.role.DatabaseRolePermissionEntity
+import dev.gradienttim.gradeway.database.models.role.DatabaseRolePermissionTemplateEntity
+import dev.gradienttim.gradeway.database.models.role.RolePermissionTemplatesTable
+import dev.gradienttim.gradeway.entity.SharedPermissionEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
+import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
+import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isUuid
+import dev.gradienttim.gradeway.reference.PermissionReference
+import net.kyori.adventure.util.TriState
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.jdbc.SizedIterable
+import org.jetbrains.exposed.v1.jdbc.emptySized
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
 
+@Suppress("LargeClass", "TooManyFunctions")
 class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService, KoinComponent {
     private val rolesService: RoleService by inject()
     private val playersService: PlayerService by inject()
+
+    override fun createPermission(
+        value: String,
+        type: PermissionEntity.Type
+    ): Either<PermissionService.CreatePermissionError, PermissionEntity> = either {
+        if (findPermissionByValue(value) != null) {
+            raise(PermissionService.CreatePermissionError.AlreadyExists)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                DatabasePermissionEntity.new {
+                    this.value = value
+                    this.type = type
+                }
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.CreatePermissionError.Unexpected(throwable))
+        }
+    }
+
+    override fun deletePermission(id: UUID): Either<PermissionService.DeletePermissionError, Unit> = either {
+        val entity = findPermissionById(id) ?: raise(PermissionService.DeletePermissionError.EntityNotFound)
+        if (entity !is DatabasePermissionEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionEntity")
+            raise(PermissionService.DeletePermissionError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entity.delete()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.DeletePermissionError.Unexpected(throwable))
+        }
+    }
+
+    override fun updatePermissionValue(
+        id: UUID,
+        value: String
+    ): Either<PermissionService.UpdatePermissionValueError, Boolean> = either {
+        val entity = findPermissionById(id) ?: raise(PermissionService.UpdatePermissionValueError.EntityNotFound)
+        return updatePermissionValue(entity, value)
+    }
+
+    override fun updatePermissionValue(
+        entity: PermissionEntity,
+        value: String
+    ): Either<PermissionService.UpdatePermissionValueError, Boolean> = either {
+        if (entity.value == value) {
+            raise(PermissionService.UpdatePermissionValueError.ValueAlreadySet)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entity.value = value
+                entity.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.UpdatePermissionValueError.Unexpected(throwable))
+        }
+    }
+
+    override fun updatePermissionType(
+        id: UUID,
+        type: PermissionEntity.Type
+    ): Either<PermissionService.UpdatePermissionTypeError, Boolean> = either {
+        val entity = findPermissionById(id) ?: raise(PermissionService.UpdatePermissionTypeError.EntityNotFound)
+        return updatePermissionType(entity, type)
+    }
+
+    override fun updatePermissionType(
+        entity: PermissionEntity,
+        type: PermissionEntity.Type
+    ): Either<PermissionService.UpdatePermissionTypeError, Boolean> = either {
+        if (entity.type == type) {
+            raise(PermissionService.UpdatePermissionTypeError.TypeAlreadySet)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entity.type = type
+                entity.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.UpdatePermissionTypeError.Unexpected(throwable))
+        }
+    }
+
+    override fun findPermissionById(id: UUID): PermissionEntity? {
+        return try {
+            transaction(gradeway.database) {
+                DatabasePermissionEntity.findById(id)
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to find permission by id '$id': ${throwable.localizedMessage}")
+            null
+        }
+    }
+
+    override fun findPermissionByValue(value: String): PermissionEntity? {
+        return try {
+            transaction(gradeway.database) {
+                DatabasePermissionEntity.find { PermissionsTable.value eq value }.firstOrNull()
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to find permission by value '$value': ${throwable.localizedMessage}")
+            null
+        }
+    }
+
+    override fun createTemplate(
+        name: String
+    ): Either<PermissionService.CreateTemplateError, PermissionTemplateEntity> = either {
+        if (!isTemplateNameValid(name)) {
+            raise(PermissionService.CreateTemplateError.InvalidName)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                DatabasePermissionTemplateEntity.new {
+                    this.name = name
+                }
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.CreateTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun deleteTemplate(id: UUID): Either<PermissionService.DeleteTemplateError, Unit> = either {
+        val entity = findTemplateById(id) as? DatabasePermissionTemplateEntity
+            ?: raise(PermissionService.DeleteTemplateError.EntityNotFound)
+
+        try {
+            transaction(gradeway.database) {
+                entity.delete()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.DeleteTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun setTemplateName(id: UUID, name: String): Either<PermissionService.SetNameTemplateError, Boolean> =
+        either {
+            val entity = findTemplateById(id) ?: raise(PermissionService.SetNameTemplateError.EntityNotFound)
+            return setTemplateName(entity, name)
+        }
+
+    override fun setTemplateName(
+        entity: PermissionTemplateEntity,
+        name: String
+    ): Either<PermissionService.SetNameTemplateError, Boolean> = either {
+        if (entity !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.SetNameTemplateError.Unexpected(throwable))
+        }
+
+        if (!isTemplateNameValid(name)) {
+            raise(PermissionService.SetNameTemplateError.InvalidName)
+        }
+
+        if (entity.name == name) {
+            raise(PermissionService.SetNameTemplateError.NameAlreadySet)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entity.name = name
+                entity.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.SetNameTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun setTemplateAssignedTo(
+        id: UUID,
+        assignedTo: PermissionTemplateEntity.AssignedTo
+    ): Either<PermissionService.SetAssignedToTemplateError, Boolean> = either {
+        val entity = findTemplateById(id) ?: raise(PermissionService.SetAssignedToTemplateError.EntityNotFound)
+        return setTemplateAssignedTo(entity, assignedTo)
+    }
+
+    override fun setTemplateAssignedTo(
+        entity: PermissionTemplateEntity,
+        assignedTo: PermissionTemplateEntity.AssignedTo
+    ): Either<PermissionService.SetAssignedToTemplateError, Boolean> = either {
+        if (entity !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.SetAssignedToTemplateError.Unexpected(throwable))
+        }
+
+        if (entity.assignedTo == assignedTo) {
+            raise(PermissionService.SetAssignedToTemplateError.AlreadyAssignedTo)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entity.assignedTo = assignedTo
+                entity.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.SetAssignedToTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun findTemplateById(id: UUID): PermissionTemplateEntity? {
+        return try {
+            transaction(gradeway.database) {
+                DatabasePermissionTemplateEntity.findById(id)
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to find template by id '$id': ${throwable.localizedMessage}")
+            null
+        }
+    }
+
+    override fun findTemplateByName(name: String): PermissionTemplateEntity? {
+        if (!isTemplateNameValid(name)) {
+            return null
+        }
+        return try {
+            transaction(gradeway.database) {
+                DatabasePermissionTemplateEntity.find { PermissionTemplatesTable.name eq name }.limit(1).firstOrNull()
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to find template by name '$name': ${throwable.localizedMessage}")
+            null
+        }
+    }
+
+    override fun findTemplateByIdOrName(value: String): PermissionTemplateEntity? {
+        if (!value.isUuid() && !isTemplateNameValid(value)) {
+            return null
+        }
+        return try {
+            transaction(gradeway.database) {
+                DatabasePermissionTemplateEntity.find {
+                    (PermissionTemplatesTable.id eqAsStr value) or (PermissionTemplatesTable.name eq value)
+                }.limit(1).firstOrNull()
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to find template by id or name '$value': ${throwable.localizedMessage}")
+            null
+        }
+    }
+
+    override fun listTemplates(
+        where: (() -> Op<Boolean>)?,
+        orderBy: Set<Pair<Expression<*>, SortOrder>>,
+        limit: Int
+    ): SizedIterable<PermissionTemplateEntity> {
+        return try {
+            transaction(gradeway.database) {
+                var iterable = if (where == null)
+                    DatabasePermissionTemplateEntity.all() else DatabasePermissionTemplateEntity.find(where)
+
+                iterable = if (orderBy.isNotEmpty()) {
+                    iterable.orderBy(*orderBy.toTypedArray())
+                } else {
+                    iterable.orderBy(PermissionTemplatesTable.createdAt to SortOrder.DESC)
+                }
+
+                iterable.limit(limit)
+            }
+        } catch (throwable: Throwable) {
+            gradeway.logger.error("Failed to list templates: ${throwable.localizedMessage}")
+            emptySized()
+        }
+    }
+
+    override fun linkTemplateToRole(
+        templateId: UUID,
+        roleId: UUID
+    ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
+        val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        return linkTemplateToRole(templateEntity, roleEntity)
+    }
+
+    override fun linkTemplateToRole(
+        templateId: UUID,
+        role: RoleEntity
+    ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
+        val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
+        return linkTemplateToRole(templateEntity, role)
+    }
+
+    override fun linkTemplateToRole(
+        template: PermissionTemplateEntity,
+        roleId: UUID
+    ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        return linkTemplateToRole(template, roleEntity)
+    }
+
+    override fun linkTemplateToRole(
+        template: PermissionTemplateEntity,
+        role: RoleEntity
+    ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
+        val templateEntitiesCount = DatabaseRolePermissionTemplateEntity.find {
+            (RolePermissionTemplatesTable.roleId eq role.id) and
+                    (RolePermissionTemplatesTable.permissionTemplateId eq template.id)
+        }.limit(1).count()
+
+        if (templateEntitiesCount != 0L) {
+            raise(PermissionService.LinkTemplateError.AlreadyLinked)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                DatabaseRolePermissionTemplateEntity.new {
+                    this.roleId = role.id
+                    this.permissionTemplateId = template.id
+                }
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.LinkTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun unlinkTemplateFromRole(
+        templateId: UUID,
+        roleId: UUID
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        return unlinkTemplateFromRole(templateEntity, roleEntity)
+    }
+
+    override fun unlinkTemplateFromRole(
+        templateId: UUID,
+        role: RoleEntity
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
+        return unlinkTemplateFromRole(templateEntity, role)
+    }
+
+    override fun unlinkTemplateFromRole(
+        template: PermissionTemplateEntity,
+        roleId: UUID
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        return unlinkTemplateFromRole(template, roleEntity)
+    }
+
+    override fun unlinkTemplateFromRole(
+        template: PermissionTemplateEntity,
+        role: RoleEntity
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val entityTemplateEntity = DatabaseRolePermissionTemplateEntity.find {
+            (RolePermissionTemplatesTable.roleId eq role.id) and
+                    (RolePermissionTemplatesTable.permissionTemplateId eq template.id)
+        }.limit(1).firstOrNull()
+
+        if (entityTemplateEntity == null) {
+            raise(PermissionService.UnlinkTemplateError.NotLinked)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entityTemplateEntity.delete()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.UnlinkTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun applyTemplateToRole(
+        templateId: UUID,
+        roleId: UUID
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        return applyTemplateToRole(templateEntity, roleEntity)
+    }
+
+    override fun applyTemplateToRole(
+        templateId: UUID,
+        role: RoleEntity
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
+        return applyTemplateToRole(templateEntity, role)
+    }
+
+    override fun applyTemplateToRole(
+        template: PermissionTemplateEntity,
+        roleId: UUID
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        return applyTemplateToRole(template, roleEntity)
+    }
+
+    override fun applyTemplateToRole(
+        template: PermissionTemplateEntity,
+        role: RoleEntity
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        if (template !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                val permissions = template.permissions
+                    .map { it.permission }
+                    .associate { it.value to true }
+
+                setRolePermissions(role, permissions).isRight()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun revokeTemplateFromRole(
+        templateId: UUID,
+        roleId: UUID
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        return revokeTemplateFromRole(templateEntity, roleEntity)
+    }
+
+    override fun revokeTemplateFromRole(
+        templateId: UUID,
+        role: RoleEntity
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val templateEntity =
+            findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
+        return revokeTemplateFromRole(templateEntity, role)
+    }
+
+    override fun revokeTemplateFromRole(
+        template: PermissionTemplateEntity,
+        roleId: UUID
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        return revokeTemplateFromRole(template, roleEntity)
+    }
+
+    override fun revokeTemplateFromRole(
+        template: PermissionTemplateEntity,
+        role: RoleEntity
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        if (template !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                val permissions = template.permissions
+                    .map { it.permission }
+                    .map { it.value }
+
+                unsetRolePermissions(role, permissions).isRight()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun linkTemplateToPlayer(
+        templateId: UUID,
+        playerId: UUID
+    ): Either<PermissionService.LinkTemplateError, Unit> = either {
+        val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
+        val playerEntity =
+            playersService.findById(playerId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        return linkTemplateToPlayer(templateEntity, playerEntity)
+    }
+
+    override fun linkTemplateToPlayer(
+        templateId: UUID,
+        player: PlayerEntity
+    ): Either<PermissionService.LinkTemplateError, Unit> = either {
+        val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
+        return linkTemplateToPlayer(templateEntity, player)
+    }
+
+    override fun linkTemplateToPlayer(
+        template: PermissionTemplateEntity,
+        playerId: UUID
+    ): Either<PermissionService.LinkTemplateError, Unit> = either {
+        val playerEntity =
+            playersService.findById(playerId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        return linkTemplateToPlayer(template, playerEntity)
+    }
+
+    override fun linkTemplateToPlayer(
+        template: PermissionTemplateEntity,
+        player: PlayerEntity
+    ): Either<PermissionService.LinkTemplateError, Unit> = either {
+        val templateEntitiesCount = DatabasePlayerPermissionTemplateEntity.find {
+            (PlayerPermissionTemplatesTable.playerId eq player.id) and
+                    (PlayerPermissionTemplatesTable.permissionTemplateId eq template.id)
+        }.limit(1).count()
+
+        if (templateEntitiesCount != 0L) {
+            raise(PermissionService.LinkTemplateError.AlreadyLinked)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                DatabasePlayerPermissionTemplateEntity.new {
+                    this.playerId = player.id
+                    this.permissionTemplateId = template.id
+                }
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.LinkTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun unlinkTemplateFromPlayer(
+        templateId: UUID,
+        playerId: UUID
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
+        val player = playersService.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        return unlinkTemplateFromPlayer(template, player)
+    }
+
+    override fun unlinkTemplateFromPlayer(
+        templateId: UUID,
+        player: PlayerEntity
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
+        return unlinkTemplateFromPlayer(template, player)
+    }
+
+    override fun unlinkTemplateFromPlayer(
+        template: PermissionTemplateEntity,
+        playerId: UUID
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val player = playersService.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        return unlinkTemplateFromPlayer(template, player)
+    }
+
+    override fun unlinkTemplateFromPlayer(
+        template: PermissionTemplateEntity,
+        player: PlayerEntity
+    ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
+        val entityTemplateEntity = DatabasePlayerPermissionTemplateEntity.find {
+            (PlayerPermissionTemplatesTable.playerId eq player.id) and
+                    (PlayerPermissionTemplatesTable.permissionTemplateId eq template.id)
+        }.limit(1).firstOrNull()
+
+        if (entityTemplateEntity == null) {
+            raise(PermissionService.UnlinkTemplateError.NotLinked)
+        }
+
+        try {
+            transaction(gradeway.database) {
+                entityTemplateEntity.delete()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.UnlinkTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun applyTemplateToPlayer(
+        templateId: UUID,
+        playerId: UUID
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
+        val player = playersService.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        return applyTemplateToPlayer(template, player)
+    }
+
+    override fun applyTemplateToPlayer(
+        templateId: UUID,
+        player: PlayerEntity
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
+        return applyTemplateToPlayer(template, player)
+    }
+
+    override fun applyTemplateToPlayer(
+        template: PermissionTemplateEntity,
+        playerId: UUID
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        val player = playersService.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        return applyTemplateToPlayer(template, player)
+    }
+
+    override fun applyTemplateToPlayer(
+        template: PermissionTemplateEntity,
+        player: PlayerEntity
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+        if (template !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                val permissions = template.permissions
+                    .map { it.permission }
+                    .associate { it.value to true }
+
+                setPlayerPermissions(player, permissions).isRight()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
+        }
+    }
+
+    override fun revokeTemplateFromPlayer(
+        templateId: UUID,
+        playerId: UUID
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
+        val player = playersService.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        return revokeTemplateFromPlayer(template, player)
+    }
+
+    override fun revokeTemplateFromPlayer(
+        templateId: UUID,
+        player: PlayerEntity
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val template = findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
+        return revokeTemplateFromPlayer(template, player)
+    }
+
+    override fun revokeTemplateFromPlayer(
+        template: PermissionTemplateEntity,
+        playerId: UUID
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        val player = playersService.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        return revokeTemplateFromPlayer(template, player)
+    }
+
+    override fun revokeTemplateFromPlayer(
+        template: PermissionTemplateEntity,
+        player: PlayerEntity
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+        if (template !is DatabasePermissionTemplateEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
+            raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                val permissions = template.permissions
+                    .map { it.permission }
+                    .map { it.value }
+
+                unsetPlayerPermissions(player, permissions).isRight()
+            }
+        } catch (throwable: Throwable) {
+            raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
+        }
+    }
 
     override fun setRolePermission(
         id: UUID,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+    ): Either<PermissionService.SetPermissionError, Unit> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setRolePermission(entity, permission, enabled)
     }
@@ -32,13 +716,19 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: RoleEntity,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = setEntityPermission(entity, permission, enabled)
+    ): Either<PermissionService.SetPermissionError, Unit> =
+        setEntityPermission(entity, permission, enabled) { permissionEntity ->
+            DatabaseRolePermissionEntity.new {
+                this.roleId = entity.id
+                this.permissionId = permissionEntity.id
+            }
+        }
 
     override fun setRolePermission(
         idOrName: String,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+    ): Either<PermissionService.SetPermissionError, Unit> = either {
         val entity = rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setRolePermission(entity, permission, enabled)
     }
@@ -46,7 +736,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun setRolePermissions(
         id: UUID,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setRolePermissions(entity, permissions)
     }
@@ -54,12 +744,19 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun setRolePermissions(
         entity: RoleEntity,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = setEntityPermissions(entity, permissions)
+    ): Either<PermissionService.BulkSetPermissionError, Unit> =
+        setEntityPermissions(entity, permissions) { permissionEntity, enabled ->
+            DatabaseRolePermissionEntity.new {
+                this.roleId = entity.id
+                this.permissionId = permissionEntity.id
+                this.isEnabled = enabled
+            }
+        }
 
     override fun setRolePermissions(
         idOrName: String,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity =
             rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setRolePermissions(entity, permissions)
@@ -68,7 +765,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetRolePermission(
         id: UUID,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetRolePermission(entity, permission)
     }
@@ -76,12 +773,12 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetRolePermission(
         entity: RoleEntity,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = unsetEntityPermission(entity, permission)
+    ): Either<PermissionService.UnsetPermissionError, Unit> = unsetEntityPermission(entity, permission)
 
     override fun unsetRolePermission(
         idOrName: String,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity =
             rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetRolePermission(entity, permission)
@@ -90,7 +787,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetRolePermissions(
         id: UUID,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetRolePermissions(entity, permissions)
     }
@@ -98,112 +795,98 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetRolePermissions(
         entity: RoleEntity,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = unsetEntityPermissions(entity, permissions)
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = unsetEntityPermissions(entity, permissions)
 
     override fun unsetRolePermissions(
         idOrName: String,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity =
             rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetRolePermissions(entity, permissions)
     }
 
-    override fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean> = either {
+    override fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit> = either {
         val entity = rolesService.findById(id) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearRolePermissions(entity)
     }
 
     override fun clearRolePermissions(
         entity: RoleEntity
-    ): Either<PermissionService.ClearPermissionError, Boolean> = clearEntityPermissions(entity)
+    ): Either<PermissionService.ClearPermissionError, Unit> = clearEntityPermissions(entity)
 
     override fun clearRolePermissions(
         idOrName: String
-    ): Either<PermissionService.ClearPermissionError, Boolean> = either {
+    ): Either<PermissionService.ClearPermissionError, Unit> = either {
         val entity =
             rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearRolePermissions(entity)
     }
 
-    override fun hasRolePermission(id: UUID, permission: String): Boolean {
-        val entityPermissions = getRolePermissions(id, true)
-        return permission in entityPermissions
+    override fun hasRolePermission(id: UUID, permission: String): TriState {
+        val entity = rolesService.findById(id) ?: return TriState.NOT_SET
+        return hasRolePermission(entity, permission)
     }
 
-    override fun hasRolePermission(entity: RoleEntity, permission: String): Boolean {
-        val entityPermissions = getRolePermissions(entity, true)
-        return permission in entityPermissions
+    override fun hasRolePermission(
+        entity: RoleEntity,
+        permission: String
+    ): TriState = hasEntityPermission(entity, permission)
+
+    override fun hasRolePermission(idOrName: String, permission: String): TriState {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasRolePermission(entity, permission)
     }
 
-    override fun hasRolePermission(idOrName: String, permission: String): Boolean {
-        val entityPermissions = getRolePermissions(idOrName, true)
-        return permission in entityPermissions
+    override fun hasRoleAnyPermissions(id: UUID, permissions: Collection<String>): TriState {
+        val entity = rolesService.findById(id) ?: return TriState.NOT_SET
+        return hasRoleAnyPermissions(entity, permissions)
     }
 
-    override fun hasRoleAnyPermissions(id: UUID, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(id, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasRoleAnyPermissions(
+        entity: RoleEntity,
+        permissions: Collection<String>
+    ): TriState = hasEntityAnyPermissions(entity, permissions)
+
+    override fun hasRoleAnyPermissions(idOrName: String, permissions: Collection<String>): TriState {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasRoleAnyPermissions(entity, permissions)
     }
 
-    override fun hasRoleAnyPermissions(entity: RoleEntity, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(entity, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasRoleAllPermissions(id: UUID, permissions: Collection<String>): TriState {
+        val entity = rolesService.findById(id) ?: return TriState.NOT_SET
+        return hasRoleAllPermissions(entity, permissions)
     }
 
-    override fun hasRoleAnyPermissions(idOrName: String, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(idOrName, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasRoleAllPermissions(
+        entity: RoleEntity,
+        permissions: Collection<String>
+    ): TriState = hasEntityAllPermissions(entity, permissions)
+
+    override fun hasRoleAllPermissions(idOrName: String, permissions: Collection<String>): TriState {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasRoleAllPermissions(entity, permissions)
     }
 
-    override fun hasRoleAllPermissions(id: UUID, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(id, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun hasRoleAllPermissions(entity: RoleEntity, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(entity, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun hasRoleAllPermissions(idOrName: String, permissions: List<String>): Boolean {
-        val entityPermissions = getRolePermissions(idOrName, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun getRolePermissions(id: UUID): Map<String, Boolean> {
-        val entity = rolesService.findById(id) ?: return emptyMap<String, Boolean>()
+    override fun getRolePermissions(id: UUID): Set<RolePermissionEntity> {
+        val entity = rolesService.findById(id) ?: return emptySet()
         return getRolePermissions(entity)
     }
 
-    override fun getRolePermissions(entity: RoleEntity): Map<String, Boolean> {
-        return entity.permissions
+    override fun getRolePermissions(entity: RoleEntity): Set<RolePermissionEntity> {
+        return entity.permissions.toSet()
     }
 
-    override fun getRolePermissions(idOrName: String): Map<String, Boolean> {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return emptyMap<String, Boolean>()
+    override fun getRolePermissions(idOrName: String): Set<RolePermissionEntity> {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet()
         return getRolePermissions(entity)
-    }
-
-    override fun getRolePermissions(id: UUID, status: Boolean): Set<String> {
-        val entity = rolesService.findById(id) ?: return emptySet<String>()
-        return getRolePermissions(entity, status)
-    }
-
-    override fun getRolePermissions(entity: RoleEntity, status: Boolean): Set<String> {
-        return entity.permissions.filter { (_, enabled) -> status == enabled }.keys
-    }
-
-    override fun getRolePermissions(idOrName: String, status: Boolean): Set<String> {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet<String>()
-        return getRolePermissions(entity, status)
     }
 
     override fun setPlayerPermission(
         id: UUID,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+    ): Either<PermissionService.SetPermissionError, Unit> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setPlayerPermission(entity, permission, enabled)
     }
@@ -212,13 +895,19 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         entity: PlayerEntity,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = setEntityPermission(entity, permission, enabled)
+    ): Either<PermissionService.SetPermissionError, Unit> =
+        setEntityPermission(entity, permission, enabled) { permissionEntity ->
+            DatabasePlayerPermissionEntity.new {
+                this.playerId = entity.id
+                this.permissionId = permissionEntity.id
+            }
+        }
 
     override fun setPlayerPermission(
         idOrName: String,
         permission: String,
         enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = either {
+    ): Either<PermissionService.SetPermissionError, Unit> = either {
         val entity =
             playersService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setPlayerPermission(entity, permission, enabled)
@@ -227,7 +916,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun setPlayerPermissions(
         id: UUID,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setPlayerPermissions(entity, permissions)
     }
@@ -235,12 +924,19 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun setPlayerPermissions(
         entity: PlayerEntity,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = setEntityPermissions(entity, permissions)
+    ): Either<PermissionService.BulkSetPermissionError, Unit> =
+        setEntityPermissions(entity, permissions) { permissionEntity, enabled ->
+            DatabasePlayerPermissionEntity.new {
+                this.playerId = entity.id
+                this.permissionId = permissionEntity.id
+                this.isEnabled = enabled
+            }
+        }
 
     override fun setPlayerPermissions(
         idOrName: String,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity =
             playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setPlayerPermissions(entity, permissions)
@@ -249,7 +945,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetPlayerPermission(
         id: UUID,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetPlayerPermission(entity, permission)
     }
@@ -257,12 +953,12 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetPlayerPermission(
         entity: PlayerEntity,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = unsetEntityPermission(entity, permission)
+    ): Either<PermissionService.UnsetPermissionError, Unit> = unsetEntityPermission(entity, permission)
 
     override fun unsetPlayerPermission(
         idOrName: String,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity =
             playersService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetPlayerPermission(entity, permission)
@@ -271,7 +967,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetPlayerPermissions(
         id: UUID,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetPlayerPermissions(entity, permissions)
     }
@@ -279,127 +975,173 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun unsetPlayerPermissions(
         entity: PlayerEntity,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = unsetEntityPermissions(entity, permissions)
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = unsetEntityPermissions(entity, permissions)
 
     override fun unsetPlayerPermissions(
         idOrName: String,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity =
             playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetPlayerPermissions(entity, permissions)
     }
 
-    override fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean> = either {
+    override fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit> = either {
         val entity = playersService.findById(id) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearPlayerPermissions(entity)
     }
 
     override fun clearPlayerPermissions(
         entity: PlayerEntity
-    ): Either<PermissionService.ClearPermissionError, Boolean> = clearEntityPermissions(entity)
+    ): Either<PermissionService.ClearPermissionError, Unit> = clearEntityPermissions(entity)
 
     override fun clearPlayerPermissions(
         idOrName: String
-    ): Either<PermissionService.ClearPermissionError, Boolean> = either {
+    ): Either<PermissionService.ClearPermissionError, Unit> = either {
         val entity =
             playersService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionError.EntityNotFound)
         return clearPlayerPermissions(entity)
     }
 
-    override fun hasPlayerPermission(id: UUID, permission: String): Boolean {
-        val entityPermissions = getPlayerPermissions(id, true)
-        return permission in entityPermissions
+    override fun hasPlayerPermission(id: UUID, permission: String): TriState {
+        val entity = playersService.findById(id) ?: return TriState.NOT_SET
+        return hasPlayerPermission(entity, permission)
     }
 
-    override fun hasPlayerPermission(entity: PlayerEntity, permission: String): Boolean {
-        val entityPermissions = getPlayerPermissions(entity, true)
-        return permission in entityPermissions
+    override fun hasPlayerPermission(
+        entity: PlayerEntity,
+        permission: String
+    ): TriState = hasEntityPermission(entity, permission)
+
+    override fun hasPlayerPermission(idOrName: String, permission: String): TriState {
+        val entity = playersService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasPlayerPermission(entity, permission)
     }
 
-    override fun hasPlayerPermission(idOrName: String, permission: String): Boolean {
-        val entityPermissions = getPlayerPermissions(idOrName, true)
-        return permission in entityPermissions
+    override fun hasPlayerAnyPermissions(id: UUID, permissions: Collection<String>): TriState {
+        val entity = playersService.findById(id) ?: return TriState.NOT_SET
+        return hasPlayerAnyPermissions(entity, permissions)
     }
 
-    override fun hasPlayerAnyPermissions(id: UUID, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(id, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasPlayerAnyPermissions(
+        entity: PlayerEntity,
+        permissions: Collection<String>
+    ): TriState = hasEntityAnyPermissions(entity, permissions)
+
+    override fun hasPlayerAnyPermissions(idOrName: String, permissions: Collection<String>): TriState {
+        val entity = playersService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasPlayerAnyPermissions(entity, permissions)
     }
 
-    override fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(entity, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasPlayerAllPermissions(id: UUID, permissions: Collection<String>): TriState {
+        val entity = playersService.findById(id) ?: return TriState.NOT_SET
+        return hasPlayerAllPermissions(entity, permissions)
     }
 
-    override fun hasPlayerAnyPermissions(idOrName: String, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(idOrName, true)
-        return permissions.any { entityPermissions.contains(it) }
+    override fun hasPlayerAllPermissions(
+        entity: PlayerEntity,
+        permissions: Collection<String>
+    ): TriState = hasEntityAllPermissions(entity, permissions)
+
+    override fun hasPlayerAllPermissions(idOrName: String, permissions: Collection<String>): TriState {
+        val entity = playersService.findByIdOrName(idOrName) ?: return TriState.NOT_SET
+        return hasPlayerAllPermissions(entity, permissions)
     }
 
-    override fun hasPlayerAllPermissions(id: UUID, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(id, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(entity, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun hasPlayerAllPermissions(idOrName: String, permissions: List<String>): Boolean {
-        val entityPermissions = getPlayerPermissions(idOrName, true)
-        return permissions.all { entityPermissions.contains(it) }
-    }
-
-    override fun getPlayerPermissions(id: UUID): Map<String, Boolean> {
-        val entity = playersService.findById(id) ?: return emptyMap<String, Boolean>()
+    override fun getPlayerPermissions(id: UUID): Set<PlayerPermissionEntity> {
+        val entity = playersService.findById(id) ?: return emptySet()
         return getPlayerPermissions(entity)
     }
 
-    override fun getPlayerPermissions(entity: PlayerEntity): Map<String, Boolean> {
-        return entity.permissions
+    override fun getPlayerPermissions(entity: PlayerEntity): Set<PlayerPermissionEntity> {
+        return entity.permissions.toSet()
     }
 
-    override fun getPlayerPermissions(idOrName: String): Map<String, Boolean> {
-        val entity = playersService.findByIdOrName(idOrName) ?: return emptyMap<String, Boolean>()
+    override fun getPlayerPermissions(idOrName: String): Set<PlayerPermissionEntity> {
+        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet()
         return getPlayerPermissions(entity)
     }
 
-    override fun getPlayerPermissions(id: UUID, status: Boolean): Set<String> {
-        val entity = playersService.findById(id) ?: return emptySet<String>()
-        return getPlayerPermissions(entity, status)
+    private fun findOrCreatePermissionEntity(permission: String): PermissionEntity {
+        return findPermissionByValue(permission) ?: DatabasePermissionEntity.new {
+            this.value = permission
+            this.type = PermissionEntity.Type.EQUALS
+        }
     }
 
-    override fun getPlayerPermissions(entity: PlayerEntity, status: Boolean): Set<String> {
-        return entity.permissions.filter { (_, enabled) -> status == enabled }.keys
+    private fun hasEntityPermission(
+        entity: PermissionReference<out SharedPermissionEntity>,
+        permission: String
+    ): TriState {
+        val entityPermission = entity.permissions.find { it.permission.value == permission }
+        if (entityPermission == null || !entityPermission.isEnabled) {
+            return TriState.NOT_SET
+        }
+        return entityPermission.permission.validatePermission(permission)
     }
 
-    override fun getPlayerPermissions(idOrName: String, status: Boolean): Set<String> {
-        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet<String>()
-        return getPlayerPermissions(entity, status)
+    private fun hasEntityAllPermissions(
+        entity: PermissionReference<out SharedPermissionEntity>,
+        permissions: Collection<String>
+    ): TriState {
+        val entityPermissions = entity.permissions
+        for (permission in permissions) {
+            if (entityPermissions.indexOfFirst { it.permission.value == permission } == -1) {
+                return TriState.NOT_SET
+            }
+            val hasPermission = entityPermissions.any {
+                it.isEnabled && it.permission.validatePermission(permission) == TriState.TRUE
+            }
+            if (!hasPermission) {
+                return TriState.FALSE
+            }
+        }
+        return TriState.TRUE
+    }
+
+    private fun hasEntityAnyPermissions(
+        entity: PermissionReference<out SharedPermissionEntity>,
+        permissions: Collection<String>
+    ): TriState {
+        val entityPermissions = entity.permissions
+        for ((index, permission) in permissions.withIndex()) {
+            if (entityPermissions.indexOfFirst { it.permission.value == permission } == -1) {
+                if (index == permissions.size - 1) return TriState.NOT_SET
+                continue
+            }
+            val hasAnyPermission = entityPermissions.any {
+                it.isEnabled && it.permission.validatePermission(permission) == TriState.TRUE
+            }
+            if (hasAnyPermission) {
+                return TriState.TRUE
+            }
+        }
+        return TriState.FALSE
     }
 
     private fun setEntityPermission(
-        entity: PermissionEntity,
+        entity: PermissionReference<out SharedPermissionEntity>,
         permission: String,
-        enabled: Boolean
-    ): Either<PermissionService.SetPermissionError, Boolean> = either {
-        val entityPermissions = entity.permissions.toMutableMap()
-        if (entityPermissions.containsKey(permission)) {
-            val isEnabled = entityPermissions[permission]!!
-            if (enabled && isEnabled) {
-                raise(PermissionService.SetPermissionError.PermissionAlreadyEnabled)
-            }
-            if (!enabled && !isEnabled) {
-                raise(PermissionService.SetPermissionError.PermissionAlreadyDisabled)
-            }
-        }
-        entityPermissions[permission] = enabled
+        enabled: Boolean,
+        createNewPermission: (PermissionEntity) -> Unit
+    ): Either<PermissionService.SetPermissionError, Unit> = either {
         try {
             transaction(gradeway.database) {
-                entity.permissions = entityPermissions
-                entity.flush()
+                val existingPermission = entity.permissions.find { it.permission.value == permission }
+                if (existingPermission != null) {
+                    val isEnabled = existingPermission.isEnabled
+                    if (enabled && isEnabled) {
+                        raise(PermissionService.SetPermissionError.PermissionAlreadyEnabled)
+                    }
+                    if (!enabled && !isEnabled) {
+                        raise(PermissionService.SetPermissionError.PermissionAlreadyDisabled)
+                    }
+                    existingPermission.isEnabled = enabled
+                    existingPermission.flush()
+                    return@transaction
+                }
+                val permissionEntity = findOrCreatePermissionEntity(permission)
+                createNewPermission(permissionEntity)
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.SetPermissionError.Unexpected(throwable))
@@ -407,17 +1149,18 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     private fun setEntityPermissions(
-        entity: PermissionEntity,
-        permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean> = either {
-        val entityPermissions = entity.permissions.toMutableMap()
-        for ((permission, status) in permissions) {
-            entityPermissions[permission] = status
-        }
+        entity: PermissionReference<out SharedPermissionEntity>,
+        permissions: Map<String, Boolean>,
+        createNewPermission: (PermissionEntity, Boolean) -> Unit
+    ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         try {
             transaction(gradeway.database) {
-                entity.permissions = entityPermissions
-                entity.flush()
+                val existingPermissions = entity.permissions
+                for ((permissionValue, enabled) in permissions) {
+                    if (existingPermissions.any { it.permission.value == permissionValue }) continue
+                    val permissionEntity = findOrCreatePermissionEntity(permissionValue)
+                    createNewPermission(permissionEntity, enabled)
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkSetPermissionError.Unexpected(throwable))
@@ -425,18 +1168,16 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     private fun unsetEntityPermission(
-        entity: PermissionEntity,
+        entity: PermissionReference<out SharedPermissionEntity>,
         permission: String
-    ): Either<PermissionService.UnsetPermissionError, Boolean> = either {
-        val entityPermissions = entity.permissions.toMutableMap()
-        if (!entity.permissions.containsKey(permission)) {
-            raise(PermissionService.UnsetPermissionError.PermissionNotFound)
-        }
-        entityPermissions.remove(permission)
+    ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         try {
             transaction(gradeway.database) {
-                entity.permissions = entityPermissions
-                entity.flush()
+                val entityPermission = entity.permissions.firstOrNull { it.permission.value == permission }
+                if (entityPermission == null) {
+                    raise(PermissionService.UnsetPermissionError.PermissionNotFound)
+                }
+                entityPermission.delete()
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.UnsetPermissionError.Unexpected(throwable))
@@ -444,17 +1185,15 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     private fun unsetEntityPermissions(
-        entity: PermissionEntity,
+        entity: PermissionReference<out SharedPermissionEntity>,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean> = either {
-        val entityPermissions = entity.permissions.toMutableMap()
-        for (permission in permissions) {
-            entityPermissions.remove(permission)
-        }
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         try {
             transaction(gradeway.database) {
-                entity.permissions = entityPermissions
-                entity.flush()
+                val entityPermissions = entity.permissions.filter { it.permission.value in permissions }
+                entityPermissions.forEach { entityPermission ->
+                    entityPermission.delete()
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkUnsetPermissionError.Unexpected(throwable))
@@ -462,15 +1201,23 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     private fun clearEntityPermissions(
-        entity: PermissionEntity
-    ): Either<PermissionService.ClearPermissionError, Boolean> = either {
+        entity: PermissionReference<out SharedPermissionEntity>
+    ): Either<PermissionService.ClearPermissionError, Unit> = either {
         try {
             transaction(gradeway.database) {
-                entity.permissions = emptyMap()
-                entity.flush()
+                entity.permissions.forEach { permissionEntity ->
+                    permissionEntity.delete()
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.ClearPermissionError.Unexpected(throwable))
         }
+    }
+
+    private fun isTemplateNameValid(name: String): Boolean {
+        if (name.isNotBlank()) return true
+        if (name.none { it.isWhitespace() }) return true
+        if (name.length in 1..TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH) return true
+        return false
     }
 }

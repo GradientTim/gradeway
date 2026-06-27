@@ -5,7 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
 import java.util.*
@@ -14,7 +16,8 @@ import java.util.*
  * Service interface for managing role entities. It defines operations for creating, updating,
  * retrieving, and deleting roles, along with checks for their existence.
  */
-interface RoleService : SharedAttributeService<RoleEntity>, SharedPermissionService<RoleEntity> {
+interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
+    SharedPermissionService<RoleEntity, RolePermissionEntity> {
     /**
      * Creates a new role with the specified name.
      *

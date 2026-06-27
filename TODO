@@ -1,10 +1,9 @@
 Models:
-- Maybe(?) move attributes in separate tables (size limit on table field an better indexing support).
 - Complete pausing and time-based roles implementation.
+- Add RoleGroups to multiple roles into one category. (maybe also for player, but useless for now)
 
-Permissions:
-- Template system with link/unlink and apply/revoke support.
-- For better support may create a global permissions Model and link them in Templates, Players and Roles.
+Services:
+- Add optional Entity builders in create functions.
 
 Messaging:
 - Plan the architecture in the Common and API module.
@@ -12,7 +11,11 @@ Messaging:
 Commands:
 - May create a Attribute category beside/instead the child role/player nodes.
 
+Configuration:
+- Maybe migrate akuleshov7 TOML with Configurate
+
 Plugins:
 - Add Sponge support
+- Add Nukkit support
 - Add Minestom support
 - Add BungeeCord support

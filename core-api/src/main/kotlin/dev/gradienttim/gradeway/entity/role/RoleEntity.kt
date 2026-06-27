@@ -5,11 +5,12 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.entity.AttributeEntity
-import dev.gradienttim.gradeway.entity.PermissionEntity
+import dev.gradienttim.gradeway.reference.AttributeReference
+import dev.gradienttim.gradeway.reference.PermissionReference
+import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.services.RoleService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
 import java.util.*
 
@@ -19,7 +20,8 @@ import java.util.*
  * and timestamps for when it was created and last updated. It also provides
  * mechanisms to modify its name and weight.
  */
-interface RoleEntity : AttributeEntity, PermissionEntity {
+interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionReference<RolePermissionEntity>,
+    PermissionTemplateReference<RolePermissionTemplateEntity> {
     /**
      * The unique identifier for the entity. This value is immutable and is used to distinctly identify
      * the entity instance across systems or databases. It is typically generated as a UUID, ensuring
@@ -45,29 +47,6 @@ interface RoleEntity : AttributeEntity, PermissionEntity {
     var weight: Int
 
     /**
-     * A collection of attributes associated with the role entity.
-     *
-     * Each attribute is represented as an instance of `Attribute<*>`, allowing for
-     * a flexible and type-safe way to store and manage diverse attributes for the role.
-     *
-     * The set of attributes can be modified to add or remove attributes as needed,
-     * enabling dynamic and customizable configurations for different role entities.
-     *
-     * Overrides the `attributes` property from the `AttributeEntity` interface.
-     */
-    override var attributes: Set<Attribute<*>>
-
-    /**
-     * A map containing key-value pairs representing the permission states associated with the role.
-     *
-     * The key is a string that identifies the specific permission, and the value is a boolean indicating
-     * whether the permission is granted (`true`) or denied (`false`). This property allows managing the
-     * permissions specific to the role entity, providing fine-grained control over access levels
-     * and capabilities.
-     */
-    override var permissions: Map<String, Boolean>
-
-    /**
      * The timestamp representing when the role entity was created.
      *
      * This property holds the point in time at which the `RoleEntity` instance
@@ -86,6 +65,41 @@ interface RoleEntity : AttributeEntity, PermissionEntity {
      * determining outdated data.
      */
     val updatedAt: Instant
+
+    /**
+     * Represents a collection of attribute entities associated with the role.
+     *
+     * This property provides a navigable and queryable iterable of [RoleAttributeEntity] objects
+     * that belong to the role. These attributes are key-value pairs that convey additional metadata
+     * or properties related to the role, such as configuration details or contextual information.
+     *
+     * The attributes are stored as entities, enabling database persistence and retrieval,
+     * and can be used to extend the role's functionality or to define custom behavior.
+     */
+    override val attributes: SizedIterable<RoleAttributeEntity>
+
+    /**
+     * Represents the collection of permissions associated with the role.
+     *
+     * This property retrieves or modifies a set of `RolePermissionEntity` objects
+     * linked to the current role. Permissions define the actions or access levels
+     * granted to the role, shaping its capabilities within the system.
+     *
+     * The `permissions` property can be used to dynamically manage and query the
+     * permissions associated with the role, enabling fine-grained control of access
+     * rights in a role-based access control system.
+     */
+    override val permissions: SizedIterable<RolePermissionEntity>
+
+    /**
+     * Represents a collection of permission templates associated with the role entity.
+     *
+     * Each permission template defines a predefined set of permissions that can be
+     * applied to the role. This property enables the role to manage its permissions
+     * in bulk by referencing these templates. It supports lazy querying, allowing
+     * efficient access to the underlying data when needed.
+     */
+    override val permissionTemplates: SizedIterable<RolePermissionTemplateEntity>
 
     /**
      * Updates the name of the role.

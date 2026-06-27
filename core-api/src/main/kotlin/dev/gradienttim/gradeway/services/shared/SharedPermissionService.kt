@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.services.PermissionService
+import net.kyori.adventure.util.TriState
 import java.util.*
 
 /**
@@ -13,7 +14,7 @@ import java.util.*
  *
  * @param TEntity The type of entity for which permissions are managed.
  */
-interface SharedPermissionService<TEntity> {
+interface SharedPermissionService<TEntity, TPermissionEntity> {
     /**
      * Sets the specified permission for the entity identified by the given ID.
      *
@@ -27,7 +28,7 @@ interface SharedPermissionService<TEntity> {
         id: UUID,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets the specified permission for the given entity.
@@ -42,7 +43,7 @@ interface SharedPermissionService<TEntity> {
         entity: TEntity,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets the specified permission for the entity identified by the given unique identifier or name.
@@ -57,7 +58,7 @@ interface SharedPermissionService<TEntity> {
         idOrName: String,
         permission: String,
         enabled: Boolean = true
-    ): Either<PermissionService.SetPermissionError, Boolean>
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the entity identified by the given ID.
@@ -72,7 +73,7 @@ interface SharedPermissionService<TEntity> {
     fun setPermissions(
         id: UUID,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the specified entity.
@@ -87,7 +88,7 @@ interface SharedPermissionService<TEntity> {
     fun setPermissions(
         entity: TEntity,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the entity identified by the given unique identifier or name.
@@ -102,7 +103,7 @@ interface SharedPermissionService<TEntity> {
     fun setPermissions(
         idOrName: String,
         permissions: Map<String, Boolean>
-    ): Either<PermissionService.BulkSetPermissionError, Boolean>
+    ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the entity identified by the given ID.
@@ -112,7 +113,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
-    fun unsetPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Boolean>
+    fun unsetPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the given entity.
@@ -122,7 +123,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
-    fun unsetPermission(entity: TEntity, permission: String): Either<PermissionService.UnsetPermissionError, Boolean>
+    fun unsetPermission(entity: TEntity, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the entity identified by the given unique identifier or name.
@@ -132,7 +133,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
-    fun unsetPermission(idOrName: String, permission: String): Either<PermissionService.UnsetPermissionError, Boolean>
+    fun unsetPermission(idOrName: String, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the entity identified by the given ID.
@@ -145,7 +146,7 @@ interface SharedPermissionService<TEntity> {
     fun unsetPermissions(
         id: UUID,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the specified entity.
@@ -158,7 +159,7 @@ interface SharedPermissionService<TEntity> {
     fun unsetPermissions(
         entity: TEntity,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the entity identified by the given unique identifier or name.
@@ -171,7 +172,7 @@ interface SharedPermissionService<TEntity> {
     fun unsetPermissions(
         idOrName: String,
         permissions: List<String>
-    ): Either<PermissionService.BulkUnsetPermissionError, Boolean>
+    ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with the entity identified by the given unique identifier.
@@ -180,7 +181,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Clears all permissions associated with the specified entity.
@@ -189,7 +190,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs during
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(entity: TEntity): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPermissions(entity: TEntity): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Clears all permissions associated with the entity identified by the given unique identifier or name.
@@ -198,7 +199,7 @@ interface SharedPermissionService<TEntity> {
      * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs during
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Boolean>
+    fun clearPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
 
     /**
      * Checks whether the entity identified by the given ID has the specified permission.
@@ -207,7 +208,7 @@ interface SharedPermissionService<TEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(id: UUID, permission: String): Boolean
+    fun hasPermission(id: UUID, permission: String): TriState
 
     /**
      * Checks if the specified entity has the given permission.
@@ -216,7 +217,7 @@ interface SharedPermissionService<TEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(entity: TEntity, permission: String): Boolean
+    fun hasPermission(entity: TEntity, permission: String): TriState
 
     /**
      * Checks whether the entity identified by the given unique identifier or name has the specified permission.
@@ -225,7 +226,7 @@ interface SharedPermissionService<TEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(idOrName: String, permission: String): Boolean
+    fun hasPermission(idOrName: String, permission: String): TriState
 
     /**
      * Checks whether the entity identified by the given ID has at least one of the specified permissions.
@@ -234,7 +235,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permission names to check for the specified entity.
      * @return True if the entity has at least one of the specified permissions; false otherwise.
      */
-    fun hasAnyPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasAnyPermissions(id: UUID, permissions: List<String>): TriState
 
     /**
      * Checks if the given entity has any of the specified permissions.
@@ -243,7 +244,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return True if the entity has at least one of the specified permissions, false otherwise.
      */
-    fun hasAnyPermissions(entity: TEntity, permissions: List<String>): Boolean
+    fun hasAnyPermissions(entity: TEntity, permissions: List<String>): TriState
 
     /**
      * Checks if the entity identified by the given unique identifier or name has at least one of the
@@ -253,7 +254,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permission names to check for the specified entity.
      * @return True if the entity has at least one of the specified permissions; false otherwise.
      */
-    fun hasAnyPermissions(idOrName: String, permissions: List<String>): Boolean
+    fun hasAnyPermissions(idOrName: String, permissions: List<String>): TriState
 
     /**
      * Checks if the given entity identified by its UUID has all the specified permissions.
@@ -262,7 +263,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permissions to verify for the given entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(id: UUID, permissions: List<String>): Boolean
+    fun hasAllPermissions(id: UUID, permissions: List<String>): TriState
 
     /**
      * Checks if the specified entity has all the permissions provided in the list.
@@ -271,7 +272,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(entity: TEntity, permissions: List<String>): Boolean
+    fun hasAllPermissions(entity: TEntity, permissions: List<String>): TriState
 
     /**
      * Checks if the entity identified by the given unique identifier or name has all the permissions
@@ -281,7 +282,7 @@ interface SharedPermissionService<TEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(idOrName: String, permissions: List<String>): Boolean
+    fun hasAllPermissions(idOrName: String, permissions: List<String>): TriState
 
     /**
      * Retrieves the permissions associated with a specific ID.
@@ -290,7 +291,7 @@ interface SharedPermissionService<TEntity> {
      * @return A map where the keys represent permission names and the values indicate
      * whether the permission is granted (true) or denied (false).
      */
-    fun getPermissions(id: UUID): Map<String, Boolean>
+    fun getPermissions(id: UUID): Set<TPermissionEntity>
 
     /**
      * Retrieves a map of permissions for the given entity, where the keys represent permission names
@@ -300,7 +301,7 @@ interface SharedPermissionService<TEntity> {
      * @return A map where the keys are permission names and the values are booleans indicating whether
      *         each permission is granted (true) or denied (false).
      */
-    fun getPermissions(entity: TEntity): Map<String, Boolean>
+    fun getPermissions(entity: TEntity): Set<TPermissionEntity>
 
     /**
      * Retrieves a map of permissions for the entity identified by the given unique identifier or name,
@@ -311,82 +312,5 @@ interface SharedPermissionService<TEntity> {
      * @return A map where the keys are permission names and the values are booleans indicating whether
      *         each permission is granted (true) or denied (false).
      */
-    fun getPermissions(idOrName: String): Map<String, Boolean>
-
-    /**
-     * Retrieves a set of permissions based on the provided ID and enabled flag.
-     *
-     * @param id The unique identifier for which permissions are fetched.
-     * @param enabled A Boolean flag indicating whether to include only enabled permissions.
-     * @return A set of strings representing the permissions associated with the given ID and criteria.
-     */
-    fun getPermissions(id: UUID, enabled: Boolean): Set<String>
-
-    /**
-     * Retrieves the set of permissions associated with the given entity.
-     *
-     * @param entity The entity for which permissions are being fetched.
-     * @param enabled A flag indicating whether only enabled permissions should be included.
-     * @return A set of permissions associated with the entity.
-     */
-    fun getPermissions(entity: TEntity, enabled: Boolean): Set<String>
-
-    /**
-     * Retrieves the set of permissions associated with the entity identified by the given unique
-     * identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the entity for which permissions are being fetched.
-     * @param enabled A flag indicating whether only enabled permissions should be included.
-     * @return A set of permissions associated with the entity.
-     */
-    fun getPermissions(idOrName: String, enabled: Boolean): Set<String>
-
-    /**
-     * Retrieves the enabled permissions for a specific entity identified by the given UUID.
-     *
-     * @param id The unique identifier of the entity whose enabled permissions are to be fetched.
-     * @return A set of strings representing the enabled permissions associated with the specified entity.
-     */
-    fun getEnabledPermissions(id: UUID): Set<String> = getPermissions(id, true)
-
-    /**
-     * Retrieves the set of enabled permissions for the specified entity.
-     *
-     * @param entity The entity for which enabled permissions are to be fetched.
-     * @return A set containing the names of the enabled permissions associated with the entity.
-     */
-    fun getEnabledPermissions(entity: TEntity): Set<String> = getPermissions(entity, true)
-
-    /**
-     * Retrieves the enabled permissions for the entity identified by the given unique identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the entity whose enabled permissions are to be fetched.
-     * @return A set of strings representing the enabled permissions associated with the specified entity.
-     */
-    fun getEnabledPermissions(idOrName: String): Set<String> = getPermissions(idOrName, true)
-
-    /**
-     * Retrieves a set of permissions that are currently disabled for a given user or entity.
-     *
-     * @param id The unique identifier of the user or entity whose disabled permissions are to be retrieved.
-     * @return A set of strings representing the disabled permissions.
-     */
-    fun getDisabledPermissions(id: UUID): Set<String> = getPermissions(id, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for the given entity.
-     *
-     * @param entity The entity for which to retrieve the disabled permissions.
-     * @return A set of disabled permissions associated with the specified entity.
-     */
-    fun getDisabledPermissions(entity: TEntity): Set<String> = getPermissions(entity, false)
-
-    /**
-     * Retrieves the set of permissions that are disabled for the entity identified by the given unique
-     * identifier or name.
-     *
-     * @param idOrName The unique identifier or name of the entity for which to retrieve the disabled permissions.
-     * @return A set of disabled permissions associated with the specified entity.
-     */
-    fun getDisabledPermissions(idOrName: String): Set<String> = getPermissions(idOrName, false)
+    fun getPermissions(idOrName: String): Set<TPermissionEntity>
 }

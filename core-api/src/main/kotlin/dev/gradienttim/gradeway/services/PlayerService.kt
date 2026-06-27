@@ -5,7 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
 import java.util.*
@@ -14,7 +16,8 @@ import java.util.*
  * Service interface for managing player entities. It defines operations for creating, updating,
  * retrieving, and deleting players, along with checks for their existence.
  */
-interface PlayerService : SharedAttributeService<PlayerEntity>, SharedPermissionService<PlayerEntity> {
+interface PlayerService : SharedAttributeService<PlayerEntity, PlayerAttributeEntity>,
+    SharedPermissionService<PlayerEntity, PlayerPermissionEntity> {
     /**
      * Creates a new player with the specified unique identifier and name.
      *
