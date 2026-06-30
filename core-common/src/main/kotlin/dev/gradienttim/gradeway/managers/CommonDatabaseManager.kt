@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.managers
 
+import arrow.core.Either
+import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatePermissionsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
@@ -20,51 +22,59 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
-    override fun load() {
+    override fun load(): Either<Throwable, Unit> = either {
         val driverId = gradeway.configs.config.database.driver
         if (driverId.isBlank()) {
-            error("Driver identifier cannot be blank.")
+            raise(Throwable("Driver identifier cannot be blank."))
         }
 
         val databaseDriver = gradeway.drivers.findDriver(driverId, DriverType.DATABASE)
-            ?: error("No database driver found with id '$driverId'")
+            ?: raise(Throwable("No database driver found with id '$driverId'"))
 
         if (databaseDriver !is DatabaseAdapter) {
-            error("Driver '$driverId' has no DatabaseAdapter.")
+            raise(Throwable("Driver '$driverId' has no DatabaseAdapter."))
         }
 
-        val dataSource = databaseDriver.createDatabaseSource(gradeway.environment)
-        gradeway.database = Database.connect(dataSource)
+        try {
+            val dataSource = databaseDriver.createDatabaseSource(gradeway.environment)
+            gradeway.database = Database.connect(dataSource)
 
-        transaction(gradeway.database) {
-            SchemaUtils.create(
-                PermissionsTable,
-                PermissionTemplatePermissionsTable,
-                PermissionTemplatesTable
-            )
+            transaction(gradeway.database) {
+                SchemaUtils.create(
+                    PermissionsTable,
+                    PermissionTemplatePermissionsTable,
+                    PermissionTemplatesTable
+                )
 
-            SchemaUtils.create(
-                PlayersTable,
-                PlayerRolesTable,
-                PlayerAttributesTable,
-                PlayerPermissionsTable,
-                PlayerPermissionTemplatesTable,
-            )
+                SchemaUtils.create(
+                    PlayersTable,
+                    PlayerRolesTable,
+                    PlayerAttributesTable,
+                    PlayerPermissionsTable,
+                    PlayerPermissionTemplatesTable,
+                )
 
-            SchemaUtils.create(
-                RolesTable,
-                RoleParentsTable,
-                RoleAttributesTable,
-                RolePermissionsTable,
-                PlayerPermissionTemplatesTable
-            )
+                SchemaUtils.create(
+                    RolesTable,
+                    RoleParentsTable,
+                    RoleAttributesTable,
+                    RolePermissionsTable,
+                    PlayerPermissionTemplatesTable
+                )
+            }
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 
-    override fun unload() {
-        val connector = gradeway.database.connector()
-        if (!connector.isClosed) {
-            connector.close()
+    override fun unload(): Either<Throwable, Unit> = either {
+        try {
+            val connector = gradeway.database.connector()
+            if (!connector.isClosed) {
+                connector.close()
+            }
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 }

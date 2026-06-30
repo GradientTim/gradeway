@@ -6,11 +6,10 @@ package dev.gradienttim.gradeway.managers
 
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.utilities.Loadable
+import dev.gradienttim.gradeway.utilities.Unloadable
 
-interface DriverManager {
-    fun load()
-    fun unload()
-
+interface DriverManager : Loadable, Unloadable {
     /**
      * Finds and returns a driver matching the provided ID and type, if available.
      *

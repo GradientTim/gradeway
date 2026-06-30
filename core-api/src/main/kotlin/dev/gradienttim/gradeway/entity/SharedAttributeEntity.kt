@@ -21,7 +21,4 @@ interface SharedAttributeEntity {
     val updatedAt: Instant
 
     val attribute: Attribute<*>
-
-    fun flush(): Boolean
-    fun delete()
 }

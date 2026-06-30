@@ -13,7 +13,4 @@ interface SharedPermissionEntity {
     var isEnabled: Boolean
 
     val permission: PermissionEntity
-
-    fun flush(): Boolean
-    fun delete()
 }

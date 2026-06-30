@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.managers
 
+import arrow.core.Either
+import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
@@ -27,40 +29,48 @@ class CommonLanguageManager(val gradeway: CommonGradeway) : LanguageManager {
 
     private lateinit var translator: MiniMessageTranslationStore
 
-    override fun load() {
-        saveResourceLanguages()
+    override fun load(): Either<Throwable, Unit> = either {
+        try {
+            saveResourceLanguages()
 
-        translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"))
+            translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
 
-        val availableLocales = Locale.availableLocales().toList()
-        directory.listFiles { it.extension == "properties" }.forEach { file ->
-            val name = file.name.removeSuffix(".properties")
-            val locale = Locale.of(name)
+            val availableLocales = Locale.availableLocales().toList()
+            directory.listFiles { it.extension == "properties" }.forEach { file ->
+                val name = file.name.removeSuffix(".properties")
+                val locale = Locale.of(name)
 
-            if (!availableLocales.contains(locale)) {
-                gradeway.logger.warn("Skipping registering locale '$name'. Locale is not available.")
-                return@forEach
+                if (!availableLocales.contains(locale)) {
+                    gradeway.logger.warn("Skipping registering locale '$name'. Locale is not available.")
+                    return@forEach
+                }
+
+                val properties = Properties()
+                file.inputStream().use { properties.load(it) }
+
+                val entries = properties.entries
+                    .associate { (key, value) -> key.toString() to value.toString() }
+
+                runCatching {
+                    translator.registerAll(locale, entries)
+                }
             }
 
-            val properties = Properties()
-            file.inputStream().use { properties.load(it) }
-
-            val entries = properties.entries
-                .associate { (key, value) -> key.toString() to value.toString() }
-
-            runCatching {
-                translator.registerAll(locale, entries)
+            if (!GlobalTranslator.translator().addSource(translator)) {
+                gradeway.logger.error("Failed to add MiniMessage translation store.")
             }
-        }
-
-        if (!GlobalTranslator.translator().addSource(translator)) {
-            gradeway.logger.error("Failed to add MiniMessage translation store.")
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 
-    override fun unload() {
-        if (::translator.isInitialized) {
-            GlobalTranslator.translator().removeSource(translator)
+    override fun unload(): Either<Throwable, Unit> = either {
+        try {
+            if (::translator.isInitialized) {
+                GlobalTranslator.translator().removeSource(translator)
+            }
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 

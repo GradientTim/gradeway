@@ -24,5 +24,16 @@ interface PermissionTemplateEntity {
     fun setName(name: String): Either<PermissionService.SetNameTemplateError, Boolean>
     fun setAssignedTo(assignedTo: AssignedTo): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
-    enum class AssignedTo { ALL, PLAYER, ROLE }
+    enum class AssignedTo {
+        ALL,
+        ROLE,
+        PLAYER,
+        ;
+
+        val allowForRole: Boolean
+            get() = this == ALL || this == ROLE
+
+        val allowForPlayer: Boolean
+            get() = this == ALL || this == PLAYER
+    }
 }

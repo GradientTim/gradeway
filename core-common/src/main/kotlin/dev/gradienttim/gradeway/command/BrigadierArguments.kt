@@ -7,6 +7,8 @@ package dev.gradienttim.gradeway.command
 import com.mojang.brigadier.arguments.*
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 
 inline fun <TCommandSource, reified T> ArgumentBuilder<TCommandSource, *>.argument(
     name: String,
@@ -59,3 +61,25 @@ fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.boolean(
     type: BoolArgumentType = BoolArgumentType.bool(),
     builder: RequiredArgumentBuilder<TCommandSource, Boolean>.() -> Unit,
 ): RequiredArgumentBuilder<TCommandSource, Boolean> = argument<TCommandSource, Boolean>(name, type, builder)
+
+fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionType(
+    name: String,
+    builder: RequiredArgumentBuilder<TCommandSource, String>.() -> Unit,
+): RequiredArgumentBuilder<TCommandSource, String> = string(name, builder = builder)
+    .suggests { _, builder ->
+        PermissionEntity.Type.entries.forEach { type ->
+            builder.suggest(type.name)
+        }
+        return@suggests builder.buildFuture()
+    }
+
+fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionTemplateAssignedTo(
+    name: String,
+    builder: RequiredArgumentBuilder<TCommandSource, String>.() -> Unit,
+): RequiredArgumentBuilder<TCommandSource, String> = string(name, builder = builder)
+    .suggests { _, builder ->
+        PermissionTemplateEntity.AssignedTo.entries.forEach { assignedTo ->
+            builder.suggest(assignedTo.name)
+        }
+        return@suggests builder.buildFuture()
+    }

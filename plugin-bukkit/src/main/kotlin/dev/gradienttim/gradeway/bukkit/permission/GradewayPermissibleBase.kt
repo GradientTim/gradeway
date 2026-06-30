@@ -17,6 +17,6 @@ class GradewayPermissibleBase(val gradeway: Gradeway, val player: Player) : Perm
     @Suppress("ForbiddenComment")
     // TODO: ADD ROLE PERMISSIONS
     override fun hasPermission(inName: String): Boolean {
-        return gradeway.players.hasPermission(player.uniqueId, inName).toBooleanOrElse(false)
+        return gradeway.players.hasPermission(player.uniqueId, inName)
     }
 }

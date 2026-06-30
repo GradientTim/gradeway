@@ -32,6 +32,11 @@ object RolePermissionsTable : CompositeIdTable(name = TableConstants.ROLE_PERMIS
     )
 
     val isEnabled = bool("is_enabled").default(true)
+
+    init {
+        addIdColumn(roleId)
+        addIdColumn(permissionId)
+    }
 }
 
 class DatabaseRolePermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(id), RolePermissionEntity {
@@ -47,6 +52,4 @@ class DatabaseRolePermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(
 
     override val permission: PermissionEntity
         get() = TODO("Not yet implemented")
-
-    override fun flush() = flush(null)
 }

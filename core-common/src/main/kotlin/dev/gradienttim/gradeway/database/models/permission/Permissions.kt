@@ -22,6 +22,4 @@ class DatabasePermissionEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionE
 
     override var value by PermissionsTable.value
     override var type by PermissionsTable.type
-
-    override fun flush() = flush(null)
 }

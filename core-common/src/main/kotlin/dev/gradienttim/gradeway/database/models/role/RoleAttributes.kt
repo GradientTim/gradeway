@@ -49,6 +49,4 @@ class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttr
 
     override val attribute: Attribute<*>
         get() = Attribute.create(type, key, value)
-
-    override fun flush() = flush(null)
 }

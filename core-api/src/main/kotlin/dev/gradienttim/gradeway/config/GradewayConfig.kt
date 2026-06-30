@@ -14,9 +14,17 @@ data class GradewayConfig(
     var version: Int = LATEST_VERSION,
     val database: DatabaseConfig = DatabaseConfig(),
     val messaging: MessagingConfig = MessagingConfig(),
+    val appearance: AppearanceConfig = AppearanceConfig(),
     val env: EnvConfig = EnvConfig(),
 ) {
     typealias Variables = Map<String, @Serializable(with = TomlAnySerializer::class) Any>
+
+    @Serializable
+    data class AppearanceConfig(
+        val prefix: String = "<dark_gray>•</dark_gray> <gradient:#ed751f:#e89e1e>Gradeway</gradient> <dark_gray>›</dark_gray> ",
+        val primaryColor: String = "#ed751f",
+        val secondaryColor: String = "#e89e1e"
+    )
 
     @Serializable
     data class DatabaseConfig(

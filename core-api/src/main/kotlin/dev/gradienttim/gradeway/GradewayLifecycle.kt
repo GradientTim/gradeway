@@ -11,6 +11,9 @@ import dev.gradienttim.gradeway.managers.DriverManager
 import dev.gradienttim.gradeway.managers.LanguageManager
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
+import dev.gradienttim.gradeway.utilities.Loadable
+import dev.gradienttim.gradeway.utilities.Reloadable
+import dev.gradienttim.gradeway.utilities.Unloadable
 import java.io.File
 
 /**
@@ -27,7 +30,7 @@ import java.io.File
  * instances. By coupling lifecycle operations with the standard Gradeway capabilities,
  * this interface facilitates clean and predictable resource management practices.
  */
-interface GradewayLifecycle : Gradeway {
+interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable {
     val logger: Logger
     val directory: File
     val environment: Environment
@@ -36,6 +39,8 @@ interface GradewayLifecycle : Gradeway {
     val languages: LanguageManager
     val drivers: DriverManager
     val configs: ConfigManager
+
+    val state: GradewayState
 
     /**
      * Initializes and prepares the implementing instance of the `GradewayLifecycle` interface.
@@ -53,7 +58,7 @@ interface GradewayLifecycle : Gradeway {
      *
      * @return `true` when Gradway was successfully loaded, `false` otherwise.
      */
-    fun load(): Either<Throwable, Unit>
+    override fun load(): Either<Throwable, Unit>
 
     /**
      * Cleans up and releases resources used by the implementing instance of the `GradewayLifecycle` interface.
@@ -71,5 +76,18 @@ interface GradewayLifecycle : Gradeway {
      *
      * @return `true` when Gradway was successfully unloaded, `false` otherwise.
      */
-    fun unload(): Either<Throwable, Unit>
+    override fun unload(): Either<Throwable, Unit>
+
+    /**
+     * Reloads the Gradeway system, refreshing its current state by reinitializing its components.
+     *
+     * This method is used to restart or reset the internal state of the Gradeway system, ensuring
+     * that the latest configurations, dependencies, and resources are loaded. It typically involves
+     * unloading and reloading the system's components, such as services, databases, or configuration
+     * files.
+     *
+     * @return `Either` containing a `Throwable` if an error occurred during the reload operation,
+     *         or `Unit` if the operation completed successfully.
+     */
+    override fun reload(): Either<Throwable, Unit>
 }

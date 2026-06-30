@@ -10,6 +10,10 @@ import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.CommonEnvironment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.services.*
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.Tag
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.KoinApplication
 import org.koin.core.component.KoinComponent
@@ -33,10 +37,11 @@ class CommonGradeway(
     override val configs: ConfigManager by inject()
 
     override val environment by lazy { CommonEnvironment(this) }
+    override var state: GradewayState = GradewayState.UNLOADED
 
     internal lateinit var koin: KoinApplication
     internal lateinit var database: Database
-    internal var state: GradewayState = GradewayState.UNLOADED
+    internal lateinit var miniMessage: MiniMessage
 
     override fun load(): Either<Throwable, Unit> = either {
         if (!state.allowLoad) raise(Throwable("Gradeway cannot be loaded currently."))
@@ -69,9 +74,14 @@ class CommonGradeway(
         }
 
         configs.load()
-        drivers.load()
-        databases.load()
-        languages.load()
+            .onLeft { raise(it) }
+            .onRight {
+                initializeMiniMessage()
+            }
+
+        drivers.load().onLeft { raise(it) }
+        databases.load().onLeft { raise(it) }
+        languages.load().onLeft { raise(it) }
 
         state = GradewayState.LOADED
     }.onLeft {
@@ -82,13 +92,46 @@ class CommonGradeway(
         if (!state.allowUnload) raise(Throwable("Gradeway cannot currently be unloaded."))
         state = GradewayState.PROCESSING
 
-        languages.unload()
-        databases.unload()
-        drivers.unload()
+        languages.unload().onLeft { raise(it) }
+        databases.unload().onLeft { raise(it) }
+        drivers.unload().onLeft { raise(it) }
         koin.close()
 
         state = GradewayState.UNLOADED
     }.onLeft {
         state = GradewayState.LOADED
+    }
+
+    override fun reload(): Either<Throwable, Unit> = either {
+        if (state != GradewayState.LOADED) raise(Throwable("Gradeway cannot currently be reloaded."))
+
+        configs.load()
+            .onLeft { raise(it) }
+            .onRight {
+                initializeMiniMessage()
+            }
+
+        languages.unload()
+            .onLeft { raise(it) }
+            .onRight {
+                languages.load().onLeft { raise(it) }
+            }
+    }
+
+    private fun initializeMiniMessage() {
+        val appearance = configs.config.appearance
+        val default = MiniMessage.miniMessage()
+
+        miniMessage = MiniMessage.builder()
+            .editTags { builder ->
+                builder.tag("prefix", Tag.inserting(default.deserialize(appearance.prefix)))
+                builder.tag("primary", Tag.styling {
+                    it.color(TextColor.fromHexString(appearance.primaryColor) ?: NamedTextColor.WHITE)
+                })
+                builder.tag("secondary", Tag.styling {
+                    it.color(TextColor.fromHexString(appearance.secondaryColor) ?: NamedTextColor.WHITE)
+                })
+            }
+            .build()
     }
 }

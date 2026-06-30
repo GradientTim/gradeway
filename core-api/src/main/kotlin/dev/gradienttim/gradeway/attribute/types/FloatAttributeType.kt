@@ -17,7 +17,7 @@ object FloatAttributeType : AttributeType<Float> {
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
-        if (other !is FloatAttributeType) return false
+        if (other !is AttributeType<*>) return false
         return other.key() == key()
     }
 

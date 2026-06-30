@@ -5,7 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplatePermissionEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
@@ -18,10 +20,11 @@ import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.util.*
 
+@Suppress("TooManyFunctions")
 interface TemplatePermissionService {
     fun createTemplate(name: String): Either<CreateTemplateError, PermissionTemplateEntity>
 
-    fun deleteTemplate(id: UUID): Either<DeleteTemplateError, Unit>
+    fun deleteTemplate(id: UUID): Either<DeleteTemplateError, PermissionTemplateEntity>
 
     fun setTemplateName(
         id: UUID,
@@ -30,6 +33,11 @@ interface TemplatePermissionService {
 
     fun setTemplateName(
         entity: PermissionTemplateEntity,
+        name: String
+    ): Either<PermissionService.SetNameTemplateError, Boolean>
+
+    fun setTemplateName(
+        idOrName: String,
         name: String
     ): Either<PermissionService.SetNameTemplateError, Boolean>
 
@@ -40,6 +48,11 @@ interface TemplatePermissionService {
 
     fun setTemplateAssignedTo(
         entity: PermissionTemplateEntity,
+        assignedTo: PermissionTemplateEntity.AssignedTo
+    ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
+
+    fun setTemplateAssignedTo(
+        idOrName: String,
         assignedTo: PermissionTemplateEntity.AssignedTo
     ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
@@ -48,6 +61,78 @@ interface TemplatePermissionService {
     fun findTemplateByName(name: String): PermissionTemplateEntity?
 
     fun findTemplateByIdOrName(value: String): PermissionTemplateEntity?
+
+    fun addPermissionToTemplate(
+        templateId: UUID,
+        permissionId: UUID
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun addPermissionToTemplate(
+        template: PermissionTemplateEntity,
+        permissionId: UUID
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun addPermissionToTemplate(
+        templateId: UUID,
+        permission: PermissionEntity
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun addPermissionToTemplate(
+        templateIdOrName: String,
+        permission: PermissionEntity
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun addPermissionToTemplate(
+        templateIdOrName: String,
+        permissionId: UUID
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun addPermissionToTemplate(
+        template: PermissionTemplateEntity,
+        permission: PermissionEntity
+    ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
+
+    fun removePermissionFromTemplate(
+        templateId: UUID,
+        permissionId: UUID
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun removePermissionFromTemplate(
+        template: PermissionTemplateEntity,
+        permissionId: UUID
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun removePermissionFromTemplate(
+        templateId: UUID,
+        permission: PermissionEntity
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun removePermissionFromTemplate(
+        templateIdOrName: String,
+        permission: PermissionEntity
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun removePermissionFromTemplate(
+        templateIdOrName: String,
+        permissionId: UUID
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun removePermissionFromTemplate(
+        template: PermissionTemplateEntity,
+        permission: PermissionEntity
+    ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
+
+    fun clearPermissionsFromTemplate(
+        templateId: UUID
+    ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
+
+    fun clearPermissionsFromTemplate(
+        template: PermissionTemplateEntity
+    ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
+
+    fun clearPermissionsFromTemplate(
+        idOrName: String
+    ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
 
     fun listTemplates(
         where: (() -> Op<Boolean>)? = null,

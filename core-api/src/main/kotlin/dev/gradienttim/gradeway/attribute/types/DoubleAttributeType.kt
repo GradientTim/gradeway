@@ -17,7 +17,7 @@ object DoubleAttributeType : AttributeType<Double> {
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
-        if (other !is DoubleAttributeType) return false
+        if (other !is AttributeType<*>) return false
         return other.key() == key()
     }
 

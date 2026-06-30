@@ -27,9 +27,15 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
 
     fun deletePermission(id: UUID): Either<DeletePermissionError, Unit>
 
+    fun deletePermission(entity: PermissionEntity): Either<DeletePermissionError, Unit>
+
+    fun deletePermission(idOrValue: String): Either<DeletePermissionError, Unit>
+
     fun updatePermissionValue(id: UUID, value: String): Either<UpdatePermissionValueError, Boolean>
 
     fun updatePermissionValue(entity: PermissionEntity, value: String): Either<UpdatePermissionValueError, Boolean>
+
+    fun updatePermissionValue(idOrValue: String, value: String): Either<UpdatePermissionValueError, Boolean>
 
     fun updatePermissionType(id: UUID, type: PermissionEntity.Type): Either<UpdatePermissionTypeError, Boolean>
 
@@ -38,9 +44,16 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
         type: PermissionEntity.Type
     ): Either<UpdatePermissionTypeError, Boolean>
 
+    fun updatePermissionType(
+        idOrValue: String,
+        type: PermissionEntity.Type
+    ): Either<UpdatePermissionTypeError, Boolean>
+
     fun findPermissionById(id: UUID): PermissionEntity?
 
     fun findPermissionByValue(value: String): PermissionEntity?
+
+    fun findPermissionByIdOrValue(value: String): PermissionEntity?
 
     sealed interface CreatePermissionError {
         object AlreadyExists : CreatePermissionError
@@ -87,10 +100,30 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
         data class Unexpected(val throwable: Throwable) : SetAssignedToTemplateError
     }
 
+    sealed interface AddPermissionToTemplateError {
+        object EntityNotFound : AddPermissionToTemplateError
+        object TargetNotFound : AddPermissionToTemplateError
+        object PermissionAlreadyExists : AddPermissionToTemplateError
+        data class Unexpected(val throwable: Throwable) : AddPermissionToTemplateError
+    }
+
+    sealed interface RemovePermissionFromTemplateError {
+        object EntityNotFound : RemovePermissionFromTemplateError
+        object TargetNotFound : RemovePermissionFromTemplateError
+        object PermissionNotExists : RemovePermissionFromTemplateError
+        data class Unexpected(val throwable: Throwable) : RemovePermissionFromTemplateError
+    }
+
+    sealed interface ClearPermissionsFromTemplateError {
+        object EntityNotFound : ClearPermissionsFromTemplateError
+        data class Unexpected(val throwable: Throwable) : ClearPermissionsFromTemplateError
+    }
+
     sealed interface LinkTemplateError {
         object TargetNotFound : LinkTemplateError
         object TemplateNotFound : LinkTemplateError
         object AlreadyLinked : LinkTemplateError
+        object WrongAssignedTo : LinkTemplateError
         data class Unexpected(val throwable: Throwable) : LinkTemplateError
     }
 
@@ -104,6 +137,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     sealed interface ApplyTemplateError {
         object TargetNotFound : ApplyTemplateError
         object TemplateNotFound : ApplyTemplateError
+        object WrongAssignedTo : ApplyTemplateError
         data class Unexpected(val throwable: Throwable) : ApplyTemplateError
     }
 

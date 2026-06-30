@@ -8,7 +8,6 @@ import arrow.core.Either
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
-import net.kyori.adventure.util.TriState
 import java.util.*
 
 /**
@@ -226,7 +225,7 @@ interface RolePermissionService {
      * @return A TriState value indicating whether the permission is granted (true), denied (false),
      *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(id: UUID, permission: String): TriState
+    fun hasRolePermission(id: UUID, permission: String): Boolean
 
     /**
      * Checks whether an entity with the given ID has the specified role permission.
@@ -236,7 +235,7 @@ interface RolePermissionService {
      * @return A TriState value indicating whether the permission is granted (true), denied (false),
      *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(entity: RoleEntity, permission: String): TriState
+    fun hasRolePermission(entity: RoleEntity, permission: String): Boolean
 
     /**
      * Checks whether an entity with the given ID or Name has the specified role permission.
@@ -246,7 +245,7 @@ interface RolePermissionService {
      * @return A TriState value indicating whether the permission is granted (true), denied (false),
      *         or if the state is indeterminate (unknown).
      */
-    fun hasRolePermission(idOrName: String, permission: String): TriState
+    fun hasRolePermission(idOrName: String, permission: String): Boolean
 
     /**
      * Checks if a role identified by its unique UUID has at least one of the specified permissions.
@@ -255,7 +254,7 @@ interface RolePermissionService {
      * @param permissions A collection of permission names to check.
      * @return `true` if the role has any of the specified permissions, otherwise `false`.
      */
-    fun hasRoleAnyPermissions(id: UUID, permissions: Collection<String>): TriState
+    fun hasRoleAnyPermissions(id: UUID, permissions: Collection<String>): Boolean
 
     /**
      * Checks if the given role entity has any of the specified permissions.
@@ -264,7 +263,7 @@ interface RolePermissionService {
      * @param permissions A collection of permission identifiers to check against.
      * @return True if the role entity has at least one of the specified permissions, otherwise false.
      */
-    fun hasRoleAnyPermissions(entity: RoleEntity, permissions: Collection<String>): TriState
+    fun hasRoleAnyPermissions(entity: RoleEntity, permissions: Collection<String>): Boolean
 
     /**
      * Checks if a role identified by its unique identifier or name has at least one of the specified permissions.
@@ -273,7 +272,7 @@ interface RolePermissionService {
      * @param permissions A collection of permission names to check.
      * @return `true` if the role has any of the specified permissions, otherwise `false`.
      */
-    fun hasRoleAnyPermissions(idOrName: String, permissions: Collection<String>): TriState
+    fun hasRoleAnyPermissions(idOrName: String, permissions: Collection<String>): Boolean
 
     /**
      * Verifies if the given role, identified by its unique ID, possesses all the specified permissions.
@@ -282,7 +281,7 @@ interface RolePermissionService {
      * @param permissions A collection of permissions to check against the role.
      * @return True if the role has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(id: UUID, permissions: Collection<String>): TriState
+    fun hasRoleAllPermissions(id: UUID, permissions: Collection<String>): Boolean
 
     /**
      * Checks if the provided role entity has all the specified permissions.
@@ -291,7 +290,7 @@ interface RolePermissionService {
      * @param permissions A collection of permissions to check against the role entity.
      * @return True if the role entity has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(entity: RoleEntity, permissions: Collection<String>): TriState
+    fun hasRoleAllPermissions(entity: RoleEntity, permissions: Collection<String>): Boolean
 
     /**
      * Verifies if the given role, identified by its unique identifier or name, possesses all the specified permissions.
@@ -300,7 +299,7 @@ interface RolePermissionService {
      * @param permissions A collection of permissions to check against the role.
      * @return True if the role has all the specified permissions, otherwise false.
      */
-    fun hasRoleAllPermissions(idOrName: String, permissions: Collection<String>): TriState
+    fun hasRoleAllPermissions(idOrName: String, permissions: Collection<String>): Boolean
 
     /**
      * Retrieves the set of permissions associated with a specific role.

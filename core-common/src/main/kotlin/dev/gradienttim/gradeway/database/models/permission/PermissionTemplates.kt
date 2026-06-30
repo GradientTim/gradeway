@@ -20,7 +20,7 @@ import java.time.Instant
 import java.util.*
 
 object PermissionTemplatesTable : UUIDTable(name = TableConstants.PERMISSION_TEMPLATES_TABLE_NAME) {
-    val name = varchar("name", TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)
+    val name = varchar("name", TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH).uniqueIndex()
     val assignedTo =
         enumeration<PermissionTemplateEntity.AssignedTo>("assigned_to").default(PermissionTemplateEntity.AssignedTo.ALL)
 

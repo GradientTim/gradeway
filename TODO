@@ -1,6 +1,6 @@
 Models:
 - Complete pausing and time-based roles implementation.
-- Add RoleGroups to multiple roles into one category. (maybe also for player, but useless for now)
+- Add RoleGroups to group roles into one category (Moderation -> CityBuild Mod, SMP Mod, ...).
 
 Services:
 - Add optional Entity builders in create functions.
@@ -13,6 +13,9 @@ Commands:
 
 Configuration:
 - Maybe migrate akuleshov7 TOML with Configurate
+
+Structure:
+- Add different Throwable/Exception types for different cases.
 
 Plugins:
 - Add Sponge support

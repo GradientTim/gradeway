@@ -214,7 +214,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or the player
      *         is not found, [TriState.FALSE] if the permission is explicitly disabled.
      */
-    fun hasPlayerPermission(id: UUID, permission: String): TriState
+    fun hasPlayerPermission(id: UUID, permission: String): Boolean
 
     /**
      * Checks if a player, represented by their [PlayerEntity], has a specific permission.
@@ -224,7 +224,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or disabled,
      *         [TriState.FALSE] if the player entity is not found.
      */
-    fun hasPlayerPermission(entity: PlayerEntity, permission: String): TriState
+    fun hasPlayerPermission(entity: PlayerEntity, permission: String): Boolean
 
     /**
      * Checks if a player, identified by their unique identifier or name, has a specific permission.
@@ -234,7 +234,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if the permission is enabled, [TriState.NOT_SET] if it is not configured or the player
      *         is not found, [TriState.FALSE] if the permission is explicitly disabled.
      */
-    fun hasPlayerPermission(idOrName: String, permission: String): TriState
+    fun hasPlayerPermission(idOrName: String, permission: String): Boolean
 
     /**
      * Checks if a player, identified by their UUID, has at least one of the specified permissions.
@@ -244,7 +244,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
      *         none enabled, [TriState.NOT_SET] if none of the permissions are configured or the player is not found.
      */
-    fun hasPlayerAnyPermissions(id: UUID, permissions: Collection<String>): TriState
+    fun hasPlayerAnyPermissions(id: UUID, permissions: Collection<String>): Boolean
 
     /**
      * Checks if the given player entity has any of the specified permissions.
@@ -254,7 +254,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
      *         none enabled, [TriState.NOT_SET] if none of the permissions are configured.
      */
-    fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: Collection<String>): TriState
+    fun hasPlayerAnyPermissions(entity: PlayerEntity, permissions: Collection<String>): Boolean
 
     /**
      * Checks if a player, identified by their unique identifier or name, has at least one of the specified permissions.
@@ -264,7 +264,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if at least one permission is enabled, [TriState.FALSE] if permissions are found but
      *         none enabled, [TriState.NOT_SET] if none of the permissions are configured or the player is not found.
      */
-    fun hasPlayerAnyPermissions(idOrName: String, permissions: Collection<String>): TriState
+    fun hasPlayerAnyPermissions(idOrName: String, permissions: Collection<String>): Boolean
 
     /**
      * Checks if a player identified by their UUID has all the specified permissions.
@@ -274,7 +274,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
      *         [TriState.NOT_SET] if any permission is not configured or the player is not found.
      */
-    fun hasPlayerAllPermissions(id: UUID, permissions: Collection<String>): TriState
+    fun hasPlayerAllPermissions(id: UUID, permissions: Collection<String>): Boolean
 
     /**
      * Checks if a player entity has all the specified permissions.
@@ -284,7 +284,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
      *         [TriState.NOT_SET] if any permission is not configured.
      */
-    fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: Collection<String>): TriState
+    fun hasPlayerAllPermissions(entity: PlayerEntity, permissions: Collection<String>): Boolean
 
     /**
      * Checks if a player, identified by their unique identifier or name, has all the specified permissions.
@@ -294,7 +294,7 @@ interface PlayerPermissionService {
      * @return [TriState.TRUE] if all permissions are enabled, [TriState.FALSE] if a permission is found but disabled,
      *         [TriState.NOT_SET] if any permission is not configured or the player is not found.
      */
-    fun hasPlayerAllPermissions(idOrName: String, permissions: Collection<String>): TriState
+    fun hasPlayerAllPermissions(idOrName: String, permissions: Collection<String>): Boolean
 
     /**
      * Retrieves the permissions assigned to a player identified by their unique identifier.

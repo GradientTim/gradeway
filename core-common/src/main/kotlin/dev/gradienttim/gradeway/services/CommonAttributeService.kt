@@ -19,6 +19,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key
+import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -298,6 +299,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.UpdateAttributeError.AttributeNotExists)
             }
 
+            if (attribute !is Entity<*>) {
+                val throwable = Throwable("Attribute is not a database Entity")
+                raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
+            }
+
             @Suppress("UNCHECKED_CAST")
             val attributeType = AttributeTypeRegistry.find(attribute.type) as? AttributeType<TValue>
                 ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered)
@@ -321,6 +327,11 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.RemoveAttributeError.AttributeNotExists)
             }
 
+            if (attribute !is Entity<*>) {
+                val throwable = Throwable("Attribute is not a database Entity")
+                raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
+            }
+
             transaction(gradeway.database) {
                 attribute.delete()
             }
@@ -339,7 +350,9 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
 
             transaction(gradeway.database) {
                 entity.attributes.forEach { attributeEntity ->
-                    attributeEntity.delete()
+                    if (attributeEntity is Entity<*>) {
+                        attributeEntity.delete()
+                    }
                 }
             }
         } catch (throwable: Throwable) {

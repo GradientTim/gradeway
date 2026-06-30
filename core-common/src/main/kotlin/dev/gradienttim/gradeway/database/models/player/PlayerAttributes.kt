@@ -49,6 +49,4 @@ class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), Player
 
     override val attribute: Attribute<*>
         get() = Attribute.create(type, key, value)
-
-    override fun flush() = flush(null)
 }

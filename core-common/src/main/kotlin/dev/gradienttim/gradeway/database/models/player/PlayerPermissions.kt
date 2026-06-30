@@ -31,6 +31,11 @@ object PlayerPermissionsTable : CompositeIdTable(name = TableConstants.PLAYER_PE
     )
 
     val isEnabled = bool("is_enabled").default(true)
+
+    init {
+        addIdColumn(playerId)
+        addIdColumn(permissionId)
+    }
 }
 
 class DatabasePlayerPermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(id), PlayerPermissionEntity {
@@ -43,6 +48,4 @@ class DatabasePlayerPermissionEntity(id: EntityID<CompositeID>) : CompositeEntit
 
     override val player by DatabasePlayerEntity referencedOn PlayerPermissionsTable.playerId
     override val permission by DatabasePermissionEntity referencedOn PlayerPermissionsTable.permissionId
-
-    override fun flush() = flush(null)
 }

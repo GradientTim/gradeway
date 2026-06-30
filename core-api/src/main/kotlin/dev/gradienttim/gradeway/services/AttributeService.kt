@@ -19,7 +19,6 @@ interface AttributeService : RoleAttributeService, PlayerAttributeService {
     sealed interface AddAttributeError {
         object EntityNotFound : AddAttributeError
         object AttributeAlreadyExists : AddAttributeError
-        object AttributeTypeNotRegistered : AddAttributeError
         data class Unexpected(val throwable: Throwable) : AddAttributeError
     }
 

@@ -6,7 +6,6 @@ package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.services.PermissionService
-import net.kyori.adventure.util.TriState
 import java.util.*
 
 /**
@@ -208,7 +207,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(id: UUID, permission: String): TriState
+    fun hasPermission(id: UUID, permission: String): Boolean
 
     /**
      * Checks if the specified entity has the given permission.
@@ -217,7 +216,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(entity: TEntity, permission: String): TriState
+    fun hasPermission(entity: TEntity, permission: String): Boolean
 
     /**
      * Checks whether the entity identified by the given unique identifier or name has the specified permission.
@@ -226,7 +225,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permission The name of the permission to verify for the specified entity.
      * @return True if the entity has the specified permission; false otherwise.
      */
-    fun hasPermission(idOrName: String, permission: String): TriState
+    fun hasPermission(idOrName: String, permission: String): Boolean
 
     /**
      * Checks whether the entity identified by the given ID has at least one of the specified permissions.
@@ -235,7 +234,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permission names to check for the specified entity.
      * @return True if the entity has at least one of the specified permissions; false otherwise.
      */
-    fun hasAnyPermissions(id: UUID, permissions: List<String>): TriState
+    fun hasAnyPermissions(id: UUID, permissions: List<String>): Boolean
 
     /**
      * Checks if the given entity has any of the specified permissions.
@@ -244,7 +243,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return True if the entity has at least one of the specified permissions, false otherwise.
      */
-    fun hasAnyPermissions(entity: TEntity, permissions: List<String>): TriState
+    fun hasAnyPermissions(entity: TEntity, permissions: List<String>): Boolean
 
     /**
      * Checks if the entity identified by the given unique identifier or name has at least one of the
@@ -254,7 +253,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permission names to check for the specified entity.
      * @return True if the entity has at least one of the specified permissions; false otherwise.
      */
-    fun hasAnyPermissions(idOrName: String, permissions: List<String>): TriState
+    fun hasAnyPermissions(idOrName: String, permissions: List<String>): Boolean
 
     /**
      * Checks if the given entity identified by its UUID has all the specified permissions.
@@ -263,7 +262,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permissions to verify for the given entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(id: UUID, permissions: List<String>): TriState
+    fun hasAllPermissions(id: UUID, permissions: List<String>): Boolean
 
     /**
      * Checks if the specified entity has all the permissions provided in the list.
@@ -272,7 +271,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(entity: TEntity, permissions: List<String>): TriState
+    fun hasAllPermissions(entity: TEntity, permissions: List<String>): Boolean
 
     /**
      * Checks if the entity identified by the given unique identifier or name has all the permissions
@@ -282,7 +281,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * @param permissions A list of permissions to verify against the entity.
      * @return `true` if the entity possesses all the specified permissions, otherwise `false`.
      */
-    fun hasAllPermissions(idOrName: String, permissions: List<String>): TriState
+    fun hasAllPermissions(idOrName: String, permissions: List<String>): Boolean
 
     /**
      * Retrieves the permissions associated with a specific ID.

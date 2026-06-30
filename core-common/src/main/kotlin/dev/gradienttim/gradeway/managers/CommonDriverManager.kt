@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.managers
 
+import arrow.core.Either
+import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.DriverConfig
@@ -26,18 +28,26 @@ class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
         driversDirectory
     }
 
-    override fun load() {
-        directory.listFiles { it.extension == "jar" }.forEach { file ->
-            loadDriver(file)
+    override fun load(): Either<Throwable, Unit> = either {
+        try {
+            directory.listFiles { it.extension == "jar" }.forEach { file ->
+                loadDriver(file)
+            }
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 
-    override fun unload() {
-        drivers.forEach {
-            it.unload()
-            it.classLoader.close()
+    override fun unload(): Either<Throwable, Unit> = either {
+        try {
+            drivers.forEach { driver ->
+                driver.unload()
+                driver.classLoader.close()
+            }
+            drivers.clear()
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
-        drivers.clear()
     }
 
     override fun findDriver(id: String, type: DriverType): Driver? {

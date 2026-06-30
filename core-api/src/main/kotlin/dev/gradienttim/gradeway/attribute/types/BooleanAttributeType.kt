@@ -17,7 +17,7 @@ object BooleanAttributeType : AttributeType<Boolean> {
 
     override fun equals(other: Any?): Boolean {
         if (other === this) return true
-        if (other !is BooleanAttributeType) return false
+        if (other !is AttributeType<*>) return false
         return other.key() == key()
     }
 

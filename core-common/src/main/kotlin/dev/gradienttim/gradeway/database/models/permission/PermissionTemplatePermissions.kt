@@ -40,8 +40,8 @@ class DatabasePermissionTemplatePermissionEntity(id: EntityID<CompositeID>) : Co
     companion object :
         CompositeEntityClass<DatabasePermissionTemplatePermissionEntity>(PermissionTemplatePermissionsTable)
 
-    override val templateId by PermissionTemplatePermissionsTable.templateId
-    override val permissionId by PermissionTemplatePermissionsTable.permissionId
+    override var templateId by PermissionTemplatePermissionsTable.templateId
+    override var permissionId by PermissionTemplatePermissionsTable.permissionId
 
     override val template by DatabasePermissionTemplateEntity referencedOn PermissionTemplatePermissionsTable.templateId
     override val permission by DatabasePermissionEntity referencedOn PermissionTemplatePermissionsTable.permissionId
