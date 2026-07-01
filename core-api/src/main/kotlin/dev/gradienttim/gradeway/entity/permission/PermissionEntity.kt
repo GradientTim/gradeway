@@ -20,6 +20,12 @@ interface PermissionEntity {
             return Regex(value)
         }
 
+    /**
+     * Validates whether the given permission string matches this entity based on its type.
+     *
+     * @param permission The permission string to validate against this entity.
+     * @return True if the permission matches this entity's value according to its type, false otherwise.
+     */
     fun validatePermission(permission: String): Boolean {
         return when (type) {
             Type.EQUALS -> value == permission

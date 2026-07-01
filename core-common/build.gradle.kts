@@ -10,9 +10,9 @@ repositories {
 
 dependencies {
     api(project(":core-api"))
-    implementation("com.mojang:brigadier:1.0.18")
 
-    implementation("org.apache.commons:commons-configuration2:2.11.0")
+    implementation(libs.mojang.brigadier)
+    implementation(libs.apache.commons.configuration2)
 
     api(libs.koin.core)
     api(libs.bundles.exposed)

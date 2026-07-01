@@ -22,5 +22,5 @@ object DurationAttributeType : AttributeType<Duration> {
         return other.key() == key()
     }
 
-    override fun hashCode(): Int =key().hashCode()
+    override fun hashCode(): Int = key().hashCode()
 }

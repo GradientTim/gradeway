@@ -181,7 +181,30 @@ interface PlayerAttributeService {
      */
     fun hasPlayerAttribute(idOrName: String, key: Key): Boolean
 
+    /**
+     * Retrieves a specific attribute of a player identified by their unique ID.
+     *
+     * @param id The unique identifier of the player whose attribute is being retrieved.
+     * @param key The key identifying the attribute to retrieve.
+     * @return The [PlayerAttributeEntity] containing the attribute if found, or `null` if the attribute does not exist.
+     */
     fun getPlayerAttribute(id: UUID, key: Key): PlayerAttributeEntity?
+
+    /**
+     * Retrieves the attribute of a player based on the provided key.
+     *
+     * @param entity The player entity whose attribute is to be retrieved.
+     * @param key The key representing the specific attribute to retrieve.
+     * @return The player attribute entity if found, otherwise null.
+     */
     fun getPlayerAttribute(entity: PlayerEntity, key: Key): PlayerAttributeEntity?
+
+    /**
+     * Retrieves the attribute of a player based on the provided identifier and key.
+     *
+     * @param idOrName The unique identifier or name of the player whose attribute is to be retrieved.
+     * @param key The key associated with the specific attribute to be fetched.
+     * @return The player's attribute matching the given key, or null if no attribute is found.
+     */
     fun getPlayerAttribute(idOrName: String, key: Key): PlayerAttributeEntity?
 }

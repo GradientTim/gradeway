@@ -20,39 +20,136 @@ import java.util.*
  * setting, unsetting, or clearing permissions.
  */
 interface PermissionService : TemplatePermissionService, RolePermissionService, PlayerPermissionService {
+    /**
+     * Creates a new permission entity with the given value and type.
+     *
+     * @param value The string value representing the permission.
+     * @param type The type of the permission. Defaults to `PermissionEntity.Type.EQUALS`.
+     * @return Either a `CreatePermissionError` if the creation fails, or the created `PermissionEntity`.
+     */
     fun createPermission(
         value: String,
         type: PermissionEntity.Type = PermissionEntity.Type.EQUALS
     ): Either<CreatePermissionError, PermissionEntity>
 
+    /**
+     * Deletes a permission entity identified by the given UUID.
+     *
+     * @param id The unique identifier (UUID) of the permission entity to be deleted.
+     * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
+     */
     fun deletePermission(id: UUID): Either<DeletePermissionError, Unit>
 
+    /**
+     * Deletes the given permission entity from the system.
+     *
+     * @param entity The permission entity to be deleted.
+     * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
+     */
     fun deletePermission(entity: PermissionEntity): Either<DeletePermissionError, Unit>
 
+    /**
+     * Deletes a permission entity identified by the provided string, which can represent either the
+     * unique identifier (UUID) of the entity or its value.
+     *
+     * @param idOrValue The unique identifier (UUID) or the value associated with the permission entity to be deleted.
+     * @return Either a [DeletePermissionError] if the deletion fails or [Unit] if the operation succeeds.
+     */
     fun deletePermission(idOrValue: String): Either<DeletePermissionError, Unit>
 
+    /**
+     * Updates the value of a permission entity identified by the given UUID.
+     *
+     * @param id The unique identifier (UUID) of the permission entity to be updated.
+     * @param value The new value to be set for the permission entity.
+     * @return Either an [UpdatePermissionValueError] if the update operation fails, or a [Boolean] indicating
+     *         success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionValue(id: UUID, value: String): Either<UpdatePermissionValueError, Boolean>
 
+    /**
+     * Updates the value of the given permission entity.
+     *
+     * @param entity The permission entity whose value is to be updated.
+     * @param value The new value to assign to the permission entity.
+     * @return Either an [UpdatePermissionValueError] if the update operation fails,
+     *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionValue(entity: PermissionEntity, value: String): Either<UpdatePermissionValueError, Boolean>
 
+    /**
+     * Updates the value of a permission entity identified by either its unique identifier (UUID)
+     * or its current value.
+     *
+     * @param idOrValue A string representing either the unique identifier (UUID) or the current
+     *                  value of the permission entity to be updated.
+     * @param value The new value to set for the permission entity.
+     * @return Either an [UpdatePermissionValueError] if the update operation fails, or a
+     *         [Boolean] indicating success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionValue(idOrValue: String, value: String): Either<UpdatePermissionValueError, Boolean>
 
+    /**
+     * Updates the type of permission entity identified by the given unique identifier (UUID).
+     *
+     * @param id The unique identifier (UUID) of the permission entity whose type is to be updated.
+     * @param type The new type to assign to the permission entity.
+     * @return Either an [UpdatePermissionTypeError] if the update operation fails, or a [Boolean]
+     *         indicating success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionType(id: UUID, type: PermissionEntity.Type): Either<UpdatePermissionTypeError, Boolean>
 
+    /**
+     * Updates the type of the given permission entity.
+     *
+     * @param entity The permission entity whose type is to be updated.
+     * @param type The new type to assign to the permission entity.
+     * @return Either an [UpdatePermissionTypeError] if the update operation fails,
+     *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionType(
         entity: PermissionEntity,
         type: PermissionEntity.Type
     ): Either<UpdatePermissionTypeError, Boolean>
 
+    /**
+     * Updates the type of permission entity identified by either its unique identifier (UUID)
+     * or its current value.
+     *
+     * @param idOrValue A string representing either the unique identifier (UUID) or the current
+     *                  value of the permission entity whose type is to be updated.
+     * @param type The new type to assign to the permission entity.
+     * @return Either an [UpdatePermissionTypeError] if the update operation fails, or a [Boolean]
+     *         indicating success (`true`) or failure (`false`) of the update.
+     */
     fun updatePermissionType(
         idOrValue: String,
         type: PermissionEntity.Type
     ): Either<UpdatePermissionTypeError, Boolean>
 
+    /**
+     * Retrieves a permission entity based on its unique identifier (UUID).
+     *
+     * @param id The unique identifier (UUID) of the permission entity to be retrieved.
+     * @return The `PermissionEntity` if found, or `null` if no entity exists with the given ID.
+     */
     fun findPermissionById(id: UUID): PermissionEntity?
 
+    /**
+     * Finds a permission entity by its value.
+     *
+     * @param value The string value of the permission to search for.
+     * @return The `PermissionEntity` if found, or `null` if no entity with the given value exists.
+     */
     fun findPermissionByValue(value: String): PermissionEntity?
 
+    /**
+     * Finds a permission entity based on its unique identifier or string value.
+     *
+     * @param value A string representing either the unique identifier (UUID) or the value
+     *              of the permission entity to be searched for.
+     * @return The `PermissionEntity` if found, or `null` if no entity matches the given identifier or value.
+     */
     fun findPermissionByIdOrValue(value: String): PermissionEntity?
 
     sealed interface CreatePermissionError {

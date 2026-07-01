@@ -186,9 +186,30 @@ interface RoleAttributeService {
      */
     fun hasRoleAttribute(idOrName: String, key: Key): Boolean
 
+    /**
+     * Retrieves the role attribute associated with the given identifier and key.
+     *
+     * @param id The unique identifier of the role.
+     * @param key The key used to identify the specific attribute of the role.
+     * @return The role attribute entity if found, or null if no matching entity exists.
+     */
     fun getRoleAttribute(id: UUID, key: Key): RoleAttributeEntity?
 
+    /**
+     * Retrieves a role attribute associated with the specified key from the given role entity.
+     *
+     * @param entity The RoleEntity from which the role attribute is to be retrieved.
+     * @param key The Key representing the attribute to be retrieved from the role.
+     * @return The RoleAttributeEntity corresponding to the specified key, or null if no such attribute exists.
+     */
     fun getRoleAttribute(entity: RoleEntity, key: Key): RoleAttributeEntity?
 
+    /**
+     * Retrieves a role attribute entity based on the specified identifier and key.
+     *
+     * @param idOrName The identifier or name used to locate the role attribute.
+     * @param key The key associated with the desired role attribute.
+     * @return The matching RoleAttributeEntity if found, or null if no match is found.
+     */
     fun getRoleAttribute(idOrName: String, key: Key): RoleAttributeEntity?
 }

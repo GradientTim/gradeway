@@ -14,7 +14,9 @@ kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization"
 
 [libraries]
 koin-core = { module = "io.insert-koin:koin-core", version = "4.1.1" }
+mojang-brigadier = { module = "com.mojang:brigadier", version = "1.0.18" }
 google-devtools-ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.3.5" }
+apache-commons-configuration2 = { module = "org.apache.commons:commons-configuration2", version = "2.11.0" }
 
 kyori-adventure = { module = "net.kyori:adventure-api", version = "5.1.1" }
 kyori-adventure-minimessage = { module = "net.kyori:adventure-text-minimessage", version = "5.1.1" }
