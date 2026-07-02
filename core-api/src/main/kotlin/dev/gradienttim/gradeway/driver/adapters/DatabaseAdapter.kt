@@ -18,5 +18,5 @@ interface DatabaseAdapter {
      * @param environment The environment configuration containing required settings for the database connection.
      * @return A DataSource instance representing the database connection source configured with the specified environment.
      */
-    fun createDatabaseSource(environment: Environment): DataSource
+    fun createDataSource(environment: Environment): DataSource
 }

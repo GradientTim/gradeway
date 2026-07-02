@@ -5,8 +5,10 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.driver
 
 import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
+import dev.gradienttim.gradeway.driver.messaging.RedisMessagingBroker
 import dev.gradienttim.gradeway.driver.meta.CreateDriver
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.Environment
 import redis.clients.jedis.DefaultJedisClientConfig
 import redis.clients.jedis.RedisClient
@@ -16,9 +18,7 @@ import redis.clients.jedis.RedisClient
     type = DriverType.MESSAGING
 )
 class RedisDriver : Driver(), MessagingAdapter {
-    private var redisClient: RedisClient? = null
-
-    override fun open(environment: Environment) {
+    override fun createMessagingBroker(environment: Environment): MessagingBroker {
         val messagingServerHost = environment.stringDefault(
             names = arrayOf("GRADEWAY_MESSAGING_HOST", "GRADEWAY_REDIS_HOST"),
             default = "localhost"
@@ -48,13 +48,10 @@ class RedisDriver : Driver(), MessagingAdapter {
         messagingUserName?.let { redisConfigBuilder.user(it) }
         messagingUserPassword?.let { redisConfigBuilder.password(it) }
 
-        redisClient = RedisClient.builder()
+        val redisClientBuilder = RedisClient.builder()
             .hostAndPort(messagingServerHost, messagingServerPort)
             .clientConfig(redisConfigBuilder.build())
-            .build()
-    }
 
-    override fun close() {
-        redisClient?.close()
+        return RedisMessagingBroker(redisClientBuilder)
     }
 }

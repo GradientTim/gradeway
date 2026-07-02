@@ -16,7 +16,7 @@ import javax.sql.DataSource
     type = DriverType.DATABASE
 )
 class SQLServerDriver : Driver(), DatabaseAdapter {
-    override fun createDatabaseSource(environment: Environment): DataSource {
+    override fun createDataSource(environment: Environment): DataSource {
         val databaseName = environment.stringDefault(
             names = arrayOf("GRADEWAY_DATABASE_NAME", "GRADEWAY_SQLSERVER_NAME"),
             default = "gradeway"

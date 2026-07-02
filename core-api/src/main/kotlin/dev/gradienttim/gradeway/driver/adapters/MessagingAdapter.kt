@@ -4,18 +4,19 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.driver.adapters
 
+import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.Environment
 
+/**
+ * Represents an adapter responsible for creating and configuring a messaging broker
+ * instance based on the provided environment configuration.
+ */
 interface MessagingAdapter {
     /**
-     * Opens the messaging adapter and initializes the connection using the provided environment.
+     * Creates and configures a messaging broker instance based on the provided environment configuration.
      *
-     * @param environment The environment containing configuration values required to establish the connection.
+     * @param environment The environment configuration containing the necessary settings for initializing the messaging broker.
+     * @return A MessagingBroker instance configured with the specified environment settings.
      */
-    fun open(environment: Environment)
-
-    /**
-     * Closes the messaging adapter and releases any held resources.
-     */
-    fun close()
+    fun createMessagingBroker(environment: Environment): MessagingBroker
 }

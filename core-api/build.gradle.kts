@@ -9,6 +9,7 @@ repositories {
 
 dependencies {
     implementation(libs.google.devtools.ksp)
+    implementation(libs.kotlinx.serialization.json)
 
     api(libs.koin.core)
     api(libs.kyori.adventure)

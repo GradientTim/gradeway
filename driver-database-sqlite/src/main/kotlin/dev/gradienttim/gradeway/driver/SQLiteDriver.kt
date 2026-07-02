@@ -16,7 +16,7 @@ import javax.sql.DataSource
     type = DriverType.DATABASE
 )
 class SQLiteDriver : Driver(), DatabaseAdapter {
-    override fun createDatabaseSource(environment: Environment): DataSource {
+    override fun createDataSource(environment: Environment): DataSource {
         val databaseFile = environment.stringRequired(
             names = arrayOf("GRADEWAY_DATABASE_FILE", "GRADEWAY_SQLITE_FILE")
         )

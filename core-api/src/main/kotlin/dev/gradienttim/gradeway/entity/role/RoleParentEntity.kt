@@ -26,7 +26,7 @@ interface RoleParentEntity {
     val parentId: EntityID<UUID>
 
     /**
-     * Represents the identifier of the child role in a hierarchical relationship.
+     * Represents the identifier of the child's role in a hierarchical relationship.
      *
      * This property references the unique identifier (UUID) of the child `RoleEntity`
      * within a parent-child structure. It is used to model dependencies or inheritance
@@ -36,7 +36,7 @@ interface RoleParentEntity {
     val childId: EntityID<UUID>
 
     /**
-     * Represents the parent role in a hierarchical relationship between roles.
+     * Represents the parent's role in a hierarchical relationship between roles.
      *
      * The `parent` property refers to the `RoleEntity` that serves as the parent
      * in a parent-child structure within a role-based access control system.
@@ -47,7 +47,7 @@ interface RoleParentEntity {
     val parent: RoleEntity
 
     /**
-     * Represents the child role in a hierarchical relationship between roles.
+     * Represents the child's role in a hierarchical relationship between roles.
      *
      * The `child` property refers to the `RoleEntity` that serves as the child
      * in a parent-child structure within a role-based access control system.

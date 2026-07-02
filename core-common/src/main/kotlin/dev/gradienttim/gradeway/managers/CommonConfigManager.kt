@@ -12,6 +12,10 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
 import kotlinx.serialization.encodeToString
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.Tag
 import java.io.File
 
 class CommonConfigManager(val gradeway: CommonGradeway) : ConfigManager {
@@ -35,8 +39,30 @@ class CommonConfigManager(val gradeway: CommonGradeway) : ConfigManager {
                 config.version = GradewayConfig.LATEST_VERSION
                 configFile.writeText(Toml.encodeToString(config))
             }
+
+            initializeMiniMessage()
         } catch (throwable: Throwable) {
             raise(throwable)
         }
+    }
+
+    private fun initializeMiniMessage() {
+        val appearance = config.appearance
+
+        gradeway.miniMessage = MiniMessage.builder()
+            .editTags { builder ->
+                builder.tag("prefix", Tag.inserting(DEFAULT_MINIMESSAGE.deserialize(appearance.prefix)))
+                builder.tag("primary", Tag.styling {
+                    it.color(TextColor.fromHexString(appearance.primaryColor) ?: NamedTextColor.WHITE)
+                })
+                builder.tag("secondary", Tag.styling {
+                    it.color(TextColor.fromHexString(appearance.secondaryColor) ?: NamedTextColor.WHITE)
+                })
+            }
+            .build()
+    }
+
+    companion object {
+        val DEFAULT_MINIMESSAGE: MiniMessage = MiniMessage.miniMessage()
     }
 }

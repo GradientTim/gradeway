@@ -5,9 +5,6 @@ Models:
 Services:
 - Add optional Entity builders in create functions.
 
-Messaging:
-- Plan the architecture in the Common and API module.
-
 Commands:
 - May create a Attribute category beside/instead the child role/player nodes.
 

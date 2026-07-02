@@ -8,4 +8,4 @@ import dev.gradienttim.gradeway.utilities.Loadable
 import dev.gradienttim.gradeway.utilities.Reloadable
 import dev.gradienttim.gradeway.utilities.Unloadable
 
-interface LanguageManager : Loadable, Unloadable, Reloadable
+interface MessagingManager : Loadable, Unloadable, Reloadable

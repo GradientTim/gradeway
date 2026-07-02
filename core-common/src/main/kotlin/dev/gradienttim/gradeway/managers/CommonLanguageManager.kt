@@ -74,6 +74,14 @@ class CommonLanguageManager(val gradeway: CommonGradeway) : LanguageManager {
         }
     }
 
+    override fun reload(): Either<Throwable, Unit> = either {
+        unload()
+            .onLeft { raise(it) }
+            .onRight {
+                load().onLeft { raise(it) }
+            }
+    }
+
     private fun saveResourceLanguages() {
         val uri = this::class.java.classLoader.getResource("languages")?.toURI()
             ?: error("No local language files found.")

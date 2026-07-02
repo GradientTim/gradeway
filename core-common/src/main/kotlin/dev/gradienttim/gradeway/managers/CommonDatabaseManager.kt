@@ -36,7 +36,7 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
         }
 
         try {
-            val dataSource = databaseDriver.createDatabaseSource(gradeway.environment)
+            val dataSource = databaseDriver.createDataSource(gradeway.environment)
             gradeway.database = Database.connect(dataSource)
 
             transaction(gradeway.database) {

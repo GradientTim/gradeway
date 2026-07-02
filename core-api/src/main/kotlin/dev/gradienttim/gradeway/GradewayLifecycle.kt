@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.managers.ConfigManager
 import dev.gradienttim.gradeway.managers.DatabaseManager
 import dev.gradienttim.gradeway.managers.DriverManager
 import dev.gradienttim.gradeway.managers.LanguageManager
+import dev.gradienttim.gradeway.managers.MessagingManager
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.utilities.Loadable
@@ -107,6 +108,25 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable {
      * associated with its language management processes.
      */
     val languages: LanguageManager
+
+    /**
+     * Manages messaging-related functionality within the Gradeway system.
+     *
+     * This property provides access to an instance of `MessagingManager`, which is responsible for handling
+     * messaging operations such as sending, receiving, and managing messages. It serves as a core
+     * component for the communication and messaging infrastructure within the system.
+     *
+     * Implementations of `MessagingManager` typically integrate with external messaging systems or
+     * facilitate internal communication between components in the Gradeway ecosystem. It also ensures
+     * that messaging processes comply with the system's lifecycle by supporting loading, unloading,
+     * and reloading operations.
+     *
+     * Typical responsibilities of `MessagingManager` include:
+     * - Sending messages to recipients or channels.
+     * - Managing message queues and delivery statuses.
+     * - Integrating with external messaging protocols, if applicable.
+     */
+    val messaging: MessagingManager
 
     /**
      * Provides centralized management and operations for driver-related functionality within the Gradeway system.

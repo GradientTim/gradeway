@@ -14,6 +14,9 @@ dependencies {
     implementation(libs.mojang.brigadier)
     implementation(libs.apache.commons.configuration2)
 
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.protobuf)
+
     api(libs.koin.core)
     api(libs.bundles.exposed)
     api(libs.bundles.ktoml)
