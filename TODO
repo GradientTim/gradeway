@@ -11,9 +11,6 @@ Commands:
 Configuration:
 - Maybe migrate akuleshov7 TOML with Configurate
 
-Structure:
-- Add different Throwable/Exception types for different cases.
-
 Plugins:
 - Add Sponge support
 - Add Nukkit support

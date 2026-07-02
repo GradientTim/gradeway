@@ -11,6 +11,9 @@ import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.CommonEnvironment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.services.*
+import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
+import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
+import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.KoinApplication
@@ -45,7 +48,7 @@ class CommonGradeway(
     internal lateinit var database: Database
 
     override fun load(): Either<Throwable, Unit> = either {
-        if (!state.allowLoad) raise(Throwable("Gradeway cannot be loaded currently."))
+        if (!state.allowLoad) raise(GradewayAlreadyLoadedThrowable())
         state = GradewayState.PROCESSING
 
         val serviceModule = module {
@@ -87,7 +90,7 @@ class CommonGradeway(
     }
 
     override fun unload(): Either<Throwable, Unit> = either {
-        if (!state.allowUnload) raise(Throwable("Gradeway cannot currently be unloaded."))
+        if (!state.allowUnload) raise(GradewayAlreadyUnloadedThrowable())
         state = GradewayState.PROCESSING
 
         languages.unload().onLeft { raise(it) }
@@ -102,7 +105,7 @@ class CommonGradeway(
     }
 
     override fun reload(): Either<Throwable, Unit> = either {
-        if (state != GradewayState.LOADED) raise(Throwable("Gradeway cannot currently be reloaded."))
+        if (state != GradewayState.LOADED) raise(GradewayNotLoadedThrowable())
 
         configs.load().onLeft { raise(it) }
         messaging.reload().onLeft { raise(it) }

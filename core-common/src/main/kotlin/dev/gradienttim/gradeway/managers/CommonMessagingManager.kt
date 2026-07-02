@@ -6,9 +6,13 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.Either
 import arrow.core.raise.either
+import arrow.core.right
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.throwables.driver.DriverBlankIdentifierThrowable
+import dev.gradienttim.gradeway.throwables.driver.DriverNotFoundThrowable
+import dev.gradienttim.gradeway.throwables.driver.DriverUnsupportedAdapterThrowable
 
 class CommonMessagingManager(val gradeway: CommonGradeway) : MessagingManager {
     override fun load(): Either<Throwable, Unit> = either {
@@ -17,16 +21,16 @@ class CommonMessagingManager(val gradeway: CommonGradeway) : MessagingManager {
             return@either
         }
 
-        val driverId = gradeway.configs.config.messaging.driver
+        val driverId = config.driver
         if (driverId.isBlank()) {
-            raise(Throwable("Driver identifier cannot be blank."))
+            raise(DriverBlankIdentifierThrowable())
         }
 
         val messagingDriver = gradeway.drivers.findDriver(driverId, DriverType.MESSAGING)
-            ?: raise(Throwable("No database driver found with id '$driverId'"))
+            ?: raise(DriverNotFoundThrowable(id = driverId))
 
         if (messagingDriver !is MessagingAdapter) {
-            raise(Throwable("Driver '$driverId' has no MessagingAdapter."))
+            raise(DriverUnsupportedAdapterThrowable(id = driverId, adapter = MessagingAdapter::class))
         }
 
         try {

@@ -17,6 +17,9 @@ import dev.gradienttim.gradeway.database.models.role.RolePermissionsTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.driver.adapters.DatabaseAdapter
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.throwables.driver.DriverBlankIdentifierThrowable
+import dev.gradienttim.gradeway.throwables.driver.DriverNotFoundThrowable
+import dev.gradienttim.gradeway.throwables.driver.DriverUnsupportedAdapterThrowable
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -25,14 +28,14 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
     override fun load(): Either<Throwable, Unit> = either {
         val driverId = gradeway.configs.config.database.driver
         if (driverId.isBlank()) {
-            raise(Throwable("Driver identifier cannot be blank."))
+            raise(DriverBlankIdentifierThrowable())
         }
 
         val databaseDriver = gradeway.drivers.findDriver(driverId, DriverType.DATABASE)
-            ?: raise(Throwable("No database driver found with id '$driverId'"))
+            ?: raise(DriverNotFoundThrowable(id = driverId))
 
         if (databaseDriver !is DatabaseAdapter) {
-            raise(Throwable("Driver '$driverId' has no DatabaseAdapter."))
+            raise(DriverUnsupportedAdapterThrowable(id = driverId, adapter = DatabaseAdapter::class))
         }
 
         try {
