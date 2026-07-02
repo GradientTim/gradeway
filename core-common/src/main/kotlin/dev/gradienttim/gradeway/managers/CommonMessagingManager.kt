@@ -12,6 +12,11 @@ import dev.gradienttim.gradeway.driver.meta.DriverType
 
 class CommonMessagingManager(val gradeway: CommonGradeway) : MessagingManager {
     override fun load(): Either<Throwable, Unit> = either {
+        val config = gradeway.configs.config.messaging
+        if (!config.enabled) {
+            return@either
+        }
+
         val driverId = gradeway.configs.config.messaging.driver
         if (driverId.isBlank()) {
             raise(Throwable("Driver identifier cannot be blank."))
