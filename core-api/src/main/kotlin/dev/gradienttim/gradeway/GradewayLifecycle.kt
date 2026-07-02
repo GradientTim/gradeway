@@ -16,6 +16,7 @@ import dev.gradienttim.gradeway.utilities.Loadable
 import dev.gradienttim.gradeway.utilities.Reloadable
 import dev.gradienttim.gradeway.utilities.Unloadable
 import java.io.File
+import java.time.Instant
 
 /**
  * Represents a lifecycle-aware extension of the Gradeway interface, adding support for
@@ -32,6 +33,14 @@ import java.io.File
  * this interface facilitates clean and predictable resource management practices.
  */
 interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable {
+    /**
+     * Retrieves the current point in time as an [Instant].
+     *
+     * The implementation of the lambda ensures that the returned value is accurate to the moment
+     * of invocation, making it suitable for scenarios where precise timing is required.
+     */
+    val now: () -> Instant
+
     /**
      * Logger instance used to log informational, warning, and error messages within the `GradewayLifecycle` class.
      *

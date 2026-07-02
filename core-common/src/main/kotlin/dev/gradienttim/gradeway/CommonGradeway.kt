@@ -22,11 +22,14 @@ import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import java.io.File
+import java.time.Instant
 
 class CommonGradeway(
     override val logger: Logger,
     override val directory: File,
 ) : GradewayLifecycle, KoinComponent {
+    override val now: () -> Instant = { Instant.now() }
+
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
     override val players: PlayerService by inject()
