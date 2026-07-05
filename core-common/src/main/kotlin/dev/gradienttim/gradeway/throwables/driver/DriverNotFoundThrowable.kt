@@ -6,5 +6,5 @@ package dev.gradienttim.gradeway.throwables.driver
 
 class DriverNotFoundThrowable(
     val id: String,
-    message: String = "No database driver found with id '$id'."
+    message: String = "No driver found with id '$id'."
 ) : Throwable(message)

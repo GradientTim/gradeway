@@ -8,6 +8,10 @@ import net.kyori.adventure.key.Keyed
 import kotlin.reflect.KClass
 
 interface AttributeType<T : Any> : Keyed {
+    /**
+     * Represents the Kotlin class reference for the generic type [T] associated with this attribute type.
+     * This property provides metadata about the type, enabling reflective operations and type-related processing.
+     */
     val klass: KClass<T>
 
     /**

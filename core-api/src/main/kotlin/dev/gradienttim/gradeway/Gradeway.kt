@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import dev.gradienttim.gradeway.services.AttributeService
+import dev.gradienttim.gradeway.services.GroupService
 import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.services.RoleService
@@ -61,6 +62,15 @@ interface Gradeway {
      * - Querying player existence and retrieving player details by ID or name.
      */
     val players: PlayerService
+
+    /**
+     * Provides access to group-related operations within the Gradeway system.
+     *
+     * This property facilitates interactions with the `GroupService` interface,
+     * which manages the creation, deletion, and modification of groups, as well
+     * as performs query operations such as finding or listing existing groups.
+     */
+    val groups: GroupService
 
     /**
      * Provides access to role-related operations within the system.

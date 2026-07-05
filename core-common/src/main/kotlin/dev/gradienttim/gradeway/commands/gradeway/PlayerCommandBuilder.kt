@@ -8,9 +8,12 @@ import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.command.*
-import dev.gradienttim.gradeway.commands.suggestPlayers
+import dev.gradienttim.gradeway.commands.extensions.suggestPlayers
+import dev.gradienttim.gradeway.commands.extensions.suggestRoles
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
+import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.utilities.TimeParser
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
@@ -26,77 +29,352 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
     literal("player") {
         requires { hasPermission(it, "gradeway.player") }
 
-        string("idOrName") {
-            suggestsDebounced { builder ->
-                val remaining = builder.remaining
-                if (remaining.isNotEmpty()) {
-                    suggestPlayers(builder, gradeway, remaining)
+        literal("modify") {
+            string("idOrName") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestPlayers(gradeway, remaining.lowercase())
+                    }
                 }
-            }
 
-            playerRolesBuilder(gradeway, hasPermission, sourceToAudience)
-            playerAttributesBuilder(gradeway, hasPermission, sourceToAudience)
-            playerPermissionsBuilder(gradeway, hasPermission, sourceToAudience)
+                playerRolesBuilder(gradeway, hasPermission, sourceToAudience)
+                playerAttributesBuilder(gradeway, hasPermission, sourceToAudience)
+                playerPermissionsBuilder(gradeway, hasPermission, sourceToAudience)
 
-            execute {
-                val audience = sourceToAudience(source)
+                execute {
+                    val audience = sourceToAudience(source)
 
-                val idOrName = stringParam("idOrName")
+                    val idOrName = stringParam("idOrName")
 
-                val entity = gradeway.players.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.notNound",
-                            Component.text(idOrName)
+                    val entity = gradeway.players.findByIdOrName(idOrName)
+                    if (entity == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.player.notFound",
+                                Component.text(idOrName)
+                            )
                         )
-                    )
-                    return@execute
+                        return@execute
+                    }
                 }
             }
         }
     }
 }
 
-@Suppress("UnusedParameter")
-// need to add helper functions in the services to complete this builder.
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
     sourceToAudience: (source: TSource) -> Audience,
 ) {
+    @Suppress("ReturnCount")
+    fun handleAddRole(audience: Audience, playerIdOrName: String, roleId: String, until: Instant? = null) {
+        val roleUniqueId = runCatching {
+            UUID.fromString(roleId)
+        }.getOrNull()
+
+        if (roleUniqueId == null) {
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.player.addRole.invalidUuid",
+                    Component.text(playerIdOrName),
+                    Component.text(roleId)
+                )
+            )
+            return
+        }
+
+        gradeway.players.addRole(playerIdOrName, roleUniqueId, until)
+            .onLeft { error ->
+                if (error is PlayerService.AddRoleError.EntityNotFound) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.addRole.entityNotFound",
+                            Component.text(playerIdOrName)
+                        )
+                    )
+                    return
+                }
+                if (error is PlayerService.AddRoleError.TargetNotFound) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.addRole.targetNotFound",
+                            Component.text(playerIdOrName),
+                            Component.text(roleId)
+                        )
+                    )
+                    return
+                }
+                if (error is PlayerService.AddRoleError.AlreadyExists) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.addRole.alreadyExists",
+                            Component.text(playerIdOrName),
+                            Component.text(roleId)
+                        )
+                    )
+                    return
+                }
+                if (error is PlayerService.AddRoleError.UntilInPast) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.addRole.untilInPast",
+                            Component.text(playerIdOrName),
+                            Component.text(roleId)
+                        )
+                    )
+                    return
+                }
+                if (error is PlayerService.AddRoleError.Unexpected) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.addRole.unexpectedError",
+                            Component.text(playerIdOrName),
+                            Component.text(roleId),
+                            Component.text(error.throwable.message ?: "Unknown")
+                        )
+                    )
+                    return
+                }
+            }
+            .onRight {
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.player.addRole.success",
+                        Component.text(playerIdOrName),
+                        Component.text(roleId)
+                    )
+                )
+            }
+    }
+
     literal("roles") {
         requires { hasPermission(it, "gradeway.player.roles") }
 
         literal("add") {
             requires { hasPermission(it, "gradeway.player.roles.add") }
 
-            string("id") {
-                execute {}
+            string("roleId") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
+                    }
+                }
+
+                string("until") {
+                    execute {
+                        val audience = sourceToAudience(source)
+
+                        val idOrName = stringParam("idOrName")
+                        val roleId = stringParam("roleId")
+                        val until = stringParam("until")
+
+                        val untilInstant = TimeParser.parseToInstant(until, gradeway.now())
+                        if (untilInstant == null) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.player.addRole.invalidTimeFormat",
+                                    Component.text(idOrName),
+                                    Component.text(until)
+                                )
+                            )
+                            return@execute
+                        }
+
+                        handleAddRole(audience, idOrName, roleId, untilInstant)
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("roleId")
+
+                    handleAddRole(audience, idOrName, roleId)
+                }
             }
         }
 
         literal("remove") {
             requires { hasPermission(it, "gradeway.player.roles.remove") }
 
-            string("id") {
-                execute {}
+            string("roleId") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("roleId")
+
+                    val roleUniqueId = runCatching {
+                        UUID.fromString(roleId)
+                    }.getOrNull()
+
+                    if (roleUniqueId == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.player.removeRole.invalidUuid",
+                                Component.text(idOrName),
+                                Component.text(roleId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.players.removeRole(idOrName, roleUniqueId)
+                        .onLeft { error ->
+                            if (error is PlayerService.RemoveRoleError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.removeRole.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.RemoveRoleError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.removeRole.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.RemoveRoleError.NotExists) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.removeRole.notExists",
+                                        Component.text(idOrName),
+                                        Component.text(roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.RemoveRoleError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.removeRole.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(roleId),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.player.removeRole.success",
+                                    Component.text(idOrName),
+                                    Component.text(roleId)
+                                )
+                            )
+                        }
+                }
             }
         }
 
-        literal("list") {
-            requires { hasPermission(it, "gradeway.player.roles.list") }
-            execute {}
-        }
+        literal("setPrimary") {
+            string("roleId") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
+                    }
+                }
 
-        literal("primary") {
-            literal("set") {}
-            execute {}
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("roleId")
+
+                    val roleUniqueId = runCatching {
+                        UUID.fromString(roleId)
+                    }.getOrNull()
+
+                    if (roleUniqueId == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.player.setPrimaryRole.invalidUuid",
+                                Component.text(idOrName),
+                                Component.text(roleId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.players.setPrimaryRole(idOrName, roleUniqueId)
+                        .onLeft { error ->
+                            if (error is PlayerService.SetPrimaryRoleError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.setPrimaryRole.entityNotFound",
+                                        Component.text(idOrName)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.SetPrimaryRoleError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.setPrimaryRole.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.SetPrimaryRoleError.AlreadyPrimary) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.setPrimaryRole.alreadyPrimary",
+                                        Component.text(idOrName),
+                                        Component.text(roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.SetPrimaryRoleError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.setPrimaryRole.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(roleId),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.player.setPrimaryRole.success",
+                                    Component.text(idOrName),
+                                    Component.text(roleId)
+                                )
+                            )
+                        }
+                }
+            }
         }
     }
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -131,7 +409,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             "gradeway.command.player.addAttribute.unexpectedError",
                             Component.text(idOrName),
                             Component.text(attribute.key.asString()),
-                            Component.text(error.throwable.localizedMessage)
+                            Component.text(error.throwable.message ?: "Unknown")
                         )
                     )
                     return
@@ -179,7 +457,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             "gradeway.command.player.updateAttribute.unexpectedError",
                             Component.text(idOrName),
                             Component.text(actualKey.asString()),
-                            Component.text(error.throwable.localizedMessage)
+                            Component.text(error.throwable.message ?: "Unknown")
                         )
                     )
                     return
@@ -304,7 +582,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             if (uuid == null) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.addAttribute.invalidUuid",
+                                        "gradeway.command.player.addAttribute.invalidUuid",
                                         Component.text(idOrName),
                                         Component.text(key),
                                         Component.text(value)
@@ -460,7 +738,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             if (uuid == null) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.updateAttribute.invalidUuid",
+                                        "gradeway.command.player.updateAttribute.invalidUuid",
                                         Component.text(idOrName),
                                         Component.text(key),
                                         Component.text(value)
@@ -519,7 +797,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             if (error is RemoveAttributeError.EntityNotFound) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.removeAttribute.entityNotFound",
+                                        "gradeway.command.player.removeAttribute.entityNotFound",
                                         Component.text(idOrName),
                                         Component.text(key)
                                     ),
@@ -529,7 +807,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             if (error is RemoveAttributeError.AttributeNotExists) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.removeAttribute.attributeNotExists",
+                                        "gradeway.command.player.removeAttribute.attributeNotExists",
                                         Component.text(idOrName),
                                         Component.text(key)
                                     ),
@@ -539,10 +817,10 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                             if (error is RemoveAttributeError.Unexpected) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.removeAttribute.unexpectedError",
+                                        "gradeway.command.player.removeAttribute.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(key),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -551,7 +829,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                         .onRight {
                             audience.sendMessage(
                                 Component.translatable(
-                                    "gradeway.command.role.removeAttribute.success",
+                                    "gradeway.command.player.removeAttribute.success",
                                     Component.text(idOrName),
                                     Component.text(key)
                                 ),
@@ -583,7 +861,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
                 entity.attributes.forEach { attribute ->
                     audience.sendMessage(
                         Component.translatable(
-                            "gradeway.command.role.listAttributes.entry",
+                            "gradeway.command.player.listAttributes.entry",
                             Component.text(attribute.key.asString()),
                             Component.text(attribute.value)
                         )
@@ -594,7 +872,6 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
     }
 }
 
-@Suppress("LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -653,7 +930,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                                             "gradeway.command.player.setPermission.unexpectedError",
                                             Component.text(idOrName),
                                             Component.text(permission),
-                                            Component.text(error.throwable.localizedMessage)
+                                            Component.text(error.throwable.message ?: "Unknown")
                                         ),
                                     )
                                     return@execute
@@ -705,7 +982,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                                         "gradeway.command.player.setPermission.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(permission),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -762,7 +1039,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                                         "gradeway.command.player.unsetPermission.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(permission),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -805,7 +1082,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                                 Component.translatable(
                                     "gradeway.command.player.clearPermissions.unexpectedError",
                                     Component.text(idOrName),
-                                    Component.text(error.throwable.localizedMessage)
+                                    Component.text(error.throwable.message ?: "Unknown")
                                 ),
                             )
                             return@execute
@@ -834,7 +1111,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
                 if (entity == null) {
                     audience.sendMessage(
                         Component.translatable(
-                            "gradeway.command.player.notNound",
+                            "gradeway.command.player.notFound",
                             Component.text(idOrName)
                         )
                     )

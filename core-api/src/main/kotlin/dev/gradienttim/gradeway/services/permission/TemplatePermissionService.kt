@@ -403,7 +403,7 @@ interface TemplatePermissionService {
      * @param templateId The unique identifier of the permission template to be unlinked.
      * @param roleId The unique identifier of the role from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromRole(templateId: UUID, roleId: UUID): Either<PermissionService.UnlinkTemplateError, Unit>
 
@@ -413,7 +413,7 @@ interface TemplatePermissionService {
      * @param templateId The unique identifier of the permission template to be unlinked.
      * @param role The role entity from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromRole(
         templateId: UUID,
@@ -426,7 +426,7 @@ interface TemplatePermissionService {
      * @param template The permission template entity to be unlinked.
      * @param roleId The unique identifier of the role from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromRole(
         template: PermissionTemplateEntity,
@@ -439,7 +439,7 @@ interface TemplatePermissionService {
      * @param template The permission template entity to be unlinked.
      * @param role The role entity from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromRole(
         template: PermissionTemplateEntity,
@@ -596,7 +596,7 @@ interface TemplatePermissionService {
      * @param templateId The unique identifier of the permission template to be unlinked.
      * @param playerId The unique identifier of the player from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromPlayer(
         templateId: UUID,
@@ -609,7 +609,7 @@ interface TemplatePermissionService {
      * @param templateId The unique identifier of the permission template to be unlinked.
      * @param player The player entity from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromPlayer(
         templateId: UUID,
@@ -622,7 +622,7 @@ interface TemplatePermissionService {
      * @param template The permission template entity to be unlinked.
      * @param playerId The unique identifier of the player from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromPlayer(
         template: PermissionTemplateEntity,
@@ -635,7 +635,7 @@ interface TemplatePermissionService {
      * @param template The permission template entity to be unlinked.
      * @param player The player entity from which the template will be unlinked.
      * @return Either an error of type UnlinkTemplateError if the operation fails,
-     *         or Unit if the unlink was successful.
+     *         or Unit if the unlinking was successful.
      */
     fun unlinkTemplateFromPlayer(
         template: PermissionTemplateEntity,

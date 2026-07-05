@@ -33,9 +33,6 @@ object PlayerRolesTable : CompositeIdTable(name = TableConstants.PLAYER_ROLES_TA
         onDelete = ReferenceOption.CASCADE
     )
 
-    val isPaused = bool("is_paused").default(false)
-    val isPrimary = bool("is_primary").default(false)
-
     val untilAt = timestamp("until_at").nullable()
     val pausedAt = timestamp("paused_at").nullable()
 
@@ -54,9 +51,6 @@ class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
 
     override var playerId by PlayerRolesTable.playerId
     override var roleId by PlayerRolesTable.roleId
-
-    override var isPaused by PlayerRolesTable.isPaused
-    override var isPrimary by PlayerRolesTable.isPrimary
 
     override var untilAt by PlayerRolesTable.untilAt
     override var pausedAt by PlayerRolesTable.pausedAt

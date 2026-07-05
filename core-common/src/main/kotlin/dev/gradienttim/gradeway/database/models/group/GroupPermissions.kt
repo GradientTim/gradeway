@@ -2,12 +2,12 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.database.models.role
+package dev.gradienttim.gradeway.database.models.group
 
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
-import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
+import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
@@ -15,10 +15,10 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.CompositeEntity
 import org.jetbrains.exposed.v1.dao.CompositeEntityClass
 
-object RolePermissionsTable : CompositeIdTable(name = TableConstants.ROLE_PERMISSIONS_TABLE_NAME) {
-    val roleId = reference(
-        name = "role_id",
-        refColumn = RolesTable.id,
+object GroupPermissionsTable : CompositeIdTable(name = TableConstants.GROUP_PERMISSIONS_TABLE_NAME) {
+    val groupId = reference(
+        name = "group_id",
+        refColumn = GroupsTable.id,
         onUpdate = ReferenceOption.CASCADE,
         onDelete = ReferenceOption.CASCADE
     )
@@ -33,19 +33,19 @@ object RolePermissionsTable : CompositeIdTable(name = TableConstants.ROLE_PERMIS
     val isEnabled = bool("is_enabled").default(true)
 
     init {
-        addIdColumn(roleId)
+        addIdColumn(groupId)
         addIdColumn(permissionId)
     }
 }
 
-class DatabaseRolePermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(id), RolePermissionEntity {
-    companion object : CompositeEntityClass<DatabaseRolePermissionEntity>(RolePermissionsTable)
+class DatabaseGroupPermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(id), GroupPermissionEntity {
+    companion object : CompositeEntityClass<DatabaseGroupPermissionEntity>(GroupPermissionsTable)
 
-    override var roleId by RolePermissionsTable.roleId
-    override var permissionId by RolePermissionsTable.permissionId
+    override var groupId by GroupPermissionsTable.groupId
+    override var permissionId by GroupPermissionsTable.permissionId
 
-    override var isEnabled by RolePermissionsTable.isEnabled
+    override var isEnabled by GroupPermissionsTable.isEnabled
 
-    override val role by DatabaseRoleEntity referencedOn RolePermissionsTable.roleId
-    override val permission by DatabasePermissionEntity referencedOn RolePermissionsTable.permissionId
+    override val group by DatabaseGroupEntity referencedOn GroupPermissionsTable.groupId
+    override val permission by DatabasePermissionEntity referencedOn GroupPermissionsTable.permissionId
 }

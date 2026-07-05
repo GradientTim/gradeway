@@ -153,13 +153,13 @@ interface RolePermissionService {
      * If the operation fails, an error indicating the cause will be returned.
      *
      * @param id The unique identifier of the role from which the permissions should be removed.
-     * @param permissions A list of permission names to be unset.
+     * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
         id: UUID,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -167,13 +167,13 @@ interface RolePermissionService {
      * If the operation fails, an error indicating the cause will be returned.
      *
      * @param entity The role entity from which the permissions should be removed.
-     * @param permissions A list of permission names to be unset.
+     * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
         entity: RoleEntity,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -181,13 +181,13 @@ interface RolePermissionService {
      * If the operation fails, an error indicating the cause will be returned.
      *
      * @param idOrName The unique identifier or name of the role from which the permissions should be removed.
-     * @param permissions A list of permission names to be unset.
+     * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
         idOrName: String,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**

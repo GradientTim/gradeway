@@ -23,11 +23,4 @@ interface PermissionReference<TReference> {
      * can be queried or manipulated to manage the entity's permission states effectively.
      */
     val permissions: SizedIterable<TReference>
-
-    /**
-     * Sends all cached inserts and updates for this Entity instance to the database.
-     *
-     * @return `false` if no cached inserts or updates were sent to the database; `true`, otherwise.
-     */
-    fun flush(): Boolean
 }

@@ -144,39 +144,39 @@ interface PlayerPermissionService {
      * Revokes multiple permissions for a player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions will be revoked.
-     * @param permissions A list of permission names to be revoked for the specified player.
+     * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
         id: UUID,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their associated [PlayerEntity].
      *
      * @param entity The [PlayerEntity] representing the player whose permissions will be revoked.
-     * @param permissions A list of permission names to be revoked for the specified player.
+     * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
         entity: PlayerEntity,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the player whose permissions will be revoked.
-     * @param permissions A list of permission names to be revoked for the specified player.
+     * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
         idOrName: String,
-        permissions: List<String>
+        permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**

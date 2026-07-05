@@ -6,14 +6,12 @@ package dev.gradienttim.gradeway.database.models.permission
 
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
-import dev.gradienttim.gradeway.entity.permission.PermissionTemplatePermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import org.jetbrains.exposed.v1.javatime.timestamp
-import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.time.Instant
@@ -39,8 +37,8 @@ class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), Per
     override val createdAt by PermissionTemplatesTable.createdAt
     override val updatedAt by PermissionTemplatesTable.updatedAt
 
-    override val permissions: SizedIterable<PermissionTemplatePermissionEntity>
-        get() = TODO("Not yet implemented")
+    override val permissions by DatabasePermissionTemplatePermissionEntity referrersOn
+            PermissionTemplatePermissionsTable.templateId
 
     override fun setName(name: String) =
         permissionService.setTemplateName(this, name)

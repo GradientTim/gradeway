@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
@@ -38,6 +39,20 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
     var name: String
 
     /**
+     * Represents the primary role identifier associated with a player entity.
+     *
+     * This property holds the unique identifier of a player's primary role within the system,
+     * which is represented as an `EntityID` object wrapping a `UUID`. The primary role is used
+     * to define the player's main or most significant role in the application's context.
+     *
+     * A `null` value indicates that no primary role has been assigned to the player.
+     * When populated, this value corresponds to the primary key of the associated role
+     * in the database schema and facilitates efficient referencing and management of
+     * the player's role hierarchy.
+     */
+    val primaryRoleId: EntityID<UUID>?
+
+    /**
      * The timestamp representing when this player entity was created.
      *
      * This property is used to record the exact moment the entity was instantiated
@@ -53,6 +68,15 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
      * synchronization purposes.
      */
     val updatedAt: Instant
+
+    /**
+     * Represents the primary role associated with a player entity.
+     *
+     * This property links a player to their main role in the system, providing
+     * access to attributes, permissions, and metadata related to that role.
+     * It can be null if the player does not have a primary role assigned.
+     */
+    val primaryRole: RoleEntity?
 
     /**
      * Represents the collection of `PlayerRoleEntity` instances associated with a `PlayerEntity`.

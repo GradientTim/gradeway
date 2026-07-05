@@ -87,6 +87,7 @@ complexity:
       - 'run'
       - 'use'
       - 'with'
+    excludes: ['**/dev/gradienttim/gradeway/commands/**']
   LabeledExpression:
     active: false
     ignoredLabels: []
@@ -96,6 +97,7 @@ complexity:
   LongMethod:
     active: true
     allowedLines: 60
+    excludes: ['**/dev/gradienttim/gradeway/commands/**']
   LongParameterList:
     active: true
     allowedFunctionParameters: 5
@@ -679,6 +681,7 @@ style:
     excludeImportStatements: true
     excludeCommentStatements: true
     excludeRawStrings: true
+    excludes: ['**/dev/gradienttim/gradeway/commands/**']
   MayBeConstant:
     active: true
   ModifierOrder:

@@ -37,30 +37,6 @@ interface PlayerRoleEntity {
     val roleId: EntityID<UUID>
 
     /**
-     * Indicates whether the role associated with a player is currently paused.
-     *
-     * This property is used to track the active state of the role. A `true` value signifies that the role
-     * is paused and not actively used in its current context, while a `false` value implies that the
-     * role is active and operational. This can be helpful for scenarios where temporary suspension of
-     * certain roles is required without removing their association with the player.
-     *
-     * The paused state can be further contextualized with timestamps such as `pausedAt` to provide
-     * additional details regarding when the pause occurred or `untilAt` to specify when the pause state
-     * ends, if applicable.
-     */
-    val isPaused: Boolean
-
-    /**
-     * Indicates whether the associated role is the primary role for the player.
-     *
-     * This property is used to denote the primary status of a player's role, which
-     * may define the primary responsibilities or privileges assigned to the player
-     * within a specific context. Roles where `isPrimary` is `true` are typically
-     * used to identify the main role of the player in relation to the entity.
-     */
-    val isPrimary: Boolean
-
-    /**
      * Represents the timestamp until which a specific player role is considered active.
      *
      * This property indicates the expiration time of a role assigned to a player.

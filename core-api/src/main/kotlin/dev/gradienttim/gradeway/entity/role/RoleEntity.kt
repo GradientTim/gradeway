@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.entity.role
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.reference.AttributeReference
+import dev.gradienttim.gradeway.reference.GroupReference
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.services.RoleService
@@ -21,7 +22,7 @@ import java.util.*
  * mechanisms to modify its name and weight.
  */
 interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionReference<RolePermissionEntity>,
-    PermissionTemplateReference<RolePermissionTemplateEntity> {
+    PermissionTemplateReference<RolePermissionTemplateEntity>, GroupReference<RoleGroupEntity> {
     /**
      * The unique identifier for the entity. This value is immutable and is used to distinctly identify
      * the entity instance across systems or databases. It is typically generated as a UUID, ensuring
@@ -65,6 +66,20 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
      * determining outdated data.
      */
     val updatedAt: Instant
+
+    /**
+     * Represents the collection of role-group associations for this role entity.
+     *
+     * This property defines a navigable relationship between the role and its associated groups
+     * within the system. It provides access to all instances of [RoleGroupEntity] that link the
+     * current role to various groups, enabling group-based operations, queries, and management
+     * of the role's group affiliations.
+     *
+     * The `groups` property is essential for establishing many-to-many relationships between
+     * roles and groups, facilitating organizational structures, permissions, or functional
+     * groupings as part of role-based access control or system-specific requirements.
+     */
+    override val groups: SizedIterable<RoleGroupEntity>
 
     /**
      * Represents a collection of attribute entities associated with the role.

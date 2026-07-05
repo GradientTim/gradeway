@@ -8,7 +8,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.command.*
-import dev.gradienttim.gradeway.commands.suggestRoles
+import dev.gradienttim.gradeway.commands.extensions.suggestRoles
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
 import dev.gradienttim.gradeway.services.RoleService.*
@@ -19,13 +19,14 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 
-@Suppress("LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
     sourceToAudience: (source: TSource) -> Audience,
 ) {
     literal("role") {
+        requires { hasPermission(it, "gradeway.role") }
+
         literal("create") {
             requires { hasPermission(it, "gradeway.role.create") }
 
@@ -60,7 +61,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
                                     Component.translatable(
                                         "gradeway.command.role.create.unexpectedError",
                                         Component.text(name),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     )
                                 )
                                 return@execute
@@ -85,7 +86,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
                 suggestsDebounced { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
-                        suggestRoles(builder, gradeway, remaining)
+                        builder.suggestRoles(gradeway, remaining.lowercase())
                     }
                 }
 
@@ -112,7 +113,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
                             if (error is DeleteRoleError.EntityNotFound) {
                                 audience.sendMessage(
                                     Component.translatable(
-                                        "gradeway.command.role.create.entityNotFound",
+                                        "gradeway.command.role.delete.entityNotFound",
                                         Component.text(id)
                                     )
                                 )
@@ -123,7 +124,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
                                     Component.translatable(
                                         "gradeway.command.role.delete.unexpectedError",
                                         Component.text(id),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     )
                                 )
                                 return@execute
@@ -141,83 +142,67 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
             }
         }
 
-        string("idOrName") {
-            suggestsDebounced { builder ->
-                val remaining = builder.remaining
-                if (remaining.isNotEmpty()) {
-                    suggestRoles(builder, gradeway, remaining)
-                }
-            }
-
-            roleAttributesBuilder(gradeway, hasPermission, sourceToAudience)
-            rolePermissionsBuilder(gradeway, hasPermission, sourceToAudience)
-
-            literal("setWeight") {
-                requires { hasPermission(it, "gradeway.role.setWeight") }
-
-                integer("value") {
-                    execute {
-                        val audience = sourceToAudience(source)
-
-                        val idOrName = stringParam("idOrName")
-                        val weight = intParam("value")
-
-                        gradeway.roles.setWeight(idOrName, weight)
-                            .onLeft { error ->
-                                if (error is SetWeightError.EntityNotFound) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.role.setWeight.entityNotFound",
-                                            Component.text(idOrName),
-                                        )
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetWeightError.Unexpected) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.role.setWeight.unexpectedError",
-                                            Component.text(idOrName),
-                                            Component.text(error.throwable.localizedMessage)
-                                        )
-                                    )
-                                    return@execute
-                                }
-                            }
-                            .onRight {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.role.setWeight.success",
-                                        Component.text(idOrName),
-                                        Component.text(weight)
-                                    )
-                                )
-                            }
+        literal("modify") {
+            string("idOrName") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
                     }
                 }
-            }
 
-            execute {
-                val audience = sourceToAudience(source)
+                roleAttributesBuilder(gradeway, hasPermission, sourceToAudience)
+                rolePermissionsBuilder(gradeway, hasPermission, sourceToAudience)
 
-                val idOrName = stringParam("idOrName")
+                literal("setWeight") {
+                    requires { hasPermission(it, "gradeway.role.setWeight") }
 
-                val entity = gradeway.roles.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.notNound",
-                            Component.text(idOrName)
-                        )
-                    )
-                    return@execute
+                    integer("value") {
+                        execute {
+                            val audience = sourceToAudience(source)
+
+                            val idOrName = stringParam("idOrName")
+                            val weight = intParam("value")
+
+                            gradeway.roles.setWeight(idOrName, weight)
+                                .onLeft { error ->
+                                    if (error is SetWeightError.EntityNotFound) {
+                                        audience.sendMessage(
+                                            Component.translatable(
+                                                "gradeway.command.role.setWeight.entityNotFound",
+                                                Component.text(idOrName),
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is SetWeightError.Unexpected) {
+                                        audience.sendMessage(
+                                            Component.translatable(
+                                                "gradeway.command.role.setWeight.unexpectedError",
+                                                Component.text(idOrName),
+                                                Component.text(error.throwable.message ?: "Unknown")
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                }
+                                .onRight {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.role.setWeight.success",
+                                            Component.text(idOrName),
+                                            Component.text(weight)
+                                        )
+                                    )
+                                }
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-@Suppress("LongMethod", "CyclomaticComplexMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -252,7 +237,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
                             "gradeway.command.role.addAttribute.unexpectedError",
                             Component.text(idOrName),
                             Component.text(attribute.key.asString()),
-                            Component.text(error.throwable.localizedMessage)
+                            Component.text(error.throwable.message ?: "Unknown")
                         )
                     )
                     return
@@ -300,7 +285,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
                             "gradeway.command.role.updateAttribute.unexpectedError",
                             Component.text(idOrName),
                             Component.text(actualKey.asString()),
-                            Component.text(error.throwable.localizedMessage)
+                            Component.text(error.throwable.message ?: "Unknown")
                         )
                     )
                     return
@@ -663,7 +648,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
                                         "gradeway.command.role.removeAttribute.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(key),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -715,7 +700,6 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleAttributesBuilder(
     }
 }
 
-@Suppress("LongMethod")
 internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
     gradeway: CommonGradeway,
     hasPermission: (source: TSource, permission: String) -> Boolean,
@@ -774,7 +758,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                                             "gradeway.command.role.setPermission.unexpectedError",
                                             Component.text(idOrName),
                                             Component.text(permission),
-                                            Component.text(error.throwable.localizedMessage)
+                                            Component.text(error.throwable.message ?: "Unknown")
                                         ),
                                     )
                                     return@execute
@@ -826,7 +810,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                                         "gradeway.command.role.setPermission.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(permission),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -883,7 +867,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                                         "gradeway.command.role.unsetPermission.unexpectedError",
                                         Component.text(idOrName),
                                         Component.text(permission),
-                                        Component.text(error.throwable.localizedMessage)
+                                        Component.text(error.throwable.message ?: "Unknown")
                                     ),
                                 )
                                 return@execute
@@ -926,7 +910,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                                 Component.translatable(
                                     "gradeway.command.role.clearPermissions.unexpectedError",
                                     Component.text(idOrName),
-                                    Component.text(error.throwable.localizedMessage)
+                                    Component.text(error.throwable.message ?: "Unknown")
                                 ),
                             )
                             return@execute
@@ -955,7 +939,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                 if (entity == null) {
                     audience.sendMessage(
                         Component.translatable(
-                            "gradeway.command.role.notNound",
+                            "gradeway.command.role.notFound",
                             Component.text(idOrName)
                         )
                     )

@@ -275,16 +275,15 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         attribute: Attribute<TValue>,
         createEntityAttribute: () -> TAttributeEntity
     ): Either<AttributeService.AddAttributeError, TAttributeEntity> = either {
-        try {
+        transaction(gradeway.database) {
             if (entity.attributes.find { it.key == attribute.key } != null) {
                 raise(AttributeService.AddAttributeError.AttributeAlreadyExists)
             }
-
-            transaction(gradeway.database) {
+            try {
                 createEntityAttribute()
+            } catch (throwable: Throwable) {
+                raise(AttributeService.AddAttributeError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(AttributeService.AddAttributeError.Unexpected(throwable))
         }
     }
 
@@ -293,7 +292,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         key: Key,
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, Unit> = either {
-        try {
+        transaction(gradeway.database) {
             val attribute = entity.attributes.find { it.key == key }
             if (attribute == null) {
                 raise(AttributeService.UpdateAttributeError.AttributeNotExists)
@@ -308,12 +307,12 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
             val attributeType = AttributeTypeRegistry.find(attribute.type) as? AttributeType<TValue>
                 ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered)
 
-            transaction(gradeway.database) {
+            try {
                 attribute.value = attributeType.serialize(value)
                 attribute.flush()
+            } catch (throwable: Throwable) {
+                raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
         }
     }
 
@@ -321,7 +320,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: AttributeReference<out SharedAttributeEntity>,
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        try {
+        transaction(gradeway.database) {
             val attribute = entity.attributes.find { it.key == key }
             if (attribute == null) {
                 raise(AttributeService.RemoveAttributeError.AttributeNotExists)
@@ -332,31 +331,31 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
             }
 
-            transaction(gradeway.database) {
+            try {
                 attribute.delete()
+            } catch (throwable: Throwable) {
+                raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
         }
     }
 
     private fun clearEntityAttributes(
         entity: AttributeReference<out SharedAttributeEntity>
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        try {
+        transaction(gradeway.database) {
             if (entity.attributes.empty()) {
                 raise(AttributeService.ClearAttributesError.NoAttributesFound)
             }
 
-            transaction(gradeway.database) {
+            try {
                 entity.attributes.forEach { attributeEntity ->
                     if (attributeEntity is Entity<*>) {
                         attributeEntity.delete()
                     }
                 }
+            } catch (throwable: Throwable) {
+                raise(AttributeService.ClearAttributesError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(AttributeService.ClearAttributesError.Unexpected(throwable))
         }
     }
 }

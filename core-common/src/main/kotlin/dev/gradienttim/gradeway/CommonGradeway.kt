@@ -33,6 +33,7 @@ class CommonGradeway(
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
     override val players: PlayerService by inject()
+    override val groups: GroupService by inject()
     override val roles: RoleService by inject()
 
     override val databases: DatabaseManager by inject()
@@ -58,6 +59,7 @@ class CommonGradeway(
             single<PermissionService> { CommonPermissionService(this@CommonGradeway) }
             single<AttributeService> { CommonAttributeService(this@CommonGradeway) }
             single<PlayerService> { CommonPlayerService(this@CommonGradeway) }
+            single<GroupService> { CommonGroupService(this@CommonGradeway) }
             single<RoleService> { CommonRoleService(this@CommonGradeway) }
         }
 

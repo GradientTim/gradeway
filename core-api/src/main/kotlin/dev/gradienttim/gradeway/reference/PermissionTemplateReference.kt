@@ -25,11 +25,4 @@ interface PermissionTemplateReference<TReference> {
      * for lazy iteration and efficient querying of the contained templates.
      */
     val permissionTemplates: SizedIterable<TReference>
-
-    /**
-     * Sends all cached inserts and updates for this Entity instance to the database.
-     *
-     * @return `false` if no cached inserts or updates were sent to the database; `true`, otherwise.
-     */
-    fun flush(): Boolean
 }

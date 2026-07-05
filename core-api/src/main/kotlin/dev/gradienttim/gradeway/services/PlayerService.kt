@@ -8,6 +8,8 @@ import arrow.core.Either
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
+import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.services.player.RolePlayerService
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
 import java.util.*
@@ -16,7 +18,7 @@ import java.util.*
  * Service interface for managing player entities. It defines operations for creating, updating,
  * retrieving, and deleting players, along with checks for their existence.
  */
-interface PlayerService : SharedAttributeService<PlayerEntity, PlayerAttributeEntity>,
+interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity, PlayerAttributeEntity>,
     SharedPermissionService<PlayerEntity, PlayerPermissionEntity> {
     /**
      * Creates a new player with the specified unique identifier and name.
@@ -105,6 +107,22 @@ interface PlayerService : SharedAttributeService<PlayerEntity, PlayerAttributeEn
      */
     fun existsByIdOrName(value: String): Boolean
 
+    /**
+     * Retrieves the primary role associated with the player identified by the given unique identifier.
+     *
+     * @param id The unique identifier of the player whose primary role is to be retrieved.
+     * @return The [RoleEntity] representing the player's primary role, or `null` if no primary role is found.
+     */
+    fun getPrimaryRole(id: UUID): RoleEntity?
+
+    /**
+     * Retrieves the primary role associated with the specified player entity.
+     *
+     * @param entity The player entity whose primary role is to be retrieved.
+     * @return The [RoleEntity] representing the player's primary role, or `null` if no primary role is found.
+     */
+    fun getPrimaryRole(entity: PlayerEntity): RoleEntity?
+
     sealed interface CreatePlayerError {
         object EntityAlreadyExists : CreatePlayerError
         object InvalidName : CreatePlayerError
@@ -120,5 +138,59 @@ interface PlayerService : SharedAttributeService<PlayerEntity, PlayerAttributeEn
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         data class Unexpected(val throwable: Throwable) : SetNameError
+    }
+
+    sealed interface AddRoleError {
+        object EntityNotFound : AddRoleError
+        object TargetNotFound : AddRoleError
+        object AlreadyExists : AddRoleError
+        object UntilInPast : AddRoleError
+        data class Unexpected(val throwable: Throwable) : AddRoleError
+    }
+
+    sealed interface RemoveRoleError {
+        object EntityNotFound : RemoveRoleError
+        object TargetNotFound : RemoveRoleError
+        object NotExists : RemoveRoleError
+        data class Unexpected(val throwable: Throwable) : RemoveRoleError
+    }
+
+    sealed interface SetRoleUntilAtError {
+        object EntityNotFound : SetRoleUntilAtError
+        object TargetNotFound : SetRoleUntilAtError
+        object RelationNotFound : SetRoleUntilAtError
+        object UntilInPast : SetRoleUntilAtError
+        data class Unexpected(val throwable: Throwable) : SetRoleUntilAtError
+    }
+
+    sealed interface SetRolePausedAtError {
+        object EntityNotFound : SetRolePausedAtError
+        object TargetNotFound : SetRolePausedAtError
+        object RelationNotFound : SetRolePausedAtError
+        object PauseInPast : SetRolePausedAtError
+        data class Unexpected(val throwable: Throwable) : SetRolePausedAtError
+    }
+
+    sealed interface PauseRoleError {
+        object EntityNotFound : PauseRoleError
+        object TargetNotFound : PauseRoleError
+        object RelationNotFound : PauseRoleError
+        object AlreadyPaused : PauseRoleError
+        data class Unexpected(val throwable: Throwable) : PauseRoleError
+    }
+
+    sealed interface ResumeRoleError {
+        object EntityNotFound : ResumeRoleError
+        object TargetNotFound : ResumeRoleError
+        object RelationNotFound : ResumeRoleError
+        object NotPaused : ResumeRoleError
+        data class Unexpected(val throwable: Throwable) : ResumeRoleError
+    }
+
+    sealed interface SetPrimaryRoleError {
+        object EntityNotFound : SetPrimaryRoleError
+        object TargetNotFound : SetPrimaryRoleError
+        object AlreadyPrimary : SetPrimaryRoleError
+        data class Unexpected(val throwable: Throwable) : SetPrimaryRoleError
     }
 }

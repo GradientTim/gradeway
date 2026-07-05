@@ -10,39 +10,49 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerEntity
+import dev.gradienttim.gradeway.database.models.player.DatabasePlayerRoleEntity
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
+import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isValidName
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 
+@Suppress("LargeClass", "TooManyFunctions")
 class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinComponent {
+    private val roleService: RoleService by inject()
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
 
-    override fun create(id: UUID, name: String): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> =
-        either {
-            if (!isNameValid(name)) {
-                raise(PlayerService.CreatePlayerError.InvalidName)
-            }
-            if (existsById(id)) {
-                raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
-            }
-            try {
-                transaction(gradeway.database) {
-                    DatabasePlayerEntity.new(id) {
-                        this.name = name
-                    }
-                }
-            } catch (throwable: Throwable) {
-                raise(PlayerService.CreatePlayerError.Unexpected(throwable))
-            }
+    override fun create(
+        id: UUID,
+        name: String
+    ): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> = either {
+        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+            raise(PlayerService.CreatePlayerError.InvalidName)
         }
+        if (existsById(id)) {
+            raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
+        }
+        try {
+            transaction(gradeway.database) {
+                DatabasePlayerEntity.new(id) {
+                    this.name = name
+                }
+            }
+        } catch (throwable: Throwable) {
+            raise(PlayerService.CreatePlayerError.Unexpected(throwable))
+        }
+    }
 
     override fun delete(id: UUID): Either<PlayerService.DeletePlayerError, Unit> = either {
         val entity = findById(id) ?: raise(PlayerService.DeletePlayerError.EntityNotFound)
@@ -60,20 +70,26 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         return setName(entity, name)
     }
 
-    override fun setName(entity: PlayerEntity, name: String): Either<PlayerService.SetNameError, Boolean> =
-        either {
-            if (!isNameValid(name)) {
-                raise(PlayerService.SetNameError.InvalidName)
-            }
-            try {
-                transaction(gradeway.database) {
-                    entity.name = name
-                    entity.flush()
-                }
-            } catch (throwable: Throwable) {
-                raise(PlayerService.SetNameError.Unexpected(throwable))
-            }
+    override fun setName(
+        entity: PlayerEntity,
+        name: String
+    ): Either<PlayerService.SetNameError, Boolean> = either {
+        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+            raise(PlayerService.SetNameError.InvalidName)
         }
+        if (entity !is DatabasePlayerEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
+            raise(PlayerService.SetNameError.Unexpected(throwable))
+        }
+        try {
+            transaction(gradeway.database) {
+                entity.name = name
+                entity.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PlayerService.SetNameError.Unexpected(throwable))
+        }
+    }
 
     override fun findById(id: UUID): DatabasePlayerEntity? {
         return transaction(gradeway.database) {
@@ -82,7 +98,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     }
 
     override fun findByName(name: String): DatabasePlayerEntity? {
-        if (!isNameValid(name)) {
+        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return transaction(gradeway.database) {
@@ -91,7 +107,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     }
 
     override fun findByIdOrName(value: String): DatabasePlayerEntity? {
-        if (value.length <= TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH && !isNameValid(value)) {
+        if (
+            value.length <= TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH &&
+            !value.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)
+        ) {
             return null
         }
         return transaction(gradeway.database) {
@@ -109,6 +128,494 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
 
     override fun existsByIdOrName(value: String): Boolean =
         findByIdOrName(value) != null
+
+    override fun getPrimaryRole(id: UUID): RoleEntity? {
+        val entity = findById(id) ?: return null
+        return getPrimaryRole(entity)
+    }
+
+    override fun getPrimaryRole(entity: PlayerEntity): RoleEntity? = entity.primaryRole
+
+    override fun addRole(
+        playerId: UUID,
+        roleId: UUID,
+        until: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        val player = findById(playerId) ?: raise(PlayerService.AddRoleError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
+        return addRole(player, role, until)
+    }
+
+    override fun addRole(
+        playerId: UUID,
+        role: RoleEntity,
+        until: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        val player = findById(playerId) ?: raise(PlayerService.AddRoleError.EntityNotFound)
+        return addRole(player, role, until)
+    }
+
+    override fun addRole(
+        player: PlayerEntity,
+        roleId: UUID,
+        until: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
+        return addRole(player, role, until)
+    }
+
+    override fun addRole(
+        player: PlayerEntity,
+        role: RoleEntity,
+        until: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        if (until != null && until < gradeway.now()) {
+            raise(PlayerService.AddRoleError.UntilInPast)
+        }
+
+        transaction(gradeway.database) {
+            if (player.roles.any { it.roleId == role.id }) {
+                raise(PlayerService.AddRoleError.AlreadyExists)
+            }
+
+            try {
+                DatabasePlayerRoleEntity.new {
+                    this.roleId = role.id
+                    this.playerId = player.id
+                    this.untilAt = until
+                }
+            } catch (throwable: Throwable) {
+                raise(PlayerService.AddRoleError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun addRole(
+        playerIdOrName: String,
+        roleId: UUID,
+        untilAt: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.AddRoleError.EntityNotFound)
+        return addRole(player, roleId, untilAt)
+    }
+
+    override fun addRole(
+        playerIdOrName: String,
+        role: RoleEntity,
+        untilAt: Instant?
+    ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.AddRoleError.EntityNotFound)
+        return addRole(player, role, untilAt)
+    }
+
+    override fun removeRole(
+        playerId: UUID,
+        roleId: UUID
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.RemoveRoleError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
+        return removeRole(player, role)
+    }
+
+    override fun removeRole(
+        playerId: UUID,
+        role: RoleEntity
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.RemoveRoleError.EntityNotFound)
+        return removeRole(player, role)
+    }
+
+    override fun removeRole(
+        player: PlayerEntity,
+        roleId: UUID
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
+        return removeRole(player, role)
+    }
+
+    override fun removeRole(
+        player: PlayerEntity,
+        role: RoleEntity
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        transaction(gradeway.database) {
+            val playerRoleEntity = player.roles.find { it.roleId == role.id }
+            if (playerRoleEntity == null) {
+                raise(PlayerService.RemoveRoleError.NotExists)
+            }
+            if (playerRoleEntity !is DatabasePlayerRoleEntity) {
+                val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
+                raise(PlayerService.RemoveRoleError.Unexpected(throwable))
+            }
+            try {
+                playerRoleEntity.delete()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.RemoveRoleError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun removeRole(
+        playerIdOrName: String,
+        roleId: UUID
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.RemoveRoleError.EntityNotFound)
+        return removeRole(player, roleId)
+    }
+
+    override fun removeRole(
+        playerIdOrName: String,
+        role: RoleEntity
+    ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.RemoveRoleError.EntityNotFound)
+        return removeRole(player, role)
+    }
+
+    override fun setRoleUntilAt(
+        playerId: UUID,
+        roleId: UUID,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetRoleUntilAtError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
+        return setRoleUntilAt(player, role, untilAt)
+    }
+
+    override fun setRoleUntilAt(
+        player: PlayerEntity,
+        roleId: UUID,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
+        return setRoleUntilAt(player, role, untilAt)
+    }
+
+    override fun setRoleUntilAt(
+        playerId: UUID,
+        role: RoleEntity,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetRoleUntilAtError.EntityNotFound)
+        return setRoleUntilAt(player, role, untilAt)
+    }
+
+    override fun setRoleUntilAt(
+        player: PlayerEntity,
+        role: RoleEntity,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        if (untilAt < gradeway.now()) {
+            raise(PlayerService.SetRoleUntilAtError.UntilInPast)
+        }
+
+        transaction(gradeway.database) {
+            val playerRoleEntity = player.roles.find { it.roleId == role.id }
+            if (playerRoleEntity == null) {
+                raise(PlayerService.SetRoleUntilAtError.RelationNotFound)
+            }
+            if (playerRoleEntity !is DatabasePlayerRoleEntity) {
+                val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
+                raise(PlayerService.SetRoleUntilAtError.Unexpected(throwable))
+            }
+            try {
+                playerRoleEntity.untilAt = untilAt
+                playerRoleEntity.flush()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.SetRoleUntilAtError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun setRoleUntilAt(
+        playerIdOrName: String,
+        roleId: UUID,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetRoleUntilAtError.EntityNotFound)
+        return setRoleUntilAt(player, roleId, untilAt)
+    }
+
+    override fun setRoleUntilAt(
+        playerIdOrName: String,
+        role: RoleEntity,
+        untilAt: Instant
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetRoleUntilAtError.EntityNotFound)
+        return setRoleUntilAt(player, role, untilAt)
+    }
+
+    override fun setRolePausedAt(
+        playerId: UUID,
+        roleId: UUID,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetRolePausedAtError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
+        return setRolePausedAt(player, role, pausedAt)
+    }
+
+    override fun setRolePausedAt(
+        playerId: UUID,
+        role: RoleEntity,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetRolePausedAtError.EntityNotFound)
+        return setRolePausedAt(player, role, pausedAt)
+    }
+
+    override fun setRolePausedAt(
+        player: PlayerEntity,
+        roleId: UUID,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
+        return setRolePausedAt(player, role, pausedAt)
+    }
+
+    override fun setRolePausedAt(
+        player: PlayerEntity,
+        role: RoleEntity,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        if (pausedAt < gradeway.now()) {
+            raise(PlayerService.SetRolePausedAtError.PauseInPast)
+        }
+
+        transaction(gradeway.database) {
+            val playerRoleEntity = player.roles.find { it.roleId == role.id }
+            if (playerRoleEntity == null) {
+                raise(PlayerService.SetRolePausedAtError.RelationNotFound)
+            }
+            if (playerRoleEntity !is DatabasePlayerRoleEntity) {
+                val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
+                raise(PlayerService.SetRolePausedAtError.Unexpected(throwable))
+            }
+            try {
+                playerRoleEntity.pausedAt = pausedAt
+                playerRoleEntity.flush()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.SetRolePausedAtError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun setRolePausedAt(
+        playerIdOrName: String,
+        roleId: UUID,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetRolePausedAtError.EntityNotFound)
+        return setRolePausedAt(player, roleId, pausedAt)
+    }
+
+    override fun setRolePausedAt(
+        playerIdOrName: String,
+        role: RoleEntity,
+        pausedAt: Instant
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetRolePausedAtError.EntityNotFound)
+        return setRolePausedAt(player, role, pausedAt)
+    }
+
+    override fun pauseRole(
+        playerId: UUID,
+        roleId: UUID
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.PauseRoleError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
+        return pauseRole(player, role)
+    }
+
+    override fun pauseRole(
+        playerId: UUID,
+        role: RoleEntity
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.PauseRoleError.EntityNotFound)
+        return pauseRole(player, role)
+    }
+
+    override fun pauseRole(
+        player: PlayerEntity,
+        roleId: UUID
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
+        return pauseRole(player, role)
+    }
+
+    override fun pauseRole(
+        player: PlayerEntity,
+        role: RoleEntity
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        transaction(gradeway.database) {
+            val playerRoleEntity = player.roles.find { it.roleId == role.id }
+            if (playerRoleEntity == null) {
+                raise(PlayerService.PauseRoleError.RelationNotFound)
+            }
+            if (playerRoleEntity.pausedAt != null) {
+                raise(PlayerService.PauseRoleError.AlreadyPaused)
+            }
+            if (playerRoleEntity !is DatabasePlayerRoleEntity) {
+                val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
+                raise(PlayerService.PauseRoleError.Unexpected(throwable))
+            }
+            try {
+                playerRoleEntity.pausedAt = gradeway.now()
+                playerRoleEntity.flush()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.PauseRoleError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun pauseRole(
+        playerIdOrName: String,
+        roleId: UUID
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.PauseRoleError.EntityNotFound)
+        return pauseRole(player, roleId)
+    }
+
+    override fun pauseRole(
+        playerIdOrName: String,
+        role: RoleEntity
+    ): Either<PlayerService.PauseRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.PauseRoleError.EntityNotFound)
+        return pauseRole(player, role)
+    }
+
+    override fun resumeRole(
+        playerId: UUID,
+        roleId: UUID
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.ResumeRoleError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        return resumeRole(player, role)
+    }
+
+    override fun resumeRole(
+        playerId: UUID,
+        role: RoleEntity
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.ResumeRoleError.EntityNotFound)
+        return resumeRole(player, role)
+    }
+
+    override fun resumeRole(
+        player: PlayerEntity,
+        roleId: UUID
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        return resumeRole(player, role)
+    }
+
+    override fun resumeRole(
+        player: PlayerEntity,
+        role: RoleEntity
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        transaction(gradeway.database) {
+            val playerRoleEntity = player.roles.find { it.roleId == role.id }
+            if (playerRoleEntity == null) {
+                raise(PlayerService.ResumeRoleError.RelationNotFound)
+            }
+
+            val pausedAt = playerRoleEntity.pausedAt ?: raise(PlayerService.ResumeRoleError.NotPaused)
+
+            if (playerRoleEntity !is DatabasePlayerRoleEntity) {
+                val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
+                raise(PlayerService.ResumeRoleError.Unexpected(throwable))
+            }
+
+            try {
+                val untilAt = playerRoleEntity.untilAt
+                if (untilAt != null) {
+                    playerRoleEntity.untilAt = untilAt + Duration.between(pausedAt, gradeway.now())
+                }
+                playerRoleEntity.pausedAt = null
+                playerRoleEntity.flush()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.ResumeRoleError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun resumeRole(
+        playerIdOrName: String,
+        roleId: UUID
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        return resumeRole(player, roleId)
+    }
+
+    override fun resumeRole(
+        playerIdOrName: String,
+        role: RoleEntity
+    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        return resumeRole(player, role)
+    }
+
+    override fun setPrimaryRole(
+        playerId: UUID,
+        roleId: UUID
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
+        return setPrimaryRole(player, role)
+    }
+
+    override fun setPrimaryRole(
+        playerId: UUID,
+        role: RoleEntity
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
+        return setPrimaryRole(player, role)
+    }
+
+    override fun setPrimaryRole(
+        player: PlayerEntity,
+        roleId: UUID
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        val role = roleService.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
+        return setPrimaryRole(player, role)
+    }
+
+    override fun setPrimaryRole(
+        player: PlayerEntity,
+        role: RoleEntity
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        if (player.primaryRoleId == role.id) {
+            raise(PlayerService.SetPrimaryRoleError.AlreadyPrimary)
+        }
+
+        if (player !is DatabasePlayerEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
+            raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
+        }
+
+        transaction(gradeway.database) {
+            try {
+                player.primaryRoleId = role.id
+                player.flush()
+            } catch (throwable: Throwable) {
+                raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun setPrimaryRole(
+        playerIdOrName: String,
+        roleId: UUID
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
+        return setPrimaryRole(player, roleId)
+    }
+
+    override fun setPrimaryRole(
+        playerIdOrName: String,
+        role: RoleEntity
+    ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
+        return setPrimaryRole(player, role)
+    }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =
         attributeService.addPlayerAttribute(id, attribute)
@@ -244,11 +751,4 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
 
     override fun getPermissions(idOrName: String) =
         permissionService.getPlayerPermissions(idOrName)
-
-    private fun isNameValid(name: String): Boolean {
-        if (name.isNotBlank()) return true
-        if (name.none { it.isWhitespace() }) return true
-        if (name.length in 1..TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH) return true
-        return false
-    }
 }

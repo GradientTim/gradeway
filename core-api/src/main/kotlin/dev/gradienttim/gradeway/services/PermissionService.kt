@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
+import dev.gradienttim.gradeway.services.permission.GroupPermissionService
 import dev.gradienttim.gradeway.services.permission.PlayerPermissionService
 import dev.gradienttim.gradeway.services.permission.RolePermissionService
 import dev.gradienttim.gradeway.services.permission.TemplatePermissionService
@@ -19,7 +20,8 @@ import java.util.*
  * represent errors that can occur during permission operations such as
  * setting, unsetting, or clearing permissions.
  */
-interface PermissionService : TemplatePermissionService, RolePermissionService, PlayerPermissionService {
+interface PermissionService : TemplatePermissionService, RolePermissionService, PlayerPermissionService,
+    GroupPermissionService {
     /**
      * Creates a new permission entity with the given value and type.
      *

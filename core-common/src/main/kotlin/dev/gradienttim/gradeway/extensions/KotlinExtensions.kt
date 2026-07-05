@@ -4,10 +4,13 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.extensions
 
-import java.util.*
+internal val UUID_REGEX = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
-@Suppress("ForbiddenComment")
-// TODO: replace it with a regexp pattern.
-fun String.isUuid(): Boolean = runCatching {
-    UUID.fromString(this)
-}.isSuccess
+fun String.isUuid(): Boolean = UUID_REGEX.matches(this)
+
+fun String.isValidName(maxLength: Int): Boolean {
+    if (isNotBlank()) return true
+    if (none { it.isWhitespace() }) return true
+    if (length in 1..maxLength) return true
+    return false
+}

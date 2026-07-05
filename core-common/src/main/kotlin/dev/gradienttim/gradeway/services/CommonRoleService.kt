@@ -13,6 +13,7 @@ import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isValidName
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.or
@@ -26,7 +27,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     private val permissionService: PermissionService by inject()
 
     override fun create(name: String): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = either {
-        if (!isNameValid(name)) {
+        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
         if (existsByName(name)) {
@@ -60,8 +61,12 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun setName(entity: RoleEntity, name: String): Either<RoleService.SetNameError, Boolean> = either {
-        if (!isNameValid(name)) {
+        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.SetNameError.InvalidName)
+        }
+        if (entity !is DatabaseRoleEntity) {
+            val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
+            raise(RoleService.SetNameError.Unexpected(throwable))
         }
         try {
             transaction(gradeway.database) {
@@ -79,6 +84,10 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun setWeight(entity: RoleEntity, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
+        if (entity !is DatabaseRoleEntity) {
+            val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
+            raise(RoleService.SetWeightError.Unexpected(throwable))
+        }
         try {
             transaction(gradeway.database) {
                 entity.weight = weight
@@ -101,7 +110,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun findByName(name: String): DatabaseRoleEntity? {
-        if (!isNameValid(name)) {
+        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return transaction(gradeway.database) {
@@ -110,7 +119,10 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun findByIdOrName(value: String): DatabaseRoleEntity? {
-        if (value.length <= TableConstants.ROLES_TABLE_MAX_NAME_LENGTH && !isNameValid(value)) {
+        if (
+            value.length <= TableConstants.ROLES_TABLE_MAX_NAME_LENGTH &&
+            !value.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)
+        ) {
             return null
         }
         return transaction(gradeway.database) {
@@ -263,11 +275,4 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
 
     override fun getPermissions(idOrName: String) =
         permissionService.getRolePermissions(idOrName)
-
-    private fun isNameValid(name: String): Boolean {
-        if (name.isNotBlank()) return true
-        if (name.none { it.isWhitespace() }) return true
-        if (name.length in 1..TableConstants.ROLES_TABLE_MAX_NAME_LENGTH) return true
-        return false
-    }
 }
