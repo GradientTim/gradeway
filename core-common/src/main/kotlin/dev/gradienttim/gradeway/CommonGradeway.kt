@@ -41,6 +41,7 @@ class CommonGradeway(
     override val messaging: MessagingManager by inject()
     override val drivers: DriverManager by inject()
     override val configs: ConfigManager by inject()
+    override val backups: BackupManager by inject()
 
     override val environment by lazy { CommonEnvironment(this) }
     override var state: GradewayState = GradewayState.UNLOADED
@@ -69,6 +70,7 @@ class CommonGradeway(
             single<MessagingManager> { CommonMessagingManager(this@CommonGradeway) }
             single<DriverManager> { CommonDriverManager(this@CommonGradeway) }
             single<ConfigManager> { CommonConfigManager(this@CommonGradeway) }
+            single<BackupManager> { CommonBackupManager(this@CommonGradeway) }
         }
 
         val commonModule = module {

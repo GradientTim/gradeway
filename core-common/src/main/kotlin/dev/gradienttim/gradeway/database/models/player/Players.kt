@@ -11,6 +11,8 @@ import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -44,7 +46,33 @@ object PlayersTable : UUIDTable(name = TableConstants.PLAYERS_TABLE_NAME) {
 }
 
 class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, KoinComponent {
-    companion object : UUIDEntityClass<DatabasePlayerEntity>(PlayersTable)
+    companion object : UUIDEntityClass<DatabasePlayerEntity>(PlayersTable), Serializable<DatabasePlayerEntity> {
+        override fun serialize(instance: DatabasePlayerEntity): JsonObject = buildJsonObject {
+            put("id", instance.id.value.toString())
+            put("name", instance.name)
+            put("primaryRoleId", instance.primaryRoleId?.value?.toString())
+            put("createdAt", instance.createdAt.toEpochMilli())
+            put("updatedAt", instance.updatedAt.toEpochMilli())
+        }
+
+        override fun deserialize(json: JsonObject): DatabasePlayerEntity {
+            val id = UUID.fromString(json.getValue("id").jsonPrimitive.content)
+
+            return new(id) {
+                name = json.getValue("name").jsonPrimitive.content
+
+                json.getValue("primaryRoleId").jsonPrimitive.contentOrNull?.let { rawPrimaryRoleId ->
+                    primaryRoleId = EntityID(
+                        id = UUID.fromString(rawPrimaryRoleId),
+                        table = RolesTable
+                    )
+                }
+
+                createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
+                updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
+            }
+        }
+    }
 
     internal val playerService: PlayerService by inject()
     internal val attributeService: AttributeService by inject()
@@ -53,7 +81,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
 
     override var primaryRoleId by PlayersTable.primaryRoleId
 
-    override val createdAt by PlayersTable.createdAt
+    override var createdAt by PlayersTable.createdAt
     override var updatedAt by PlayersTable.updatedAt
 
     override val primaryRole by DatabaseRoleEntity optionalReferencedOn PlayersTable.primaryRoleId

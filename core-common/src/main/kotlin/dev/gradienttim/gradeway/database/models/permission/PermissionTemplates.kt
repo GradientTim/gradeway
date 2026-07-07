@@ -7,6 +7,8 @@ package dev.gradienttim.gradeway.database.models.permission
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
@@ -27,15 +29,37 @@ object PermissionTemplatesTable : UUIDTable(name = TableConstants.PERMISSION_TEM
 }
 
 class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionTemplateEntity, KoinComponent {
-    companion object : UUIDEntityClass<DatabasePermissionTemplateEntity>(PermissionTemplatesTable)
+    companion object : UUIDEntityClass<DatabasePermissionTemplateEntity>(PermissionTemplatesTable),
+        Serializable<DatabasePermissionTemplateEntity> {
+        override fun serialize(instance: DatabasePermissionTemplateEntity): JsonObject = buildJsonObject {
+            put("id", instance.id.value.toString())
+            put("name", instance.name)
+            put("assignedTo", instance.assignedTo.name)
+            put("createdAt", instance.createdAt.toEpochMilli())
+            put("updatedAt", instance.updatedAt.toEpochMilli())
+        }
+
+        override fun deserialize(json: JsonObject): DatabasePermissionTemplateEntity {
+            val id = UUID.fromString(json.getValue("id").jsonPrimitive.content)
+
+            return new(id) {
+                name = json.getValue("name").jsonPrimitive.content
+                assignedTo = PermissionTemplateEntity.AssignedTo
+                    .valueOf(json.getValue("assignedTo").jsonPrimitive.content)
+
+                createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
+                updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
+            }
+        }
+    }
 
     internal val permissionService: PermissionService by inject()
 
     override var name by PermissionTemplatesTable.name
     override var assignedTo by PermissionTemplatesTable.assignedTo
 
-    override val createdAt by PermissionTemplatesTable.createdAt
-    override val updatedAt by PermissionTemplatesTable.updatedAt
+    override var createdAt by PermissionTemplatesTable.createdAt
+    override var updatedAt by PermissionTemplatesTable.updatedAt
 
     override val permissions by DatabasePermissionTemplatePermissionEntity referrersOn
             PermissionTemplatePermissionsTable.templateId

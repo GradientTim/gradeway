@@ -12,6 +12,7 @@ dependencies {
     api(project(":core-api"))
 
     implementation(libs.mojang.brigadier)
+    implementation(libs.apache.commons.compress)
     implementation(libs.apache.commons.configuration2)
 
     implementation(libs.kotlinx.serialization.json)

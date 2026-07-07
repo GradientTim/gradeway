@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.managers.BackupManager
 import dev.gradienttim.gradeway.managers.ConfigManager
 import dev.gradienttim.gradeway.managers.DatabaseManager
 import dev.gradienttim.gradeway.managers.DriverManager
@@ -169,6 +170,24 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable {
      * or validation.
      */
     val configs: ConfigManager
+
+    /**
+     * Manages backup operations within the Gradeway system, providing functionality
+     * for exporting and importing data.
+     *
+     * This property exposes an instance of [BackupManager], which facilitates handling
+     * critical backup-related tasks, such as exporting the current state of the system
+     * to an external format and importing data from a provided file. It serves as a
+     * central component for ensuring the persistence and recovery of system data.
+     *
+     * Typical operations include:
+     * - Exporting the current system state.
+     * - Importing system data from an external file.
+     *
+     * Errors during export or import are encapsulated in sealed `ExportError` or
+     * `ImportError` types, allowing structured handling of unexpected issues.
+     */
+    val backups: BackupManager
 
     /**
      * Represents the current operational state of the Gradeway lifecycle.

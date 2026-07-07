@@ -8,12 +8,18 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTemplateEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
 import dev.gradienttim.gradeway.entity.group.GroupPermissionTemplateEntity
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.CompositeEntity
 import org.jetbrains.exposed.v1.dao.CompositeEntityClass
+import java.util.*
 
 object GroupPermissionTemplatesTable : CompositeIdTable(name = TableConstants.GROUP_PERMISSION_TEMPLATES_TABLE_NAME) {
     val groupId = reference(
@@ -33,7 +39,25 @@ object GroupPermissionTemplatesTable : CompositeIdTable(name = TableConstants.GR
 
 class DatabaseGroupPermissionTemplateEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
     GroupPermissionTemplateEntity {
-    companion object : CompositeEntityClass<DatabaseGroupPermissionTemplateEntity>(GroupPermissionTemplatesTable)
+    companion object : CompositeEntityClass<DatabaseGroupPermissionTemplateEntity>(GroupPermissionTemplatesTable),
+        Serializable<DatabaseGroupPermissionTemplateEntity> {
+        override fun serialize(instance: DatabaseGroupPermissionTemplateEntity): JsonObject = buildJsonObject {
+            put("groupId", instance.groupId.value.toString())
+            put("permissionTemplateId", instance.permissionTemplateId.value.toString())
+        }
+
+        override fun deserialize(json: JsonObject): DatabaseGroupPermissionTemplateEntity = new {
+            groupId = EntityID(
+                id = UUID.fromString(json.getValue("groupId").jsonPrimitive.content),
+                table = GroupsTable
+            )
+
+            permissionTemplateId = EntityID(
+                id = UUID.fromString(json.getValue("permissionTemplateId").jsonPrimitive.content),
+                table = PermissionTemplatesTable
+            )
+        }
+    }
 
     override var groupId by GroupPermissionTemplatesTable.groupId
     override var permissionTemplateId by GroupPermissionTemplatesTable.permissionTemplateId

@@ -8,6 +8,9 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.columns.adventureKey
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.*
+import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
@@ -34,7 +37,31 @@ object PlayerAttributesTable : UUIDTable(name = TableConstants.PLAYER_ATTRIBUTES
 }
 
 class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerAttributeEntity {
-    companion object : UUIDEntityClass<DatabasePlayerAttributeEntity>(PlayerAttributesTable)
+    companion object : UUIDEntityClass<DatabasePlayerAttributeEntity>(PlayerAttributesTable),
+        Serializable<DatabasePlayerAttributeEntity> {
+        override fun serialize(instance: DatabasePlayerAttributeEntity): JsonObject = buildJsonObject {
+            put("playerId", instance.playerId.value.toString())
+            put("type", instance.type.asString())
+            put("key", instance.key.asString())
+            put("value", instance.value)
+            put("createdAt", instance.createdAt.toEpochMilli())
+            put("updatedAt", instance.updatedAt.toEpochMilli())
+        }
+
+        override fun deserialize(json: JsonObject): DatabasePlayerAttributeEntity = new {
+            playerId = EntityID(
+                id = UUID.fromString(json.getValue("playerId").jsonPrimitive.content),
+                table = PlayersTable
+            )
+
+            type = Key.key(json.getValue("type").jsonPrimitive.content)
+            key = Key.key(json.getValue("key").jsonPrimitive.content)
+            value = json.getValue("value").jsonPrimitive.content
+
+            createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
+            updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
+        }
+    }
 
     override var playerId by PlayerAttributesTable.playerId
 
@@ -42,7 +69,7 @@ class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), Player
     override var key by PlayerAttributesTable.key
     override var value by PlayerAttributesTable.value
 
-    override val createdAt by PlayerAttributesTable.createdAt
+    override var createdAt by PlayerAttributesTable.createdAt
     override var updatedAt by PlayerAttributesTable.updatedAt
 
     override val player by DatabasePlayerEntity referencedOn PlayerAttributesTable.playerId

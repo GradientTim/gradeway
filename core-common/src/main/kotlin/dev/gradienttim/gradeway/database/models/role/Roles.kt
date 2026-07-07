@@ -11,6 +11,8 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import dev.gradienttim.gradeway.services.GroupService
 import dev.gradienttim.gradeway.services.RoleService
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
@@ -32,7 +34,26 @@ object RolesTable : UUIDTable(name = TableConstants.ROLES_TABLE_NAME) {
 }
 
 class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinComponent {
-    companion object : UUIDEntityClass<DatabaseRoleEntity>(RolesTable)
+    companion object : UUIDEntityClass<DatabaseRoleEntity>(RolesTable), Serializable<DatabaseRoleEntity> {
+        override fun serialize(instance: DatabaseRoleEntity): JsonObject = buildJsonObject {
+            put("id", instance.id.value.toString())
+            put("name", instance.name)
+            put("weight", instance.weight)
+            put("createdAt", instance.createdAt.toEpochMilli())
+            put("updatedAt", instance.updatedAt.toEpochMilli())
+        }
+
+        override fun deserialize(json: JsonObject): DatabaseRoleEntity {
+            val id = UUID.fromString(json.getValue("id").jsonPrimitive.content)
+
+            return new(id) {
+                name = json.getValue("name").jsonPrimitive.content
+                weight = json.getValue("weight").jsonPrimitive.int
+                createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
+                updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
+            }
+        }
+    }
 
     internal val roleService: RoleService by inject()
     internal val groupService: GroupService by inject()
@@ -41,7 +62,7 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     override var name by RolesTable.name
     override var weight by RolesTable.weight
 
-    override val createdAt by RolesTable.createdAt
+    override var createdAt by RolesTable.createdAt
     override var updatedAt by RolesTable.updatedAt
 
     override val groups by DatabaseRoleGroupEntity referrersOn RoleGroupsTable.roleId

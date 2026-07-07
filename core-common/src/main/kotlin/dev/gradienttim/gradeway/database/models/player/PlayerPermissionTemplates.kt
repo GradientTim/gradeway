@@ -8,12 +8,18 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTemplateEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionTemplateEntity
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.dao.CompositeEntity
 import org.jetbrains.exposed.v1.dao.CompositeEntityClass
+import java.util.*
 
 object PlayerPermissionTemplatesTable : CompositeIdTable(name = TableConstants.PLAYER_PERMISSION_TEMPLATES_TABLE_NAME) {
     val playerId = reference(
@@ -33,7 +39,25 @@ object PlayerPermissionTemplatesTable : CompositeIdTable(name = TableConstants.P
 
 class DatabasePlayerPermissionTemplateEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
     PlayerPermissionTemplateEntity {
-    companion object : CompositeEntityClass<DatabasePlayerPermissionTemplateEntity>(PlayerPermissionTemplatesTable)
+    companion object : CompositeEntityClass<DatabasePlayerPermissionTemplateEntity>(PlayerPermissionTemplatesTable),
+        Serializable<DatabasePlayerPermissionTemplateEntity> {
+        override fun serialize(instance: DatabasePlayerPermissionTemplateEntity) = buildJsonObject {
+            put("playerId", instance.playerId.value.toString())
+            put("permissionTemplateId", instance.permissionTemplateId.value.toString())
+        }
+
+        override fun deserialize(json: JsonObject) = new {
+            playerId = EntityID(
+                id = UUID.fromString(json.getValue("playerId").jsonPrimitive.content),
+                table = PlayersTable
+            )
+
+            permissionTemplateId = EntityID(
+                id = UUID.fromString(json.getValue("permissionTemplateId").jsonPrimitive.content),
+                table = PermissionTemplatesTable
+            )
+        }
+    }
 
     override var playerId by PlayerPermissionTemplatesTable.playerId
     override var permissionTemplateId by PlayerPermissionTemplatesTable.permissionTemplateId

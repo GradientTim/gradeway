@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.command.command
 import dev.gradienttim.gradeway.command.execute
 import dev.gradienttim.gradeway.command.literal
+import dev.gradienttim.gradeway.commands.gradeway.backupBuilder
 import dev.gradienttim.gradeway.commands.gradeway.groupBuilder
 import dev.gradienttim.gradeway.commands.gradeway.permissionBuilder
 import dev.gradienttim.gradeway.commands.gradeway.playerBuilder
@@ -26,6 +27,7 @@ fun <TSource> gradewayCommandBuilder(
         roleBuilder(gradeway, hasPermission, sourceToAudience)
         groupBuilder(gradeway, hasPermission, sourceToAudience)
         playerBuilder(gradeway, hasPermission, sourceToAudience)
+        backupBuilder(gradeway, hasPermission, sourceToAudience)
         permissionBuilder(gradeway, hasPermission, sourceToAudience)
 
         literal("reload") {

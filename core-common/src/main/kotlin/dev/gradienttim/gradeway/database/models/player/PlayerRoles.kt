@@ -8,6 +8,8 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
+import dev.gradienttim.gradeway.utilities.Serializable
+import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.CompositeIdTable
@@ -17,6 +19,7 @@ import org.jetbrains.exposed.v1.dao.CompositeEntityClass
 import org.jetbrains.exposed.v1.dao.EntityBatchUpdate
 import org.jetbrains.exposed.v1.javatime.timestamp
 import java.time.Instant
+import java.util.*
 
 object PlayerRolesTable : CompositeIdTable(name = TableConstants.PLAYER_ROLES_TABLE_NAME) {
     val playerId = reference(
@@ -47,7 +50,39 @@ object PlayerRolesTable : CompositeIdTable(name = TableConstants.PLAYER_ROLES_TA
 }
 
 class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id), PlayerRoleEntity {
-    companion object : CompositeEntityClass<DatabasePlayerRoleEntity>(PlayerRolesTable)
+    companion object : CompositeEntityClass<DatabasePlayerRoleEntity>(PlayerRolesTable),
+        Serializable<DatabasePlayerRoleEntity> {
+        override fun serialize(instance: DatabasePlayerRoleEntity): JsonObject = buildJsonObject {
+            put("playerId", instance.playerId.value.toString())
+            put("roleId", instance.roleId.value.toString())
+            put("untilAt", instance.untilAt?.toEpochMilli())
+            put("pausedAt", instance.pausedAt?.toEpochMilli())
+            put("createdAt", instance.createdAt.toEpochMilli())
+            put("updatedAt", instance.updatedAt.toEpochMilli())
+        }
+
+        override fun deserialize(json: JsonObject): DatabasePlayerRoleEntity = new {
+            playerId = EntityID(
+                id = UUID.fromString(json.getValue("playerId").jsonPrimitive.content),
+                table = PlayersTable
+            )
+            roleId = EntityID(
+                id = UUID.fromString(json.getValue("roleId").jsonPrimitive.content),
+                table = RolesTable
+            )
+
+            json.getValue("untilAt").jsonPrimitive.longOrNull?.let { rawUntilAt ->
+                untilAt = Instant.ofEpochMilli(rawUntilAt)
+            }
+
+            json.getValue("pausedAt").jsonPrimitive.longOrNull?.let { rawPausedAt ->
+                pausedAt = Instant.ofEpochMilli(rawPausedAt)
+            }
+
+            createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
+            updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
+        }
+    }
 
     override var playerId by PlayerRolesTable.playerId
     override var roleId by PlayerRolesTable.roleId
@@ -55,7 +90,7 @@ class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
     override var untilAt by PlayerRolesTable.untilAt
     override var pausedAt by PlayerRolesTable.pausedAt
 
-    override val createdAt by PlayerRolesTable.createdAt
+    override var createdAt by PlayerRolesTable.createdAt
     override var updatedAt by PlayerRolesTable.updatedAt
 
     override val player by DatabasePlayerEntity referencedOn PlayerRolesTable.playerId

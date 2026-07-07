@@ -19,6 +19,7 @@ koin-core = { module = "io.insert-koin:koin-core", version = "4.1.1" }
 mojang-brigadier = { module = "com.mojang:brigadier", version = "1.0.18" }
 google-devtools-ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.3.5" }
 apache-commons-configuration2 = { module = "org.apache.commons:commons-configuration2", version = "2.11.0" }
+apache-commons-compress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
