@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.services
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
@@ -134,6 +135,86 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
      */
     fun existsByIdOrName(value: String): Boolean
 
+    /**
+     * Adds an existing role as a parent of another role, so the child role inherits the parent's
+     * attributes and permissions.
+     *
+     * @param role The role that will inherit from the parent.
+     * @param parentId The unique identifier of the role to add as a parent.
+     * @return Either an error of type [AddParentError] if the operation fails,
+     *         or the created [RoleParentEntity] representing the relationship.
+     */
+    fun addParent(role: RoleEntity, parentId: UUID): Either<AddParentError, RoleParentEntity>
+
+    /**
+     * Adds an existing role as a parent of another role, so the child role inherits the parent's
+     * attributes and permissions.
+     *
+     * @param role The role that will inherit from the parent.
+     * @param parent The role entity to add as a parent.
+     * @return Either an error of type [AddParentError] if the operation fails,
+     *         or the created [RoleParentEntity] representing the relationship.
+     */
+    fun addParent(role: RoleEntity, parent: RoleEntity): Either<AddParentError, RoleParentEntity>
+
+    /**
+     * Adds an existing role as a parent of another role, identified by id or name, so the child role
+     * inherits the parent's attributes and permissions.
+     *
+     * @param roleIdOrName The unique identifier or name of the role that will inherit from the parent.
+     * @param parentId The unique identifier of the role to add as a parent.
+     * @return Either an error of type [AddParentError] if the operation fails,
+     *         or the created [RoleParentEntity] representing the relationship.
+     */
+    fun addParent(roleIdOrName: String, parentId: UUID): Either<AddParentError, RoleParentEntity>
+
+    /**
+     * Adds an existing role as a parent of another role, identified by id or name, so the child role
+     * inherits the parent's attributes and permissions.
+     *
+     * @param roleIdOrName The unique identifier or name of the role that will inherit from the parent.
+     * @param parent The role entity to add as a parent.
+     * @return Either an error of type [AddParentError] if the operation fails,
+     *         or the created [RoleParentEntity] representing the relationship.
+     */
+    fun addParent(roleIdOrName: String, parent: RoleEntity): Either<AddParentError, RoleParentEntity>
+
+    /**
+     * Removes an existing parent-role relationship from a role.
+     *
+     * @param role The role to remove the parent from.
+     * @param parentId The unique identifier of the parent role to remove.
+     * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
+     */
+    fun removeParent(role: RoleEntity, parentId: UUID): Either<RemoveParentError, Unit>
+
+    /**
+     * Removes an existing parent-role relationship from a role.
+     *
+     * @param role The role to remove the parent from.
+     * @param parent The parent role entity to remove.
+     * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
+     */
+    fun removeParent(role: RoleEntity, parent: RoleEntity): Either<RemoveParentError, Unit>
+
+    /**
+     * Removes an existing parent-role relationship from a role, identified by id or name.
+     *
+     * @param roleIdOrName The unique identifier or name of the role to remove the parent from.
+     * @param parentId The unique identifier of the parent role to remove.
+     * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
+     */
+    fun removeParent(roleIdOrName: String, parentId: UUID): Either<RemoveParentError, Unit>
+
+    /**
+     * Removes an existing parent-role relationship from a role, identified by id or name.
+     *
+     * @param roleIdOrName The unique identifier or name of the role to remove the parent from.
+     * @param parent The parent role entity to remove.
+     * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
+     */
+    fun removeParent(roleIdOrName: String, parent: RoleEntity): Either<RemoveParentError, Unit>
+
     sealed interface CreateRoleError {
         object EntityAlreadyExists : CreateRoleError
         object InvalidName : CreateRoleError
@@ -154,5 +235,21 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     sealed interface SetWeightError {
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
+    }
+
+    sealed interface AddParentError {
+        object EntityNotFound : AddParentError
+        object TargetNotFound : AddParentError
+        object SelfReference : AddParentError
+        object AlreadyParent : AddParentError
+        object CyclicRelation : AddParentError
+        data class Unexpected(val throwable: Throwable) : AddParentError
+    }
+
+    sealed interface RemoveParentError {
+        object EntityNotFound : RemoveParentError
+        object TargetNotFound : RemoveParentError
+        object NotParent : RemoveParentError
+        data class Unexpected(val throwable: Throwable) : RemoveParentError
     }
 }

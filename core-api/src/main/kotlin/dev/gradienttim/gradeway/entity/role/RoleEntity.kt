@@ -117,6 +117,22 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
     override val permissionTemplates: SizedIterable<RolePermissionTemplateEntity>
 
     /**
+     * Represents the collection of parent-role relationships for this role entity, i.e. the roles
+     * this role inherits attributes and permissions from.
+     *
+     * Each entry is a [RoleParentEntity] linking this role (as the child) to one of its parent roles.
+     */
+    val parents: SizedIterable<RoleParentEntity>
+
+    /**
+     * Represents the collection of child-role relationships for this role entity, i.e. the roles
+     * that inherit attributes and permissions from this role.
+     *
+     * Each entry is a [RoleParentEntity] linking this role (as the parent) to one of its child roles.
+     */
+    val children: SizedIterable<RoleParentEntity>
+
+    /**
      * Updates the name of the role.
      *
      * @param name The new name to assign to the role.

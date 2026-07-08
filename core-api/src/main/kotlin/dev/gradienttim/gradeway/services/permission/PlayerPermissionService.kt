@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
@@ -322,4 +323,67 @@ interface PlayerPermissionService {
      * indicating whether the permission is granted (true) or denied (false).
      */
     fun getPlayerPermissions(idOrName: String): Set<PlayerPermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a player, i.e., their own enabled
+     * permissions plus permissions inherited from assigned templates and every active (non-expired,
+     * non-paused) role assigned to them (including each role's groups and parent roles, recursively).
+     *
+     * @param id The unique identifier of the player.
+     * @return The set of [PermissionEntity] instances effectively granted to the player.
+     */
+    fun getEffectivePlayerPermissions(id: UUID): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a player, i.e., their own enabled
+     * permissions plus permissions inherited from assigned templates and every active (non-expired,
+     * non-paused) role assigned to them (including each role's groups and parent roles, recursively).
+     *
+     * @param entity The player entity.
+     * @return The set of [PermissionEntity] instances effectively granted to the player.
+     */
+    fun getEffectivePlayerPermissions(entity: PlayerEntity): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a player, i.e., their own enabled
+     * permissions plus permissions inherited from assigned templates and every active (non-expired,
+     * non-paused) role assigned to them (including each role's groups and parent roles, recursively).
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @return The set of [PermissionEntity] instances effectively granted to the player.
+     */
+    fun getEffectivePlayerPermissions(idOrName: String): Set<PermissionEntity>
+
+    /**
+     * Checks whether a player effectively has the specified permission, considering their own
+     * permissions plus everything inherited from templates and their active roles (including each
+     * role's groups and parent roles).
+     *
+     * @param id The unique identifier of the player.
+     * @param permission The name of the permission to check.
+     * @return `true` if the player effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectivePlayerPermission(id: UUID, permission: String): Boolean
+
+    /**
+     * Checks whether a player effectively has the specified permission, considering their own
+     * permissions plus everything inherited from templates and their active roles (including each
+     * role's groups and parent roles).
+     *
+     * @param entity The player entity to check.
+     * @param permission The name of the permission to check.
+     * @return `true` if the player effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectivePlayerPermission(entity: PlayerEntity, permission: String): Boolean
+
+    /**
+     * Checks whether a player effectively has the specified permission, considering their own
+     * permissions plus everything inherited from templates and their active roles (including each
+     * role's groups and parent roles).
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @param permission The name of the permission to check.
+     * @return `true` if the player effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean
 }

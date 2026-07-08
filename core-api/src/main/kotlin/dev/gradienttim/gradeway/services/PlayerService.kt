@@ -123,6 +123,19 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      */
     fun getPrimaryRole(entity: PlayerEntity): RoleEntity?
 
+    /**
+     * Removes every expired, non-paused role from each of the given players in a single batched
+     * operation. Intended for periodic maintenance sweeps over a bounded set of players (e.g. all
+     * currently online players) rather than a per-player loop.
+     *
+     * @param playerIds The unique identifiers of the players whose expired roles should be removed.
+     * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
+     *         `(playerId, role)` pairs describing every role that was removed.
+     */
+    fun removeExpiredRoles(
+        playerIds: Collection<UUID>
+    ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
+
     sealed interface CreatePlayerError {
         object EntityAlreadyExists : CreatePlayerError
         object InvalidName : CreatePlayerError
@@ -192,5 +205,10 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
         object TargetNotFound : SetPrimaryRoleError
         object AlreadyPrimary : SetPrimaryRoleError
         data class Unexpected(val throwable: Throwable) : SetPrimaryRoleError
+    }
+
+    sealed interface RemoveExpiredRolesError {
+        object EntityNotFound : RemoveExpiredRolesError
+        data class Unexpected(val throwable: Throwable) : RemoveExpiredRolesError
     }
 }

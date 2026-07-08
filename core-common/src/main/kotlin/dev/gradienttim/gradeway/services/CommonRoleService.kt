@@ -10,8 +10,10 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
+import dev.gradienttim.gradeway.database.models.role.DatabaseRoleParentEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isValidName
 import net.kyori.adventure.key.Key
@@ -140,6 +142,123 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
 
     override fun existsByIdOrName(value: String): Boolean =
         findByIdOrName(value) != null
+
+    /**
+     * Returns whether [candidateAncestor] is reachable by walking [role]'s parent chain transitively,
+     * i.e., whether [candidateAncestor] is (directly or indirectly) a parent of [role].
+     */
+    private fun isAncestorOf(
+        candidateAncestor: RoleEntity,
+        role: RoleEntity,
+        visitedRoleIds: MutableSet<UUID> = mutableSetOf()
+    ): Boolean {
+        if (!visitedRoleIds.add(role.id.value)) {
+            return false
+        }
+        return role.parents.any { roleParentEntity ->
+            roleParentEntity.parentId == candidateAncestor.id ||
+                isAncestorOf(candidateAncestor, roleParentEntity.parent, visitedRoleIds)
+        }
+    }
+
+    override fun addParent(
+        role: RoleEntity,
+        parentId: UUID
+    ): Either<RoleService.AddParentError, RoleParentEntity> = either {
+        val parent = findById(parentId) ?: raise(RoleService.AddParentError.TargetNotFound)
+        return addParent(role, parent)
+    }
+
+    override fun addParent(
+        role: RoleEntity,
+        parent: RoleEntity
+    ): Either<RoleService.AddParentError, RoleParentEntity> = either {
+        if (role.id == parent.id) {
+            raise(RoleService.AddParentError.SelfReference)
+        }
+
+        transaction(gradeway.database) {
+            if (role.parents.any { it.parentId == parent.id }) {
+                raise(RoleService.AddParentError.AlreadyParent)
+            }
+
+            if (isAncestorOf(role, parent)) {
+                raise(RoleService.AddParentError.CyclicRelation)
+            }
+
+            try {
+                DatabaseRoleParentEntity.new {
+                    this.parentId = parent.id
+                    this.childId = role.id
+                }
+            } catch (throwable: Throwable) {
+                raise(RoleService.AddParentError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun addParent(
+        roleIdOrName: String,
+        parentId: UUID
+    ): Either<RoleService.AddParentError, RoleParentEntity> = either {
+        val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
+        val parent = findById(parentId) ?: raise(RoleService.AddParentError.TargetNotFound)
+        return addParent(role, parent)
+    }
+
+    override fun addParent(
+        roleIdOrName: String,
+        parent: RoleEntity
+    ): Either<RoleService.AddParentError, RoleParentEntity> = either {
+        val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
+        return addParent(role, parent)
+    }
+
+    override fun removeParent(
+        role: RoleEntity,
+        parentId: UUID
+    ): Either<RoleService.RemoveParentError, Unit> = either {
+        val parent = findById(parentId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
+        return removeParent(role, parent)
+    }
+
+    override fun removeParent(
+        role: RoleEntity,
+        parent: RoleEntity
+    ): Either<RoleService.RemoveParentError, Unit> = either {
+        transaction(gradeway.database) {
+            val roleParentEntity = role.parents.find { it.parentId == parent.id }
+            if (roleParentEntity == null) {
+                raise(RoleService.RemoveParentError.NotParent)
+            }
+            if (roleParentEntity !is DatabaseRoleParentEntity) {
+                val throwable = Throwable("Entity is not a type of DatabaseRoleParentEntity")
+                raise(RoleService.RemoveParentError.Unexpected(throwable))
+            }
+            try {
+                roleParentEntity.delete()
+            } catch (throwable: Throwable) {
+                raise(RoleService.RemoveParentError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun removeParent(
+        roleIdOrName: String,
+        parentId: UUID
+    ): Either<RoleService.RemoveParentError, Unit> = either {
+        val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
+        val parent = findById(parentId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
+        return removeParent(role, parent)
+    }
+
+    override fun removeParent(
+        roleIdOrName: String,
+        parent: RoleEntity
+    ): Either<RoleService.RemoveParentError, Unit> = either {
+        val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
+        return removeParent(role, parent)
+    }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =
         attributeService.addRoleAttribute(id, attribute)

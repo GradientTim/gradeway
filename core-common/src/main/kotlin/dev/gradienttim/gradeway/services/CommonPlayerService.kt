@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerEntity
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerRoleEntity
+import dev.gradienttim.gradeway.database.models.player.PlayerRolesTable
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
@@ -18,7 +19,11 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isValidName
 import net.kyori.adventure.key.Key
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNull
+import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
@@ -169,6 +174,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         role: RoleEntity,
         until: Instant?
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
+        removeExpiredRoles(player)
+
         if (until != null && until < gradeway.now()) {
             raise(PlayerService.AddRoleError.UntilInPast)
         }
@@ -237,6 +244,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity
     ): Either<PlayerService.RemoveRoleError, Unit> = either {
+        removeExpiredRoles(player)
+
         transaction(gradeway.database) {
             val playerRoleEntity = player.roles.find { it.roleId == role.id }
             if (playerRoleEntity == null) {
@@ -303,6 +312,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         role: RoleEntity,
         untilAt: Instant
     ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+        removeExpiredRoles(player)
+
         if (untilAt < gradeway.now()) {
             raise(PlayerService.SetRoleUntilAtError.UntilInPast)
         }
@@ -376,6 +387,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         role: RoleEntity,
         pausedAt: Instant
     ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+        removeExpiredRoles(player)
+
         if (pausedAt < gradeway.now()) {
             raise(PlayerService.SetRolePausedAtError.PauseInPast)
         }
@@ -445,6 +458,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity
     ): Either<PlayerService.PauseRoleError, Unit> = either {
+        removeExpiredRoles(player)
+
         transaction(gradeway.database) {
             val playerRoleEntity = player.roles.find { it.roleId == role.id }
             if (playerRoleEntity == null) {
@@ -511,6 +526,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity
     ): Either<PlayerService.ResumeRoleError, Unit> = either {
+        removeExpiredRoles(player)
+
         transaction(gradeway.database) {
             val playerRoleEntity = player.roles.find { it.roleId == role.id }
             if (playerRoleEntity == null) {
@@ -582,6 +599,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity
     ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
+        removeExpiredRoles(player)
+
         if (player.primaryRoleId == role.id) {
             raise(PlayerService.SetPrimaryRoleError.AlreadyPrimary)
         }
@@ -615,6 +634,74 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
         val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
         return setPrimaryRole(player, role)
+    }
+
+    /**
+     * Deletes the given already-expired player-role rows and returns the `(playerId, role)` pair for
+     * each one removed. Single choke point for physically removing expired role assignments, so a
+     * future "player lost role" event dispatch only needs to be wired in here.
+     */
+    private fun deleteExpiredPlayerRoleRows(
+        rows: List<DatabasePlayerRoleEntity>
+    ): List<Pair<UUID, RoleEntity>> {
+        return rows.map { playerRoleEntity ->
+            val playerId = playerRoleEntity.playerId.value
+            val role = playerRoleEntity.role
+            playerRoleEntity.delete()
+            playerId to role
+        }
+    }
+
+    override fun removeExpiredRoles(
+        playerId: UUID
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>> = either {
+        val player = findById(playerId) ?: raise(PlayerService.RemoveExpiredRolesError.EntityNotFound)
+        return removeExpiredRoles(player)
+    }
+
+    override fun removeExpiredRoles(
+        player: PlayerEntity
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>> = either {
+        transaction(gradeway.database) {
+            val expiredPlayerRoleEntities = player.roles
+                .filter { it.pausedAt == null && it.untilAt != null && it.untilAt!! <= gradeway.now() }
+                .filterIsInstance<DatabasePlayerRoleEntity>()
+
+            try {
+                deleteExpiredPlayerRoleRows(expiredPlayerRoleEntities).map { it.second }
+            } catch (throwable: Throwable) {
+                raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
+            }
+        }
+    }
+
+    override fun removeExpiredRoles(
+        playerIdOrName: String
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.RemoveExpiredRolesError.EntityNotFound)
+        return removeExpiredRoles(player)
+    }
+
+    override fun removeExpiredRoles(
+        playerIds: Collection<UUID>
+    ): Either<PlayerService.RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>> = either {
+        if (playerIds.isEmpty()) {
+            return@either emptyList()
+        }
+
+        transaction(gradeway.database) {
+            val expiredPlayerRoleEntities = DatabasePlayerRoleEntity.find {
+                (PlayerRolesTable.playerId inList playerIds) and
+                    PlayerRolesTable.pausedAt.isNull() and
+                    (PlayerRolesTable.untilAt less gradeway.now())
+            }.toList()
+
+            try {
+                deleteExpiredPlayerRoleRows(expiredPlayerRoleEntities)
+            } catch (throwable: Throwable) {
+                raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
+            }
+        }
     }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =

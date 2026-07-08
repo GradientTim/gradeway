@@ -7,12 +7,15 @@ package dev.gradienttim.gradeway.listeners
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.LoginEvent
-import dev.gradienttim.gradeway.Gradeway
+import dev.gradienttim.gradeway.GradewayLifecycle
 
-class ConnectionListener(val gradeway: Gradeway) {
+class ConnectionListener(val gradeway: GradewayLifecycle) {
     @Subscribe(order = PostOrder.EARLY, priority = Short.MAX_VALUE)
     fun onLogin(event: LoginEvent) {
         val player = event.player
         gradeway.players.create(player.uniqueId, player.username)
+
+        gradeway.players.removeExpiredRoles(player.uniqueId)
+            .onLeft { error -> gradeway.logger.error("Failed to remove expired roles for ${player.username}: $error") }
     }
 }

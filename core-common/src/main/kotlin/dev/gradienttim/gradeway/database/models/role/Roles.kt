@@ -71,6 +71,9 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     override val permissionTemplates by DatabaseRolePermissionTemplateEntity referrersOn
             RolePermissionTemplatesTable.roleId
 
+    override val parents by DatabaseRoleParentEntity referrersOn RoleParentsTable.childId
+    override val children by DatabaseRoleParentEntity referrersOn RoleParentsTable.parentId
+
     override fun setName(name: String) = roleService.setName(this, name)
     override fun setWeight(weight: Int) = roleService.setWeight(this, weight)
 

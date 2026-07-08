@@ -14,9 +14,7 @@ class GradewayPermissibleBase(val gradeway: Gradeway, val player: Player) : Perm
     override fun isPermissionSet(perm: Permission): Boolean = this.isPermissionSet(perm.name)
     override fun hasPermission(perm: Permission): Boolean = this.hasPermission(perm.name)
 
-    @Suppress("ForbiddenComment")
-    // TODO: ADD ROLE PERMISSIONS
     override fun hasPermission(inName: String): Boolean {
-        return gradeway.players.hasPermission(player.uniqueId, inName)
+        return gradeway.permissions.hasEffectivePlayerPermission(player.uniqueId, inName)
     }
 }

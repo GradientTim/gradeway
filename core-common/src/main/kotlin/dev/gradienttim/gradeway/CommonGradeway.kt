@@ -14,6 +14,10 @@ import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.KoinApplication
@@ -29,6 +33,7 @@ class CommonGradeway(
     override val directory: File,
 ) : GradewayLifecycle, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
+    override var backgroundScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
@@ -55,6 +60,8 @@ class CommonGradeway(
     override fun load(): Either<Throwable, Unit> = either {
         if (!state.allowLoad) raise(GradewayAlreadyLoadedThrowable())
         state = GradewayState.PROCESSING
+
+        backgroundScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         val serviceModule = module {
             single<PermissionService> { CommonPermissionService(this@CommonGradeway) }
@@ -99,6 +106,8 @@ class CommonGradeway(
     override fun unload(): Either<Throwable, Unit> = either {
         if (!state.allowUnload) raise(GradewayAlreadyUnloadedThrowable())
         state = GradewayState.PROCESSING
+
+        backgroundScope.cancel()
 
         languages.unload().onLeft { raise(it) }
         databases.unload().onLeft { raise(it) }

@@ -502,4 +502,36 @@ interface RolePlayerService {
      *         or Unit if the primary role is successfully set.
      */
     fun setPrimaryRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.SetPrimaryRoleError, Unit>
+
+    /**
+     * Removes every role assigned to the player identified by the given unique identifier that has
+     * expired (its `untilAt` has passed) and is not currently paused.
+     *
+     * @param playerId The unique identifier of the player whose expired roles should be removed.
+     * @return Either an error of type [PlayerService.RemoveExpiredRolesError] if the operation fails,
+     *         or the list of [RoleEntity] instances that were removed.
+     */
+    fun removeExpiredRoles(playerId: UUID): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
+
+    /**
+     * Removes every role assigned to the specified player that has expired (its `untilAt` has passed)
+     * and is not currently paused.
+     *
+     * @param player The player entity whose expired roles should be removed.
+     * @return Either an error of type [PlayerService.RemoveExpiredRolesError] if the operation fails,
+     *         or the list of [RoleEntity] instances that were removed.
+     */
+    fun removeExpiredRoles(player: PlayerEntity): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
+
+    /**
+     * Removes every role assigned to the player identified by their ID or name that has expired
+     * (its `untilAt` has passed) and is not currently paused.
+     *
+     * @param playerIdOrName The unique identifier or name of the player whose expired roles should be removed.
+     * @return Either an error of type [PlayerService.RemoveExpiredRolesError] if the operation fails,
+     *         or the list of [RoleEntity] instances that were removed.
+     */
+    fun removeExpiredRoles(
+        playerIdOrName: String
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
 }

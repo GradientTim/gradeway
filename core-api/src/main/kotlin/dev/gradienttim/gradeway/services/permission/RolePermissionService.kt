@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
@@ -324,4 +325,64 @@ interface RolePermissionService {
      * @return A set of RolePermissionEntity objects representing the permissions linked to the specified role.
      */
     fun getRolePermissions(idOrName: String): Set<RolePermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a role, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates, the groups it belongs to,
+     * and its parent roles (recursively).
+     *
+     * @param id The unique identifier of the role.
+     * @return The set of [PermissionEntity] instances effectively granted to the role.
+     */
+    fun getEffectiveRolePermissions(id: UUID): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a role, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates, the groups it belongs to,
+     * and its parent roles (recursively).
+     *
+     * @param entity The role entity.
+     * @return The set of [PermissionEntity] instances effectively granted to the role.
+     */
+    fun getEffectiveRolePermissions(entity: RoleEntity): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a role, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates, the groups it belongs to,
+     * and its parent roles (recursively).
+     *
+     * @param idOrName The unique identifier or name of the role.
+     * @return The set of [PermissionEntity] instances effectively granted to the role.
+     */
+    fun getEffectiveRolePermissions(idOrName: String): Set<PermissionEntity>
+
+    /**
+     * Checks whether a role effectively has the specified permission, considering its own
+     * permissions plus everything inherited from templates, groups, and parent roles.
+     *
+     * @param id The unique identifier of the role.
+     * @param permission The name of the permission to check.
+     * @return `true` if the role effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveRolePermission(id: UUID, permission: String): Boolean
+
+    /**
+     * Checks whether a role effectively has the specified permission, considering its own
+     * permissions plus everything inherited from templates, groups, and parent roles.
+     *
+     * @param entity The role entity to check.
+     * @param permission The name of the permission to check.
+     * @return `true` if the role effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveRolePermission(entity: RoleEntity, permission: String): Boolean
+
+    /**
+     * Checks whether a role effectively has the specified permission, considering its own
+     * permissions plus everything inherited from templates, groups, and parent roles.
+     *
+     * @param idOrName The unique identifier or name of the role.
+     * @param permission The name of the permission to check.
+     * @return `true` if the role effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveRolePermission(idOrName: String, permission: String): Boolean
 }

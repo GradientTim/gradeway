@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.services.permission
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import net.kyori.adventure.util.TriState
 import java.util.*
@@ -322,4 +323,61 @@ interface GroupPermissionService {
      * indicating whether the permission is granted (true) or denied (false).
      */
     fun getGroupPermissions(idOrName: String): Set<GroupPermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a group, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates.
+     *
+     * @param id The unique identifier of the group.
+     * @return The set of [PermissionEntity] instances effectively granted to the group.
+     */
+    fun getEffectiveGroupPermissions(id: UUID): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a group, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates.
+     *
+     * @param entity The group entity.
+     * @return The set of [PermissionEntity] instances effectively granted to the group.
+     */
+    fun getEffectiveGroupPermissions(entity: GroupEntity): Set<PermissionEntity>
+
+    /**
+     * Resolves the full set of permissions effectively granted to a group, i.e., its own enabled
+     * permissions plus permissions inherited from its assigned templates.
+     *
+     * @param idOrName The unique identifier or name of the group.
+     * @return The set of [PermissionEntity] instances effectively granted to the group.
+     */
+    fun getEffectiveGroupPermissions(idOrName: String): Set<PermissionEntity>
+
+    /**
+     * Checks whether a group effectively has the specified permission, considering its own
+     * permissions plus everything inherited from its assigned templates.
+     *
+     * @param id The unique identifier of the group.
+     * @param permission The name of the permission to check.
+     * @return `true` if the group effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveGroupPermission(id: UUID, permission: String): Boolean
+
+    /**
+     * Checks whether a group effectively has the specified permission, considering its own
+     * permissions plus everything inherited from its assigned templates.
+     *
+     * @param entity The group entity to check.
+     * @param permission The name of the permission to check.
+     * @return `true` if the group effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveGroupPermission(entity: GroupEntity, permission: String): Boolean
+
+    /**
+     * Checks whether a group effectively has the specified permission, considering its own
+     * permissions plus everything inherited from its assigned templates.
+     *
+     * @param idOrName The unique identifier or name of the group.
+     * @param permission The name of the permission to check.
+     * @return `true` if the group effectively has the permission, otherwise `false`.
+     */
+    fun hasEffectiveGroupPermission(idOrName: String, permission: String): Boolean
 }

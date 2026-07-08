@@ -6,18 +6,19 @@ package dev.gradienttim.gradeway.bukkit
 
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
+import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
+import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
 class GradewayPlugin : JavaPlugin() {
-    internal var entityPermissionHandle: MethodHandle? = null
-        private set
+    private var entityPermissionHandle: MethodHandle? = null
 
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
@@ -43,6 +44,10 @@ class GradewayPlugin : JavaPlugin() {
 
     private fun registerEvents() {
         server.pluginManager.registerEvents(ConnectionListener(this), this)
+    }
+
+    fun applyEntityPermissions(player: Player) {
+        entityPermissionHandle?.invoke(player, GradewayPermissibleBase(gradeway, player))
     }
 
     private fun registerCommands() {

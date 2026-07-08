@@ -153,6 +153,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
 
                 roleAttributesBuilder(gradeway, hasPermission, sourceToAudience)
                 rolePermissionsBuilder(gradeway, hasPermission, sourceToAudience)
+                roleParentsBuilder(gradeway, hasPermission, sourceToAudience)
 
                 literal("setWeight") {
                     requires { hasPermission(it, "gradeway.role.setWeight") }
@@ -944,6 +945,243 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.rolePermissionsBuilder(
                         )
                     )
                     return@execute
+                }
+            }
+        }
+    }
+}
+
+internal fun <TSource> ArgumentBuilder<TSource, *>.roleParentsBuilder(
+    gradeway: CommonGradeway,
+    hasPermission: (source: TSource, permission: String) -> Boolean,
+    sourceToAudience: (source: TSource) -> Audience,
+) {
+    literal("parents") {
+        requires { hasPermission(it, "gradeway.role.parents") }
+
+        literal("add") {
+            requires { hasPermission(it, "gradeway.role.parents.add") }
+
+            string("parentId") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val parentId = stringParam("parentId")
+
+                    val parentUniqueId = runCatching {
+                        UUID.fromString(parentId)
+                    }.getOrNull()
+
+                    if (parentUniqueId == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.role.addParent.invalidUuid",
+                                Component.text(idOrName),
+                                Component.text(parentId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.roles.addParent(idOrName, parentUniqueId)
+                        .onLeft { error ->
+                            if (error is AddParentError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddParentError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddParentError.SelfReference) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.selfReference",
+                                        Component.text(idOrName)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddParentError.AlreadyParent) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.alreadyParent",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddParentError.CyclicRelation) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.cyclicRelation",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddParentError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.addParent.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(parentId),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.addParent.success",
+                                    Component.text(idOrName),
+                                    Component.text(parentId)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("remove") {
+            requires { hasPermission(it, "gradeway.role.parents.remove") }
+
+            string("parentId") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestRoles(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val parentId = stringParam("parentId")
+
+                    val parentUniqueId = runCatching {
+                        UUID.fromString(parentId)
+                    }.getOrNull()
+
+                    if (parentUniqueId == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.role.removeParent.invalidUuid",
+                                Component.text(idOrName),
+                                Component.text(parentId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.roles.removeParent(idOrName, parentUniqueId)
+                        .onLeft { error ->
+                            if (error is RemoveParentError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.removeParent.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemoveParentError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.removeParent.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemoveParentError.NotParent) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.removeParent.notParent",
+                                        Component.text(idOrName),
+                                        Component.text(parentId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemoveParentError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.removeParent.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(parentId),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.removeParent.success",
+                                    Component.text(idOrName),
+                                    Component.text(parentId)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("list") {
+            requires { hasPermission(it, "gradeway.role.parents.list") }
+
+            execute {
+                val audience = sourceToAudience(source)
+
+                val idOrName = stringParam("idOrName")
+
+                val entity = gradeway.roles.findByIdOrName(idOrName)
+                if (entity == null) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.role.listParents.entityNotFound",
+                            Component.text(idOrName)
+                        )
+                    )
+                    return@execute
+                }
+
+                entity.parents.forEach { roleParentEntity ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.role.listParents.entry",
+                            Component.text(roleParentEntity.parent.name)
+                        )
+                    )
                 }
             }
         }

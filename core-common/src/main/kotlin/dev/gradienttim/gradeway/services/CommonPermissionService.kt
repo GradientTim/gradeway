@@ -30,6 +30,7 @@ import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.reference.PermissionReference
+import kotlinx.coroutines.launch
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -1457,7 +1458,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun hasGroupPermission(
         entity: GroupEntity,
         permission: String
-    ): Boolean = hasGroupPermission(entity, permission)
+    ): Boolean = hasEntityPermission(entity, permission)
 
     override fun hasGroupPermission(idOrName: String, permission: String): Boolean {
         val entity = groupsService.findByIdOrName(idOrName) ?: return false
@@ -1536,12 +1537,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     ): Boolean {
         return transaction(gradeway.database) {
             val entityPermissions = entity.permissions.filter { it.isEnabled }
-            for (entityPermission in entityPermissions) {
-                if (!permissions.all { entityPermission.permission.validatePermission(it) }) {
-                    return@transaction false
-                }
-            }
-            true
+            permissions.all { permission -> entityPermissions.any { it.permission.validatePermission(permission) } }
         }
     }
 
@@ -1551,13 +1547,167 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     ): Boolean {
         return transaction(gradeway.database) {
             val entityPermissions = entity.permissions.filter { it.isEnabled }
-            for (entityPermission in entityPermissions) {
-                if (!permissions.any { entityPermission.permission.validatePermission(it) }) {
-                    return@transaction false
-                }
-            }
-            true
+            permissions.any { permission -> entityPermissions.any { it.permission.validatePermission(permission) } }
         }
+    }
+
+    private fun resolveGroupPermissions(group: GroupEntity): Set<PermissionEntity> {
+        val ownPermissions = group.permissions.filter { it.isEnabled }.map { it.permission }
+        val templatePermissions = group.permissionTemplates.flatMap { groupPermissionTemplate ->
+            groupPermissionTemplate.permissionTemplate.permissions.map { templatePermission ->
+                templatePermission.permission
+            }
+        }
+        return (ownPermissions + templatePermissions).toSet()
+    }
+
+    private fun resolveRolePermissions(
+        role: RoleEntity,
+        visitedRoleIds: MutableSet<UUID> = mutableSetOf()
+    ): Set<PermissionEntity> {
+        if (!visitedRoleIds.add(role.id.value)) {
+            return emptySet()
+        }
+
+        val ownPermissions = role.permissions.filter { it.isEnabled }.map { it.permission }
+        val templatePermissions = role.permissionTemplates.flatMap { rolePermissionTemplate ->
+            rolePermissionTemplate.permissionTemplate.permissions.map { templatePermission ->
+                templatePermission.permission
+            }
+        }
+        val groupPermissions = role.groups.flatMap { roleGroupEntity -> resolveGroupPermissions(roleGroupEntity.group) }
+        val parentPermissions = role.parents.flatMap { roleParentEntity ->
+            resolveRolePermissions(roleParentEntity.parent, visitedRoleIds)
+        }
+
+        return (ownPermissions + templatePermissions + groupPermissions + parentPermissions).toSet()
+    }
+
+    private fun resolvePlayerPermissions(player: PlayerEntity): Set<PermissionEntity> {
+        val ownPermissions = player.permissions.filter { it.isEnabled }.map { it.permission }
+        val templatePermissions = player.permissionTemplates.flatMap { playerPermissionTemplate ->
+            playerPermissionTemplate.permissionTemplate.permissions.map { templatePermission ->
+                templatePermission.permission
+            }
+        }
+
+        val hasExpiredRoles = player.roles.any {
+            it.pausedAt == null && it.untilAt != null && it.untilAt!! <= gradeway.now()
+        }
+        if (hasExpiredRoles) {
+            scheduleExpiredRoleCleanup(player.id.value)
+        }
+
+        val activeRolePermissions = player.roles
+            .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
+            .flatMap { playerRoleEntity -> resolveRolePermissions(playerRoleEntity.role) }
+
+        return (ownPermissions + templatePermissions + activeRolePermissions).toSet()
+    }
+
+    /**
+     * Fires off the actual removal of a player's expired roles on a background dispatcher instead of
+     * inline, since this runs from inside permission resolution — one of the hottest, most
+     * latency-sensitive paths in the plugin (called on nearly every player action). Deleting a
+     * database row synchronously there risks stalling the calling thread (e.g., the server main thread
+     * on Bukkit); permission resolution itself already excludes expired roles live, so the physical
+     * delete here is pure housekeeping and can safely happen a moment later.
+     */
+    private fun scheduleExpiredRoleCleanup(playerId: UUID) {
+        gradeway.backgroundScope.launch {
+            playersService.removeExpiredRoles(playerId)
+                .onLeft { error -> gradeway.logger.error("Failed to remove expired roles for $playerId: $error") }
+        }
+    }
+
+    override fun getEffectiveRolePermissions(id: UUID): Set<PermissionEntity> {
+        val entity = rolesService.findById(id) ?: return emptySet()
+        return getEffectiveRolePermissions(entity)
+    }
+
+    override fun getEffectiveRolePermissions(entity: RoleEntity): Set<PermissionEntity> {
+        return transaction(gradeway.database) {
+            resolveRolePermissions(entity)
+        }
+    }
+
+    override fun getEffectiveRolePermissions(idOrName: String): Set<PermissionEntity> {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet()
+        return getEffectiveRolePermissions(entity)
+    }
+
+    override fun hasEffectiveRolePermission(id: UUID, permission: String): Boolean {
+        val entity = rolesService.findById(id) ?: return false
+        return hasEffectiveRolePermission(entity, permission)
+    }
+
+    override fun hasEffectiveRolePermission(entity: RoleEntity, permission: String): Boolean {
+        return getEffectiveRolePermissions(entity).any { it.validatePermission(permission) }
+    }
+
+    override fun hasEffectiveRolePermission(idOrName: String, permission: String): Boolean {
+        val entity = rolesService.findByIdOrName(idOrName) ?: return false
+        return hasEffectiveRolePermission(entity, permission)
+    }
+
+    override fun getEffectiveGroupPermissions(id: UUID): Set<PermissionEntity> {
+        val entity = groupsService.findById(id) ?: return emptySet()
+        return getEffectiveGroupPermissions(entity)
+    }
+
+    override fun getEffectiveGroupPermissions(entity: GroupEntity): Set<PermissionEntity> {
+        return transaction(gradeway.database) {
+            resolveGroupPermissions(entity)
+        }
+    }
+
+    override fun getEffectiveGroupPermissions(idOrName: String): Set<PermissionEntity> {
+        val entity = groupsService.findByIdOrName(idOrName) ?: return emptySet()
+        return getEffectiveGroupPermissions(entity)
+    }
+
+    override fun hasEffectiveGroupPermission(id: UUID, permission: String): Boolean {
+        val entity = groupsService.findById(id) ?: return false
+        return hasEffectiveGroupPermission(entity, permission)
+    }
+
+    override fun hasEffectiveGroupPermission(entity: GroupEntity, permission: String): Boolean {
+        return getEffectiveGroupPermissions(entity).any { it.validatePermission(permission) }
+    }
+
+    override fun hasEffectiveGroupPermission(idOrName: String, permission: String): Boolean {
+        val entity = groupsService.findByIdOrName(idOrName) ?: return false
+        return hasEffectiveGroupPermission(entity, permission)
+    }
+
+    override fun getEffectivePlayerPermissions(id: UUID): Set<PermissionEntity> {
+        val entity = playersService.findById(id) ?: return emptySet()
+        return getEffectivePlayerPermissions(entity)
+    }
+
+    override fun getEffectivePlayerPermissions(entity: PlayerEntity): Set<PermissionEntity> {
+        return transaction(gradeway.database) {
+            resolvePlayerPermissions(entity)
+        }
+    }
+
+    override fun getEffectivePlayerPermissions(idOrName: String): Set<PermissionEntity> {
+        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet()
+        return getEffectivePlayerPermissions(entity)
+    }
+
+    override fun hasEffectivePlayerPermission(id: UUID, permission: String): Boolean {
+        val entity = playersService.findById(id) ?: return false
+        return hasEffectivePlayerPermission(entity, permission)
+    }
+
+    override fun hasEffectivePlayerPermission(entity: PlayerEntity, permission: String): Boolean {
+        return getEffectivePlayerPermissions(entity).any { it.validatePermission(permission) }
+    }
+
+    override fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean {
+        val entity = playersService.findByIdOrName(idOrName) ?: return false
+        return hasEffectivePlayerPermission(entity, permission)
     }
 
     private fun setEntityPermission(
