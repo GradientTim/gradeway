@@ -5,17 +5,10 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.managers.BackupManager
-import dev.gradienttim.gradeway.managers.ConfigManager
-import dev.gradienttim.gradeway.managers.DatabaseManager
-import dev.gradienttim.gradeway.managers.DriverManager
-import dev.gradienttim.gradeway.managers.LanguageManager
-import dev.gradienttim.gradeway.managers.MessagingManager
+import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
-import dev.gradienttim.gradeway.utilities.Loadable
-import dev.gradienttim.gradeway.utilities.Reloadable
-import dev.gradienttim.gradeway.utilities.Unloadable
+import dev.gradienttim.gradeway.utilities.lifecycle.*
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.time.Instant
@@ -34,7 +27,7 @@ import java.time.Instant
  * instances. By coupling lifecycle operations with the standard Gradeway capabilities,
  * this interface facilitates clean and predictable resource management practices.
  */
-interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable {
+interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enableable, Disableable {
     /**
      * Retrieves the current point in time as an [Instant].
      *

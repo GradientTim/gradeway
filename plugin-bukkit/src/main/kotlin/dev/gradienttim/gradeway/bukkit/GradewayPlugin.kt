@@ -6,8 +6,10 @@ package dev.gradienttim.gradeway.bukkit
 
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
+import dev.gradienttim.gradeway.bukkit.messaging.BukkitPluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
+import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
@@ -27,19 +29,37 @@ class GradewayPlugin : JavaPlugin() {
 
     override fun onEnable() {
         initializeEntityPermissionHandle()
+
         gradeway.load()
             .onLeft { throwable ->
-                slF4JLogger.error("Failed to load Gradeway: ${throwable.localizedMessage}")
+                slF4JLogger.error("Failed to load Gradeway: ${throwable.message}")
                 server.pluginManager.disablePlugin(this)
             }
             .onRight {
-                registerEvents()
-                registerCommands()
+                gradeway.drivers.registerDriver(
+                    id = "plugin-message",
+                    type = DriverType.MESSAGING,
+                    driver = BukkitPluginMessageDriver(this)
+                )
+
+                gradeway.enable()
+                    .onLeft { throwable ->
+                        slF4JLogger.error("Failed to enable Gradeway: ${throwable.message}")
+                    }
+                    .onRight {
+                        registerEvents()
+                        registerCommands()
+                    }
             }
     }
 
     override fun onDisable() {
-        gradeway.unload()
+        gradeway.disable()
+            .onLeft { slF4JLogger.error("Failed to disable Gradeway: ${it.message}") }
+            .onRight {
+                gradeway.unload()
+                    .onLeft { slF4JLogger.error("Failed to unload Gradeway: ${it.message}") }
+            }
     }
 
     private fun registerEvents() {

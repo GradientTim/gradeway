@@ -23,4 +23,13 @@ dependencies {
     api(libs.bundles.ktoml)
     api(libs.bundles.kyori)
     api(libs.bundles.arrow)
+
+    testImplementation(kotlin("test"))
+    testImplementation("com.h2database:h2:2.4.240")
+}
+
+tasks {
+    test {
+        useJUnitPlatform()
+    }
 }

@@ -32,7 +32,7 @@ data class GradewayConfig(
             "Defines the database type that Gradeway should use.",
             "Use the 'id' of the installed database driver."
         )
-        val driver: String = "postgres",
+        var driver: String = "postgres",
 
         @TomlComments(
             "Defines the prefix for all Gradeway database tables.",
@@ -55,7 +55,7 @@ data class GradewayConfig(
             "Controls whether messaging should be enabled or disabled.",
             "If messaging is disabled, data can no longer be synchronized in real time."
         )
-        val enabled: Boolean = true,
+        val enabled: Boolean = false,
 
         @TomlComments(
             "Defines the type of messaging service.",

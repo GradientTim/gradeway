@@ -16,6 +16,10 @@ import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
+import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
+import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributeChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.RoleAttributeChangedPayload
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key
@@ -270,6 +274,25 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         return getPlayerAttribute(entity, key)
     }
 
+    /**
+     * Publishes the [MessagingPayload] matching the concrete kind of [entity] (role or player)
+     * for a single attribute change. Shared by every add/update/remove/clear code path below,
+     * since they all ultimately operate on an [AttributeReference] without otherwise knowing
+     * which concrete entity kind they were called for.
+     */
+    private fun publishAttributeChanged(
+        entity: AttributeReference<out SharedAttributeEntity>,
+        key: Key,
+        action: MessagingAction
+    ) {
+        val payload: MessagingPayload = when (entity) {
+            is RoleEntity -> RoleAttributeChangedPayload(entity.id.value.toString(), key.asString(), action)
+            is PlayerEntity -> PlayerAttributeChangedPayload(entity.id.value.toString(), key.asString(), action)
+            else -> return
+        }
+        gradeway.messaging.publish(payload)
+    }
+
     private fun <TValue : Any, TAttributeEntity> addEntityAttribute(
         entity: AttributeReference<out SharedAttributeEntity>,
         attribute: Attribute<TValue>,
@@ -285,13 +308,13 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.AddAttributeError.Unexpected(throwable))
             }
         }
-    }
+    }.onRight { publishAttributeChanged(entity, attribute.key, MessagingAction.CREATED) }
 
     private fun <TValue : Any> updateEntityAttribute(
         entity: AttributeReference<out SharedAttributeEntity>,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either {
+    ): Either<AttributeService.UpdateAttributeError, Unit> = either<AttributeService.UpdateAttributeError, Unit> {
         transaction(gradeway.database) {
             val attribute = entity.attributes.find { it.key == key }
             if (attribute == null) {
@@ -314,7 +337,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
             }
         }
-    }
+    }.onRight { publishAttributeChanged(entity, key, MessagingAction.UPDATED) }
 
     private fun removeEntityAttribute(
         entity: AttributeReference<out SharedAttributeEntity>,
@@ -337,25 +360,29 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
                 raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
             }
         }
-    }
+    }.onRight { publishAttributeChanged(entity, key, MessagingAction.DELETED) }
 
     private fun clearEntityAttributes(
         entity: AttributeReference<out SharedAttributeEntity>
-    ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        transaction(gradeway.database) {
-            if (entity.attributes.empty()) {
-                raise(AttributeService.ClearAttributesError.NoAttributesFound)
-            }
+    ): Either<AttributeService.ClearAttributesError, Unit> {
+        val clearedKeys = transaction(gradeway.database) { entity.attributes.map { it.key } }
 
-            try {
-                entity.attributes.forEach { attributeEntity ->
-                    if (attributeEntity is Entity<*>) {
-                        attributeEntity.delete()
-                    }
+        return either {
+            transaction(gradeway.database) {
+                if (entity.attributes.empty()) {
+                    raise(AttributeService.ClearAttributesError.NoAttributesFound)
                 }
-            } catch (throwable: Throwable) {
-                raise(AttributeService.ClearAttributesError.Unexpected(throwable))
+
+                try {
+                    entity.attributes.forEach { attributeEntity ->
+                        if (attributeEntity is Entity<*>) {
+                            attributeEntity.delete()
+                        }
+                    }
+                } catch (throwable: Throwable) {
+                    raise(AttributeService.ClearAttributesError.Unexpected(throwable))
+                }
             }
-        }
+        }.onRight { clearedKeys.forEach { publishAttributeChanged(entity, it, MessagingAction.DELETED) } }
     }
 }

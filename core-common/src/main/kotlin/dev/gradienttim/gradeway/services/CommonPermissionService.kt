@@ -29,6 +29,7 @@ import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isUuid
+import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.PermissionReference
 import kotlinx.coroutines.launch
 import org.jetbrains.exposed.v1.core.*
@@ -39,12 +40,21 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 @Suppress("LargeClass", "TooManyFunctions")
 class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService, KoinComponent {
     private val rolesService: RoleService by inject()
     private val groupsService: GroupService by inject()
     private val playersService: PlayerService by inject()
+
+    private val playerPermissionCache = ConcurrentHashMap<UUID, Set<PermissionEntity>>()
+    private val roleEffectivePermissionCache = ConcurrentHashMap<UUID, Set<PermissionEntity>>()
+    private val groupEffectivePermissionCache = ConcurrentHashMap<UUID, Set<PermissionEntity>>()
+
+    init {
+        gradeway.messaging.subscribe { payload -> invalidateFor(payload) }
+    }
 
     override fun createPermission(
         value: String,
@@ -434,6 +444,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.AddPermissionToTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplatePermissionChangedPayload(
+                template.id.value.toString(),
+                permission.id.value.toString(),
+                MessagingAction.CREATED
+            )
+        )
     }
 
     override fun removePermissionFromTemplate(
@@ -508,6 +526,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.RemovePermissionFromTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplatePermissionChangedPayload(
+                template.id.value.toString(),
+                permission.id.value.toString(),
+                MessagingAction.DELETED
+            )
+        )
     }
 
     override fun clearPermissionsFromTemplate(
@@ -520,15 +546,31 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
 
     override fun clearPermissionsFromTemplate(
         template: PermissionTemplateEntity
-    ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit> = either {
-        try {
-            transaction(gradeway.database) {
-                template.permissions.filterIsInstance<DatabasePermissionTemplatePermissionEntity>().forEach {
-                    it.delete()
+    ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit> {
+        val clearedPermissionIds = transaction(gradeway.database) {
+            template.permissions.map { it.permissionId.value }
+        }
+
+        return either {
+            try {
+                transaction(gradeway.database) {
+                    template.permissions.filterIsInstance<DatabasePermissionTemplatePermissionEntity>().forEach {
+                        it.delete()
+                    }
                 }
+            } catch (throwable: Throwable) {
+                raise(PermissionService.ClearPermissionsFromTemplateError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(PermissionService.ClearPermissionsFromTemplateError.Unexpected(throwable))
+        }.onRight {
+            clearedPermissionIds.forEach { permissionId ->
+                gradeway.messaging.publish(
+                    PermissionTemplatePermissionChangedPayload(
+                        template.id.value.toString(),
+                        permissionId.toString(),
+                        MessagingAction.DELETED
+                    )
+                )
+            }
         }
     }
 
@@ -616,6 +658,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.LinkTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplateRoleLinkChangedPayload(
+                template.id.value.toString(),
+                role.id.value.toString(),
+                MessagingAction.CREATED
+            )
+        )
     }
 
     override fun unlinkTemplateFromRole(
@@ -665,6 +715,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.UnlinkTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplateRoleLinkChangedPayload(
+                template.id.value.toString(),
+                role.id.value.toString(),
+                MessagingAction.DELETED
+            )
+        )
     }
 
     override fun applyTemplateToRole(
@@ -799,7 +857,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun linkTemplateToPlayer(
         template: PermissionTemplateEntity,
         player: PlayerEntity
-    ): Either<PermissionService.LinkTemplateError, Unit> = either {
+    ): Either<PermissionService.LinkTemplateError, Unit> = either<PermissionService.LinkTemplateError, Unit> {
         if (!template.assignedTo.allowForPlayer) {
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
@@ -823,6 +881,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.LinkTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplatePlayerLinkChangedPayload(
+                template.id.value.toString(),
+                player.id.value.toString(),
+                MessagingAction.CREATED
+            )
+        )
     }
 
     override fun unlinkTemplateFromPlayer(
@@ -870,6 +936,14 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.UnlinkTemplateError.Unexpected(throwable))
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PermissionTemplatePlayerLinkChangedPayload(
+                template.id.value.toString(),
+                player.id.value.toString(),
+                MessagingAction.DELETED
+            )
+        )
     }
 
     override fun applyTemplateToPlayer(
@@ -1620,14 +1694,62 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         }
     }
 
+    /**
+     * Reacts to a [MessagingPayload] (whether it originated locally or on another server) by
+     * invalidating the effective-permission caches it affects.
+     *
+     * Anything that isn't specific to a single player (a role, group, permission, or permission
+     * template changing) clears all three caches in full rather than tracing which players are
+     * actually affected through arbitrary role/group inheritance chains — edits are rare relative
+     * to permission checks, and a full clear only costs a lazy recomputing on next access, not eager
+     * work. Player-specific payloads only remove that one player's cached entry.
+     */
+    private fun invalidateFor(payload: MessagingPayload) {
+        when (payload) {
+            is PlayerChangedPayload -> invalidatePlayer(payload.playerId)
+            is PlayerRoleChangedPayload -> invalidatePlayer(payload.playerId)
+            is PlayerPermissionChangedPayload -> invalidatePlayer(payload.playerId)
+            is PlayerAttributeChangedPayload -> invalidatePlayer(payload.playerId)
+
+            is RoleChangedPayload,
+            is RolePermissionChangedPayload,
+            is RoleParentChangedPayload,
+            is RoleAttributeChangedPayload,
+            is GroupChangedPayload,
+            is GroupRoleChangedPayload,
+            is GroupPermissionChangedPayload,
+            is PermissionChangedPayload,
+            is PermissionValueChangedPayload,
+            is PermissionTypeChangedPayload,
+            is PermissionTemplateChangedPayload,
+            is PermissionTemplatePermissionChangedPayload,
+            is PermissionTemplateRoleLinkChangedPayload,
+            is PermissionTemplateGroupLinkChangedPayload,
+            is PermissionTemplatePlayerLinkChangedPayload -> invalidateAll()
+        }
+    }
+
+    private fun invalidatePlayer(playerId: String) {
+        val uuid = runCatching { UUID.fromString(playerId) }.getOrNull() ?: return
+        playerPermissionCache.remove(uuid)
+    }
+
+    private fun invalidateAll() {
+        playerPermissionCache.clear()
+        roleEffectivePermissionCache.clear()
+        groupEffectivePermissionCache.clear()
+    }
+
     override fun getEffectiveRolePermissions(id: UUID): Set<PermissionEntity> {
         val entity = rolesService.findById(id) ?: return emptySet()
         return getEffectiveRolePermissions(entity)
     }
 
     override fun getEffectiveRolePermissions(entity: RoleEntity): Set<PermissionEntity> {
-        return transaction(gradeway.database) {
-            resolveRolePermissions(entity)
+        return roleEffectivePermissionCache.getOrPut(entity.id.value) {
+            transaction(gradeway.database) {
+                resolveRolePermissions(entity)
+            }
         }
     }
 
@@ -1656,8 +1778,10 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     override fun getEffectiveGroupPermissions(entity: GroupEntity): Set<PermissionEntity> {
-        return transaction(gradeway.database) {
-            resolveGroupPermissions(entity)
+        return groupEffectivePermissionCache.getOrPut(entity.id.value) {
+            transaction(gradeway.database) {
+                resolveGroupPermissions(entity)
+            }
         }
     }
 
@@ -1686,8 +1810,10 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     override fun getEffectivePlayerPermissions(entity: PlayerEntity): Set<PermissionEntity> {
-        return transaction(gradeway.database) {
-            resolvePlayerPermissions(entity)
+        return playerPermissionCache.getOrPut(entity.id.value) {
+            transaction(gradeway.database) {
+                resolvePlayerPermissions(entity)
+            }
         }
     }
 
@@ -1708,6 +1834,22 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean {
         val entity = playersService.findByIdOrName(idOrName) ?: return false
         return hasEffectivePlayerPermission(entity, permission)
+    }
+
+    /**
+     * Publishes the [MessagingPayload] matching the concrete kind of [entity] (role, group, or
+     * player) for a single permission change. Shared by every set/unset/bulk/clear code path
+     * below, since they all ultimately operate on a [PermissionReference] without otherwise
+     * knowing which concrete entity kind they were called for.
+     */
+    private fun publishPermissionChanged(entity: PermissionReference<out SharedPermissionEntity>, permission: String) {
+        val payload: MessagingPayload = when (entity) {
+            is RoleEntity -> RolePermissionChangedPayload(entity.id.value.toString(), permission)
+            is GroupEntity -> GroupPermissionChangedPayload(entity.id.value.toString(), permission)
+            is PlayerEntity -> PlayerPermissionChangedPayload(entity.id.value.toString(), permission)
+            else -> return
+        }
+        gradeway.messaging.publish(payload)
     }
 
     private fun setEntityPermission(
@@ -1748,7 +1890,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
                 raise(PermissionService.SetPermissionError.Unexpected(throwable))
             }
         }
-    }
+    }.onRight { publishPermissionChanged(entity, permission) }
 
     private fun setEntityPermissions(
         entity: PermissionReference<out SharedPermissionEntity>,
@@ -1767,7 +1909,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkSetPermissionError.Unexpected(throwable))
         }
-    }
+    }.onRight { permissions.keys.forEach { publishPermissionChanged(entity, it) } }
 
     private fun unsetEntityPermission(
         entity: PermissionReference<out SharedPermissionEntity>,
@@ -1788,7 +1930,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
                 raise(PermissionService.UnsetPermissionError.Unexpected(throwable))
             }
         }
-    }
+    }.onRight { publishPermissionChanged(entity, permission) }
 
     private fun unsetEntityPermissions(
         entity: PermissionReference<out SharedPermissionEntity>,
@@ -1806,22 +1948,26 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         } catch (throwable: Throwable) {
             raise(PermissionService.BulkUnsetPermissionError.Unexpected(throwable))
         }
-    }
+    }.onRight { permissions.forEach { publishPermissionChanged(entity, it) } }
 
     private fun clearEntityPermissions(
         entity: PermissionReference<out SharedPermissionEntity>
-    ): Either<PermissionService.ClearPermissionError, Unit> = either {
-        try {
-            transaction(gradeway.database) {
-                entity.permissions.forEach { entityPermissionEntity ->
-                    if (entityPermissionEntity is Entity<*>) {
-                        entityPermissionEntity.delete()
+    ): Either<PermissionService.ClearPermissionError, Unit> {
+        val clearedPermissionValues = transaction(gradeway.database) { entity.permissions.map { it.permission.value } }
+
+        return either {
+            try {
+                transaction(gradeway.database) {
+                    entity.permissions.forEach { entityPermissionEntity ->
+                        if (entityPermissionEntity is Entity<*>) {
+                            entityPermissionEntity.delete()
+                        }
                     }
                 }
+            } catch (throwable: Throwable) {
+                raise(PermissionService.ClearPermissionError.Unexpected(throwable))
             }
-        } catch (throwable: Throwable) {
-            raise(PermissionService.ClearPermissionError.Unexpected(throwable))
-        }
+        }.onRight { clearedPermissionValues.forEach { publishPermissionChanged(entity, it) } }
     }
 
     private fun isTemplateNameValid(name: String): Boolean {

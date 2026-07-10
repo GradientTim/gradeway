@@ -25,7 +25,7 @@ import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
-    override fun load(): Either<Throwable, Unit> = either {
+    override fun enable(): Either<Throwable, Unit> = either {
         val driverId = gradeway.configs.config.database.driver
         if (driverId.isBlank()) {
             raise(DriverBlankIdentifierThrowable())
@@ -77,7 +77,7 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
         }
     }
 
-    override fun unload(): Either<Throwable, Unit> = either {
+    override fun disable(): Either<Throwable, Unit> = either {
         try {
             val connector = gradeway.database.connector()
             if (!connector.isClosed) {

@@ -42,7 +42,7 @@ class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
         try {
             drivers.forEach { driver ->
                 driver.unload()
-                driver.classLoader.close()
+                driver.classLoader?.close()
             }
             drivers.clear()
         } catch (throwable: Throwable) {
@@ -55,6 +55,19 @@ class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
             val (configId, configType) = driver.config
             configId == id && configType == type
         }
+    }
+
+    override fun registerDriver(id: String, type: DriverType, driver: Driver): Boolean {
+        driver.config = DriverConfig(id = id, type = type, entry = driver::class.qualifiedName ?: id)
+
+        if (!drivers.add(driver)) {
+            gradeway.logger.warn("Unable to register driver '$id': Driver already registered.")
+            return false
+        }
+
+        driver.load()
+        gradeway.logger.info("Registered driver '$id'.")
+        return true
     }
 
     @OptIn(ExperimentalSerializationApi::class)

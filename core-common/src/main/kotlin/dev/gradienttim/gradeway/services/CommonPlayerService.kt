@@ -18,6 +18,8 @@ import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
+import dev.gradienttim.gradeway.messaging.payloads.PlayerRoleChangedPayload
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -195,6 +197,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.AddRoleError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.CREATED)
+        )
     }
 
     override fun addRole(
@@ -261,6 +267,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.RemoveRoleError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.DELETED)
+        )
     }
 
     override fun removeRole(
@@ -311,7 +321,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity,
         untilAt: Instant
-    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
+    ): Either<PlayerService.SetRoleUntilAtError, Unit> = either<PlayerService.SetRoleUntilAtError, Unit> {
         removeExpiredRoles(player)
 
         if (untilAt < gradeway.now()) {
@@ -334,6 +344,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.SetRoleUntilAtError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.UPDATED)
+        )
     }
 
     override fun setRoleUntilAt(
@@ -386,7 +400,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         player: PlayerEntity,
         role: RoleEntity,
         pausedAt: Instant
-    ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
+    ): Either<PlayerService.SetRolePausedAtError, Unit> = either<PlayerService.SetRolePausedAtError, Unit> {
         removeExpiredRoles(player)
 
         if (pausedAt < gradeway.now()) {
@@ -409,6 +423,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.SetRolePausedAtError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.UPDATED)
+        )
     }
 
     override fun setRolePausedAt(
@@ -457,7 +475,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun pauseRole(
         player: PlayerEntity,
         role: RoleEntity
-    ): Either<PlayerService.PauseRoleError, Unit> = either {
+    ): Either<PlayerService.PauseRoleError, Unit> = either<PlayerService.PauseRoleError, Unit> {
         removeExpiredRoles(player)
 
         transaction(gradeway.database) {
@@ -479,6 +497,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.PauseRoleError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.UPDATED)
+        )
     }
 
     override fun pauseRole(
@@ -525,7 +547,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun resumeRole(
         player: PlayerEntity,
         role: RoleEntity
-    ): Either<PlayerService.ResumeRoleError, Unit> = either {
+    ): Either<PlayerService.ResumeRoleError, Unit> = either<PlayerService.ResumeRoleError, Unit> {
         removeExpiredRoles(player)
 
         transaction(gradeway.database) {
@@ -552,6 +574,10 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
                 raise(PlayerService.ResumeRoleError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            PlayerRoleChangedPayload(player.id.value.toString(), role.id.value.toString(), MessagingAction.UPDATED)
+        )
     }
 
     override fun resumeRole(
@@ -648,6 +674,11 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
             val playerId = playerRoleEntity.playerId.value
             val role = playerRoleEntity.role
             playerRoleEntity.delete()
+
+            gradeway.messaging.publish(
+                PlayerRoleChangedPayload(playerId.toString(), role.id.value.toString(), MessagingAction.DELETED)
+            )
+
             playerId to role
         }
     }

@@ -14,8 +14,10 @@ import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
+import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.listeners.ConnectionListener
 import dev.gradienttim.gradeway.listeners.PermissionListener
+import dev.gradienttim.gradeway.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
 import org.slf4j.Logger
 import java.nio.file.Path
@@ -33,7 +35,7 @@ class GradewayVelocity @Inject constructor(
 ) {
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(logger),
-        directory = dataDirectory,
+        directory = dataDirectory.toFile(),
     )
 
     @Subscribe
@@ -41,11 +43,23 @@ class GradewayVelocity @Inject constructor(
     fun onProxyInitialize(event: ProxyInitializeEvent) {
         gradeway.load()
             .onLeft {
-                logger.error("Failed to load Gradeway: ${it.localizedMessage}")
+                logger.error("Failed to load Gradeway: ${it.message}")
             }
             .onRight {
-                registerEvents()
-                registerCommands()
+                gradeway.drivers.registerDriver(
+                    id = "plugin-message",
+                    type = DriverType.MESSAGING,
+                    driver = VelocityPluginMessageDriver(server, this)
+                )
+
+                gradeway.enable()
+                    .onLeft { throwable ->
+                        logger.error("Failed to enable Gradeway: ${throwable.message}")
+                    }
+                    .onRight {
+                        registerEvents()
+                        registerCommands()
+                    }
             }
     }
 

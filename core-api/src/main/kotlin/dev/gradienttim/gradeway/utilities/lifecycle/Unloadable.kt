@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.utilities
+package dev.gradienttim.gradeway.utilities.lifecycle
 
 import arrow.core.Either
 

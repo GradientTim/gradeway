@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.managers
 
-import dev.gradienttim.gradeway.utilities.Loadable
-import dev.gradienttim.gradeway.utilities.Reloadable
-import dev.gradienttim.gradeway.utilities.Unloadable
+import dev.gradienttim.gradeway.utilities.lifecycle.Loadable
+import dev.gradienttim.gradeway.utilities.lifecycle.Reloadable
+import dev.gradienttim.gradeway.utilities.lifecycle.Unloadable
 
 interface LanguageManager : Loadable, Unloadable, Reloadable

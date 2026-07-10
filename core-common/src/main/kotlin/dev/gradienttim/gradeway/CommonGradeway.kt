@@ -5,9 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import arrow.core.Either
+import arrow.core.raise.Raise
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.managers.*
-import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.CommonEnvironment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.services.*
@@ -20,10 +20,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.koin.core.KoinApplication
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
@@ -51,10 +51,7 @@ class CommonGradeway(
     override val environment by lazy { CommonEnvironment(this) }
     override var state: GradewayState = GradewayState.UNLOADED
 
-    internal lateinit var koin: KoinApplication
     internal lateinit var miniMessage: MiniMessage
-
-    internal lateinit var broker: MessagingBroker
     internal lateinit var database: Database
 
     override fun load(): Either<Throwable, Unit> = either {
@@ -88,14 +85,12 @@ class CommonGradeway(
             directory.mkdirs()
         }
 
-        koin = startKoin {
+        startKoin {
             modules(serviceModule, managerModule, commonModule)
         }
 
         configs.load().onLeft { raise(it) }
         drivers.load().onLeft { raise(it) }
-        messaging.load().onLeft { raise(it) }
-        databases.load().onLeft { raise(it) }
         languages.load().onLeft { raise(it) }
 
         state = GradewayState.LOADED
@@ -110,10 +105,12 @@ class CommonGradeway(
         backgroundScope.cancel()
 
         languages.unload().onLeft { raise(it) }
-        databases.unload().onLeft { raise(it) }
-        messaging.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
-        koin.close()
+
+        // stopKoin() (not koin.close()) - it also closes the underlying KoinApplication but
+        // additionally deregisters it from Koin's global context. Without that, a later load()
+        // call in the same JVM (e.g., a plugin disable/enable cycle) fails with KoinApplicationAlreadyStartedException.
+        stopKoin()
 
         state = GradewayState.UNLOADED
     }.onLeft {
@@ -121,10 +118,30 @@ class CommonGradeway(
     }
 
     override fun reload(): Either<Throwable, Unit> = either {
-        if (state != GradewayState.LOADED) raise(GradewayNotLoadedThrowable())
+        checkIsLoaded()
 
         configs.load().onLeft { raise(it) }
         messaging.reload().onLeft { raise(it) }
         languages.reload().onLeft { raise(it) }
+    }
+
+    override fun enable(): Either<Throwable, Unit> = either {
+        checkIsLoaded()
+
+        databases.enable().onLeft { raise(it) }
+        messaging.enable().onLeft { raise(it) }
+    }
+
+    override fun disable(): Either<Throwable, Unit> = either {
+        checkIsLoaded()
+
+        databases.disable().onLeft { raise(it) }
+        messaging.disable().onLeft { raise(it) }
+    }
+
+    private fun Raise<Throwable>.checkIsLoaded() {
+        if (state != GradewayState.LOADED) {
+            raise(GradewayNotLoadedThrowable())
+        }
     }
 }

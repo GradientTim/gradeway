@@ -4,7 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.managers
 
-import dev.gradienttim.gradeway.utilities.Loadable
-import dev.gradienttim.gradeway.utilities.Unloadable
+import dev.gradienttim.gradeway.utilities.lifecycle.Disableable
+import dev.gradienttim.gradeway.utilities.lifecycle.Enableable
 
-interface DatabaseManager : Loadable, Unloadable
+interface DatabaseManager : Enableable, Disableable

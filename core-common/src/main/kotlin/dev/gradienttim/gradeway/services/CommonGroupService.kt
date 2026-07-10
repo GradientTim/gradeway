@@ -17,6 +17,8 @@ import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.services.GroupService.*
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -241,6 +243,10 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
                 raise(AddTargetError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            GroupRoleChangedPayload(group.id.value.toString(), role.id.value.toString(), MessagingAction.CREATED)
+        )
     }
 
     override fun removeRoleFromGroup(groupId: UUID, roleId: UUID): Either<RemoveTargetError, Unit> = either {
@@ -293,6 +299,10 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
                 raise(RemoveTargetError.Unexpected(throwable))
             }
         }
+    }.onRight {
+        gradeway.messaging.publish(
+            GroupRoleChangedPayload(group.id.value.toString(), role.id.value.toString(), MessagingAction.DELETED)
+        )
     }
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =

@@ -1,0 +1,39 @@
+name: core-common CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run detekt
+        run: ./gradlew detekt
+
+      - name: Run core-common tests
+        run: ./gradlew :core-common:test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-common-test-results
+          path: core-common/build/reports/tests/test
+
+      - name: Build core-common
+        run: ./gradlew :core-common:build

@@ -13,7 +13,7 @@ abstract class Driver : KoinComponent {
     val gradeway: Gradeway by inject()
 
     lateinit var config: DriverConfig
-    lateinit var classLoader: URLClassLoader
+    var classLoader: URLClassLoader? = null
 
     open fun load() = Unit
     open fun unload() = Unit
