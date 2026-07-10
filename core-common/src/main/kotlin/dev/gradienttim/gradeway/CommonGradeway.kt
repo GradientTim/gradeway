@@ -92,6 +92,7 @@ class CommonGradeway(
         configs.load().onLeft { raise(it) }
         drivers.load().onLeft { raise(it) }
         languages.load().onLeft { raise(it) }
+        messaging.load().onLeft { raise(it) }
 
         state = GradewayState.LOADED
     }.onLeft {
@@ -104,6 +105,7 @@ class CommonGradeway(
 
         backgroundScope.cancel()
 
+        messaging.unload().onLeft { raise(it) }
         languages.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
 
