@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.bukkit.messaging
+package dev.gradienttim.gradeway.paper.messaging
 
 import dev.gradienttim.gradeway.constants.MessagingConstants
 import dev.gradienttim.gradeway.messaging.MessagingBroker
@@ -14,11 +14,11 @@ import org.bukkit.plugin.messaging.PluginMessageListener
  * A [MessagingBroker] backed by vanilla Minecraft plugin messaging channels instead of an
  * external broker such as Redis. Requires a proxy (Velocity or, later, BungeeCord) relaying the
  * same channel to actually synchronize anything between backend servers - see
- * [dev.gradienttim.gradeway.bukkit.messaging.BukkitPluginMessageDriver].
+ * [dev.gradienttim.gradeway.paper.messaging.PaperPluginMessageDriver].
  *
  * @property plugin The plugin used to register plugin channels and send/receive messages through.
  */
-class BukkitPluginMessageMessagingBroker(
+class PaperPluginMessageMessagingBroker(
     private val plugin: JavaPlugin,
 ) : MessagingBroker, PluginMessageListener {
     private var listener: ((payload: ByteArray) -> Unit)? = null

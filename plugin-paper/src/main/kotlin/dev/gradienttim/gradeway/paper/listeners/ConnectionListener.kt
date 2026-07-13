@@ -2,9 +2,9 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.bukkit.listeners
+package dev.gradienttim.gradeway.paper.listeners
 
-import dev.gradienttim.gradeway.bukkit.GradewayPlugin
+import dev.gradienttim.gradeway.paper.GradewayPlugin
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener

@@ -2,12 +2,12 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.bukkit
+package dev.gradienttim.gradeway.paper
 
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
-import dev.gradienttim.gradeway.bukkit.messaging.BukkitPluginMessageDriver
-import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
+import dev.gradienttim.gradeway.paper.listeners.ConnectionListener
+import dev.gradienttim.gradeway.paper.messaging.PaperPluginMessageDriver
+import dev.gradienttim.gradeway.paper.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -39,7 +39,7 @@ class GradewayPlugin : JavaPlugin() {
                 gradeway.drivers.registerDriver(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
-                    driver = BukkitPluginMessageDriver(this)
+                    driver = PaperPluginMessageDriver(this)
                 )
 
                 gradeway.enable()
@@ -85,7 +85,7 @@ class GradewayPlugin : JavaPlugin() {
             sourceToAudience = { source -> source.sender },
         ).build()
 
-        registrar.register(gradewayCommand, listOf("gw", "gradewayb", "gwbukkit", "gwb"))
+        registrar.register(gradewayCommand, listOf("gw", "gradewayp", "gwpaper", "gwp"))
     }
 
     private fun initializeEntityPermissionHandle() {
