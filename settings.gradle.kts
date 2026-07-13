@@ -21,6 +21,5 @@ include(
 
 include(
     "plugin-bukkit",
-    "plugin-bungeecord",
     "plugin-velocity",
 )

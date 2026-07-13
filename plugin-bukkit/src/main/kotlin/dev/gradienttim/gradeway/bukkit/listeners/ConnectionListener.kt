@@ -17,7 +17,9 @@ class ConnectionListener(val plugin: GradewayPlugin) : Listener {
 
         plugin.gradeway.players.create(player.uniqueId, player.name)
         plugin.gradeway.players.removeExpiredRoles(player.uniqueId)
-            .onLeft { error -> plugin.slF4JLogger.error("Failed to remove expired roles for ${player.name}: $error") }
+            .onLeft { error ->
+                plugin.gradeway.logger.error("Failed to remove expired roles for ${player.name}: $error")
+            }
 
         try {
             plugin.applyEntityPermissions(player)
