@@ -60,6 +60,36 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     fun setName(entity: PlayerEntity, name: String): Either<SetNameError, Boolean>
 
     /**
+     * Updates the weight of a player identified by the specified unique identifier.
+     *
+     * @param id The unique identifier of the player whose weight is to be updated.
+     * @param weight The new weight to assign to the player.
+     * @return An instance of [Either] containing [SetWeightError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setWeight(id: UUID, weight: Int): Either<SetWeightError, Boolean>
+
+    /**
+     * Updates the weight of the specified player entity.
+     *
+     * @param entity The player entity whose weight is to be updated.
+     * @param weight The new weight to assign to the player entity.
+     * @return An instance of [Either] containing [SetWeightError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setWeight(entity: PlayerEntity, weight: Int): Either<SetWeightError, Boolean>
+
+    /**
+     * Updates the weight of a player identified by its unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the player whose weight needs to be updated.
+     * @param weight The new weight to assign to the player entity.
+     * @return An instance of [Either] containing [SetWeightError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
+
+    /**
      * Retrieves a player entity by its unique identifier.
      *
      * @param id The unique identifier of the player to be retrieved.
@@ -124,6 +154,36 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     fun getPrimaryRole(entity: PlayerEntity): RoleEntity?
 
     /**
+     * Resolves the effective weight of a player, i.e., its own explicitly configured weight if set,
+     * otherwise the highest effective weight among its active (non-expired, non-paused) roles, or
+     * `0` if neither is available.
+     *
+     * @param id The unique identifier of the player.
+     * @return The effective weight of the player.
+     */
+    fun getEffectiveWeight(id: UUID): Int
+
+    /**
+     * Resolves the effective weight of a player, i.e., its own explicitly configured weight if set,
+     * otherwise the highest effective weight among its active (non-expired, non-paused) roles, or
+     * `0` if neither is available.
+     *
+     * @param entity The player entity.
+     * @return The effective weight of the player.
+     */
+    fun getEffectiveWeight(entity: PlayerEntity): Int
+
+    /**
+     * Resolves the effective weight of a player, i.e., its own explicitly configured weight if set,
+     * otherwise the highest effective weight among its active (non-expired, non-paused) roles, or
+     * `0` if neither is available.
+     *
+     * @param idOrName The unique identifier or name of the player.
+     * @return The effective weight of the player.
+     */
+    fun getEffectiveWeight(idOrName: String): Int
+
+    /**
      * Removes every expired, non-paused role from each of the given players in a single batched
      * operation. Intended for periodic maintenance sweeps over a bounded set of players (e.g. all
      * currently online players) rather than a per-player loop.
@@ -151,6 +211,11 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         data class Unexpected(val throwable: Throwable) : SetNameError
+    }
+
+    sealed interface SetWeightError {
+        object EntityNotFound : SetWeightError
+        data class Unexpected(val throwable: Throwable) : SetWeightError
     }
 
     sealed interface AddRoleError {

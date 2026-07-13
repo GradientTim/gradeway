@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 import kotlin.test.AfterTest
@@ -72,6 +73,27 @@ class CommonPermissionServiceCacheTest {
         assertFalse(
             gradeway.permissions.hasEffectivePlayerPermission(player, permission),
             "expected the cache to be invalidated by the RolePermissionChangedPayload published from setPermission",
+        )
+    }
+
+    @Test
+    fun `publishing a cache flush invalidates the player cache`() {
+        val permission = "gradeway.test.cacheflush"
+        val role = createRoleWithPermission(permission)
+        val player = createPlayerWithRole(role)
+
+        assertTrue(gradeway.permissions.hasEffectivePlayerPermission(player, permission))
+
+        // Simulates the bulk-write path (migration/backup import) that bypasses the services and
+        // their per-mutation payloads entirely, so it can only rely on an explicit full flush.
+        transaction(gradeway.database) {
+            role.permissions.first().isEnabled = false
+        }
+        gradeway.messaging.publish(CacheFlushPayload)
+
+        assertFalse(
+            gradeway.permissions.hasEffectivePlayerPermission(player, permission),
+            "expected CacheFlushPayload to invalidate the cache with no broker connected",
         )
     }
 

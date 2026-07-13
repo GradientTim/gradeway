@@ -1725,7 +1725,8 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
             is PermissionTemplatePermissionChangedPayload,
             is PermissionTemplateRoleLinkChangedPayload,
             is PermissionTemplateGroupLinkChangedPayload,
-            is PermissionTemplatePlayerLinkChangedPayload -> invalidateAll()
+            is PermissionTemplatePlayerLinkChangedPayload,
+            is CacheFlushPayload -> invalidateAll()
         }
     }
 

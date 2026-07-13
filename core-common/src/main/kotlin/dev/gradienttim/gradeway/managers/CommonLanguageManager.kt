@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
 import net.kyori.adventure.translation.GlobalTranslator
@@ -19,14 +20,7 @@ import java.util.*
 import kotlin.io.path.*
 
 class CommonLanguageManager(val gradeway: CommonGradeway) : LanguageManager {
-    private val directory by lazy {
-        val languagesDirectory = File(gradeway.directory, "languages")
-        if (!languagesDirectory.exists()) {
-            languagesDirectory.mkdirs()
-        }
-        languagesDirectory
-    }
-
+    private val directory = gradeway.directory.createDirectoryIfNotExists("languages")
     private lateinit var translator: MiniMessageTranslationStore
 
     override fun load(): Either<Throwable, Unit> = either {

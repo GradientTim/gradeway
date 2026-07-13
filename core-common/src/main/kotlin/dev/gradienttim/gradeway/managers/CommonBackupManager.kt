@@ -15,6 +15,8 @@ import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTem
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTemplatePermissionEntity
 import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
+import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
+import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
 import dev.gradienttim.gradeway.utilities.Serializable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -35,13 +37,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
-    private val directory by lazy {
-        val backupsDirectory = File(gradeway.directory, "backups")
-        if (!backupsDirectory.exists()) {
-            backupsDirectory.mkdirs()
-        }
-        backupsDirectory
-    }
+    private val directory = gradeway.directory.createDirectoryIfNotExists("backups")
 
     // Parent-before-child order: every table only ever references tables earlier in this list, so
     // the same list drives export, import and (reversed) the pre-import wipe without needing a
@@ -140,6 +136,11 @@ class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
             }
             raise(BackupManager.ImportError.Unexpected(throwable))
         }
+
+        // Entries are deserialized directly via the DAO and never publish the fine-grained
+        // payloads the services normally would, so every server's effective-permission and
+        // effective-weight caches need to be dropped in full now that the import committed.
+        gradeway.messaging.publish(CacheFlushPayload)
     }
 
     private data class BackupEntry(

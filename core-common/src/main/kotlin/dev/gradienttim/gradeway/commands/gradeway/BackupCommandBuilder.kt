@@ -60,6 +60,8 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
     }
 
     literal("backup") {
+        requires { hasPermission(it, "gradeway.backup") }
+
         literal("export") {
             requires { hasPermission(it, "gradeway.backup.export") }
 

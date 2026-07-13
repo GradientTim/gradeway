@@ -51,6 +51,15 @@ class MessagingPayloadSerializationTest {
     }
 
     @Test
+    fun `cache flush payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = CacheFlushPayload
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
     fun `network payload wrapping round trips through ProtoBuf and preserves the inner payload`() {
         val payload: MessagingPayload = RoleChangedPayload(UUID.randomUUID().toString(), MessagingAction.UPDATED)
         val encodedPayload = ProtoBuf.encodeToByteArray(payload)

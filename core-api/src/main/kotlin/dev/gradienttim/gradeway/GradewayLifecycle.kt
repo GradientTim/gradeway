@@ -84,6 +84,51 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
     val environment: Environment
 
     /**
+     * Manages confirmation-based operations within the Gradeway system.
+     *
+     * This variable represents an instance of `ConfirmationManager`, which is responsible
+     * for scheduling, managing, and canceling confirmation-related tasks. It acts as a centralized
+     * service to coordinate confirmations and ensures proper cleanup of resources when disabled.
+     *
+     * The tasks managed by this variable can include deferred execution or scheduled jobs
+     * that require explicit confirmation or cancellation during the system's lifecycle.
+     */
+    val confirmations: ConfirmationManager
+
+    /**
+     * Manages migrations within the Gradeway lifecycle.
+     *
+     * The `migrations` property provides access to an instance of [MigrationManager], which is responsible
+     * for handling migration operations in the system. Migrations allow for the systematic updating or
+     * transforming of system components, configurations, or data.
+     *
+     * Key features of the `migrations` property:
+     * - Executes migration tasks using registered strategies for specific components or files.
+     * - Ensures that migration operations are performed reliably with error handling built-in.
+     * - Handles errors such as a file not being found, missing migration strategies, or unexpected issues during execution.
+     */
+    val migrations: MigrationManager
+
+    /**
+     * Manages messaging-related functionality within the Gradeway system.
+     *
+     * This property provides access to an instance of `MessagingManager`, which is responsible for handling
+     * messaging operations such as sending, receiving, and managing messages. It serves as a core
+     * component for the communication and messaging infrastructure within the system.
+     *
+     * Implementations of `MessagingManager` typically integrate with external messaging systems or
+     * facilitate internal communication between components in the Gradeway ecosystem. It also ensures
+     * that messaging processes comply with the system's lifecycle by supporting loading, unloading,
+     * and reloading operations.
+     *
+     * Typical responsibilities of `MessagingManager` include:
+     * - Sending messages to recipients or channels.
+     * - Managing message queues and delivery statuses.
+     * - Integrating with external messaging protocols, if applicable.
+     */
+    val messaging: MessagingManager
+
+    /**
      * Manages database interactions and operations within the Gradeway system.
      *
      * This property provides an instance of the `DatabaseManager` interface, which serves as the
@@ -122,25 +167,6 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
      * associated with its language management processes.
      */
     val languages: LanguageManager
-
-    /**
-     * Manages messaging-related functionality within the Gradeway system.
-     *
-     * This property provides access to an instance of `MessagingManager`, which is responsible for handling
-     * messaging operations such as sending, receiving, and managing messages. It serves as a core
-     * component for the communication and messaging infrastructure within the system.
-     *
-     * Implementations of `MessagingManager` typically integrate with external messaging systems or
-     * facilitate internal communication between components in the Gradeway ecosystem. It also ensures
-     * that messaging processes comply with the system's lifecycle by supporting loading, unloading,
-     * and reloading operations.
-     *
-     * Typical responsibilities of `MessagingManager` include:
-     * - Sending messages to recipients or channels.
-     * - Managing message queues and delivery statuses.
-     * - Integrating with external messaging protocols, if applicable.
-     */
-    val messaging: MessagingManager
 
     /**
      * Provides centralized management and operations for driver-related functionality within the Gradeway system.

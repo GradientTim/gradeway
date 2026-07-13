@@ -22,9 +22,12 @@ import dev.gradienttim.gradeway.throwables.driver.DriverNotFoundThrowable
 import dev.gradienttim.gradeway.throwables.driver.DriverUnsupportedAdapterThrowable
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.exists
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 
 class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
+    @Suppress("LongMethod")
     override fun enable(): Either<Throwable, Unit> = either {
         val driverId = gradeway.configs.config.database.driver
         if (driverId.isBlank()) {
@@ -43,6 +46,32 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
             gradeway.database = Database.connect(dataSource)
 
             transaction(gradeway.database) {
+                val tables = arrayOf(
+                    GroupsTable,
+                    GroupPermissionsTable,
+                    GroupPermissionTemplatesTable,
+                    PermissionsTable,
+                    PermissionTemplatePermissionsTable,
+                    PermissionTemplatesTable,
+                    PlayersTable,
+                    PlayerRolesTable,
+                    PlayerAttributesTable,
+                    PlayerPermissionsTable,
+                    PlayerPermissionTemplatesTable,
+                    RolesTable,
+                    RoleGroupsTable,
+                    RoleParentsTable,
+                    RoleAttributesTable,
+                    RolePermissionsTable,
+                    RolePermissionTemplatesTable
+                )
+
+                // Tables that already exist may have been created by an older version of Gradeway and can be
+                // missing columns/constraints introduced since; freshly created tables below already match the
+                // current definitions exactly and must be excluded here, or Exposed re-detects their own
+                // brand-new constraints as missing and tries to add them a second time.
+                val existingTables = tables.filter { it.exists() }
+
                 SchemaUtils.create(
                     GroupsTable,
                     GroupPermissionsTable,
@@ -71,6 +100,17 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
                     RolePermissionsTable,
                     RolePermissionTemplatesTable
                 )
+
+                if (existingTables.isNotEmpty()) {
+                    val migrationStatements = MigrationUtils.statementsRequiredForDatabaseMigration(
+                        *existingTables.toTypedArray(),
+                        withLogs = false
+                    )
+
+                    if (migrationStatements.isNotEmpty()) {
+                        migrationStatements.forEach { statement -> exec(statement) }
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(throwable)

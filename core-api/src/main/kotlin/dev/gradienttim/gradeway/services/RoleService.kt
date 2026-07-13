@@ -68,6 +68,36 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
 
     /**
+     * Resolves the effective weight of a role, i.e., its own explicitly configured weight if set,
+     * otherwise the highest `defaultWeight` among the groups it belongs to, or `0` if neither is
+     * available.
+     *
+     * @param id The unique identifier of the role.
+     * @return The effective weight of the role.
+     */
+    fun getEffectiveWeight(id: UUID): Int
+
+    /**
+     * Resolves the effective weight of a role, i.e., its own explicitly configured weight if set,
+     * otherwise the highest `defaultWeight` among the groups it belongs to, or `0` if neither is
+     * available.
+     *
+     * @param entity The role entity.
+     * @return The effective weight of the role.
+     */
+    fun getEffectiveWeight(entity: RoleEntity): Int
+
+    /**
+     * Resolves the effective weight of a role, i.e., its own explicitly configured weight if set,
+     * otherwise the highest `defaultWeight` among the groups it belongs to, or `0` if neither is
+     * available.
+     *
+     * @param idOrName The unique identifier or name of the role.
+     * @return The effective weight of the role.
+     */
+    fun getEffectiveWeight(idOrName: String): Int
+
+    /**
      * Updates the name of a role identified by the specified unique identifier.
      *
      * @param id The unique identifier of the role whose name is to be updated.

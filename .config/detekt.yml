@@ -343,6 +343,7 @@ naming:
       - 'macosX64'
       - 'mingwX64'
       - 'linuxX64'
+    excludes: ['**/dev/gradienttim/gradeway/messaging/payloads/**']
   MemberNameEqualsClassName:
     active: true
     ignoreOverridden: true

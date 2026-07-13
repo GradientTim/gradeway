@@ -41,9 +41,11 @@ class CommonGradeway(
     override val groups: GroupService by inject()
     override val roles: RoleService by inject()
 
+    override val confirmations: ConfirmationManager by inject()
+    override val migrations: MigrationManager by inject()
+    override val messaging: MessagingManager by inject()
     override val databases: DatabaseManager by inject()
     override val languages: LanguageManager by inject()
-    override val messaging: MessagingManager by inject()
     override val drivers: DriverManager by inject()
     override val configs: ConfigManager by inject()
     override val backups: BackupManager by inject()
@@ -69,9 +71,11 @@ class CommonGradeway(
         }
 
         val managerModule = module {
+            single<ConfirmationManager> { CommonConfirmationManager() }
+            single<MigrationManager> { CommonMigrationManager(this@CommonGradeway) }
+            single<MessagingManager> { CommonMessagingManager(this@CommonGradeway) }
             single<DatabaseManager> { CommonDatabaseManager(this@CommonGradeway) }
             single<LanguageManager> { CommonLanguageManager(this@CommonGradeway) }
-            single<MessagingManager> { CommonMessagingManager(this@CommonGradeway) }
             single<DriverManager> { CommonDriverManager(this@CommonGradeway) }
             single<ConfigManager> { CommonConfigManager(this@CommonGradeway) }
             single<BackupManager> { CommonBackupManager(this@CommonGradeway) }
@@ -93,6 +97,7 @@ class CommonGradeway(
         drivers.load().onLeft { raise(it) }
         languages.load().onLeft { raise(it) }
         messaging.load().onLeft { raise(it) }
+        confirmations.load().onLeft { raise(it) }
 
         state = GradewayState.LOADED
     }.onLeft {
@@ -105,6 +110,7 @@ class CommonGradeway(
 
         backgroundScope.cancel()
 
+        confirmations.unload().onLeft { raise(it) }
         messaging.unload().onLeft { raise(it) }
         languages.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
@@ -139,6 +145,7 @@ class CommonGradeway(
 
         databases.disable().onLeft { raise(it) }
         messaging.disable().onLeft { raise(it) }
+        confirmations.disable().onLeft { raise(it) }
     }
 
     private fun Raise<Throwable>.checkIsLoaded() {

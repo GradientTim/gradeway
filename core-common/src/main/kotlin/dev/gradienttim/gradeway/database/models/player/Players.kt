@@ -28,6 +28,7 @@ import java.util.*
 
 object PlayersTable : UUIDTable(name = TableConstants.PLAYERS_TABLE_NAME) {
     val name = varchar("name", TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH).uniqueIndex()
+    val weight = integer("weight").default(-1)
 
     val primaryRoleId = optReference(
         name = "primary_role_id",
@@ -50,6 +51,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
         override fun serialize(instance: DatabasePlayerEntity): JsonObject = buildJsonObject {
             put("id", instance.id.value.toString())
             put("name", instance.name)
+            put("weight", instance.weight)
             put("primaryRoleId", instance.primaryRoleId?.value?.toString())
             put("createdAt", instance.createdAt.toEpochMilli())
             put("updatedAt", instance.updatedAt.toEpochMilli())
@@ -60,6 +62,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
 
             return new(id) {
                 name = json.getValue("name").jsonPrimitive.content
+                weight = json.getValue("weight").jsonPrimitive.int
 
                 json.getValue("primaryRoleId").jsonPrimitive.contentOrNull?.let { rawPrimaryRoleId ->
                     primaryRoleId = EntityID(
@@ -78,6 +81,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
     internal val attributeService: AttributeService by inject()
 
     override var name by PlayersTable.name
+    override var weight by PlayersTable.weight
 
     override var primaryRoleId by PlayersTable.primaryRoleId
 
@@ -93,6 +97,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
             PlayerPermissionTemplatesTable.playerId
 
     override fun setName(name: String) = playerService.setName(this, name)
+    override fun setWeight(weight: Int) = playerService.setWeight(this, weight)
 
     override fun <TValue : Any> addAttribute(attribute: Attribute<TValue>) =
         attributeService.addPlayerAttribute(this, attribute)

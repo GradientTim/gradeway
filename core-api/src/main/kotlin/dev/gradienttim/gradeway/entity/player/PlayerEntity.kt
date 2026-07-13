@@ -39,6 +39,18 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
     var name: String
 
     /**
+     * Represents the weight of the player, which can be used to define its relative importance,
+     * precedence, or order within a hierarchy or sorting context.
+     *
+     * A value of `-1` indicates that no weight has been explicitly configured for this player, in
+     * which case the player's effective weight is instead derived from its active roles (see
+     * [dev.gradienttim.gradeway.services.PlayerService.getEffectiveWeight]). A higher weight might
+     * indicate greater importance or precedence, while a lower weight could represent lesser
+     * priority.
+     */
+    var weight: Int
+
+    /**
      * Represents the primary role identifier associated with a player entity.
      *
      * This property holds the unique identifier of a player's primary role within the system,
@@ -132,4 +144,13 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
      *         or `true` if the update succeeds.
      */
     fun setName(name: String): Either<PlayerService.SetNameError, Boolean>
+
+    /**
+     * Updates the weight of the player.
+     *
+     * @param weight The new weight to assign to the player.
+     * @return An instance of [Either] containing [PlayerService.SetWeightError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setWeight(weight: Int): Either<PlayerService.SetWeightError, Boolean>
 }

@@ -9,11 +9,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.command.command
 import dev.gradienttim.gradeway.command.execute
 import dev.gradienttim.gradeway.command.literal
-import dev.gradienttim.gradeway.commands.gradeway.backupBuilder
-import dev.gradienttim.gradeway.commands.gradeway.groupBuilder
-import dev.gradienttim.gradeway.commands.gradeway.permissionBuilder
-import dev.gradienttim.gradeway.commands.gradeway.playerBuilder
-import dev.gradienttim.gradeway.commands.gradeway.roleBuilder
+import dev.gradienttim.gradeway.commands.gradeway.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 
@@ -28,7 +24,9 @@ fun <TSource> gradewayCommandBuilder(
         groupBuilder(gradeway, hasPermission, sourceToAudience)
         playerBuilder(gradeway, hasPermission, sourceToAudience)
         backupBuilder(gradeway, hasPermission, sourceToAudience)
+        migrationBuilder(literal, gradeway, hasPermission, sourceToAudience)
         permissionBuilder(gradeway, hasPermission, sourceToAudience)
+        confirmationBuilder(gradeway, hasPermission, sourceToAudience)
 
         literal("reload") {
             requires { hasPermission(it, "gradeway.reload") }

@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.DriverConfig
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.ksp.resolvers.DriverResolver
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
@@ -20,13 +21,7 @@ import java.util.zip.ZipFile
 
 class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
     private val drivers = mutableSetOf<Driver>()
-    private val directory by lazy {
-        val driversDirectory = File(gradeway.directory, "drivers")
-        if (!driversDirectory.exists()) {
-            driversDirectory.mkdirs()
-        }
-        driversDirectory
-    }
+    private val directory = gradeway.directory.createDirectoryIfNotExists("drivers")
 
     override fun load(): Either<Throwable, Unit> = either {
         try {

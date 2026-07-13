@@ -27,7 +27,7 @@ import java.util.*
 
 object RolesTable : UUIDTable(name = TableConstants.ROLES_TABLE_NAME) {
     val name = varchar("name", TableConstants.ROLES_TABLE_MAX_NAME_LENGTH).uniqueIndex()
-    val weight = integer("weight").default(0)
+    val weight = integer("weight").default(-1)
 
     val createdAt = timestamp("created_at").default(Instant.now())
     val updatedAt = timestamp("updated_at").default(Instant.now())

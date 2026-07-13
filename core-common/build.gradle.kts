@@ -20,6 +20,7 @@ dependencies {
 
     api(libs.koin.core)
     api(libs.bundles.exposed)
+    implementation(libs.bundles.exposed.migration)
     api(libs.bundles.ktoml)
     api(libs.bundles.kyori)
     api(libs.bundles.arrow)

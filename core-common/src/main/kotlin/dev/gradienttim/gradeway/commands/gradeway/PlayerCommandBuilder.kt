@@ -42,6 +42,51 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
                 playerAttributesBuilder(gradeway, hasPermission, sourceToAudience)
                 playerPermissionsBuilder(gradeway, hasPermission, sourceToAudience)
 
+                literal("setWeight") {
+                    requires { hasPermission(it, "gradeway.player.setWeight") }
+
+                    integer("value") {
+                        execute {
+                            val audience = sourceToAudience(source)
+
+                            val idOrName = stringParam("idOrName")
+                            val weight = intParam("value")
+
+                            gradeway.players.setWeight(idOrName, weight)
+                                .onLeft { error ->
+                                    if (error is PlayerService.SetWeightError.EntityNotFound) {
+                                        audience.sendMessage(
+                                            Component.translatable(
+                                                "gradeway.command.player.setWeight.entityNotFound",
+                                                Component.text(idOrName),
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is PlayerService.SetWeightError.Unexpected) {
+                                        audience.sendMessage(
+                                            Component.translatable(
+                                                "gradeway.command.player.setWeight.unexpectedError",
+                                                Component.text(idOrName),
+                                                Component.text(error.throwable.message ?: "Unknown")
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                }
+                                .onRight {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.setWeight.success",
+                                            Component.text(idOrName),
+                                            Component.text(weight)
+                                        )
+                                    )
+                                }
+                        }
+                    }
+                }
+
                 execute {
                     val audience = sourceToAudience(source)
 
