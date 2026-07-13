@@ -18,7 +18,7 @@
             <option value="$PROJECT_DIR$/driver-database-sqlite" />
             <option value="$PROJECT_DIR$/driver-database-sqlserver" />
             <option value="$PROJECT_DIR$/driver-messaging-redis" />
-            <option value="$PROJECT_DIR$/plugin-bukkit" />
+            <option value="$PROJECT_DIR$/plugin-paper" />
             <option value="$PROJECT_DIR$/plugin-velocity" />
           </set>
         </option>

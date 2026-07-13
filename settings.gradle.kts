@@ -20,6 +20,6 @@ include(
 )
 
 include(
-    "plugin-bukkit",
+    "plugin-paper",
     "plugin-velocity",
 )
