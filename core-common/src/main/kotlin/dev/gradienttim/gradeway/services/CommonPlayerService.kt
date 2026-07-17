@@ -19,6 +19,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isValidName
 import dev.gradienttim.gradeway.messaging.payloads.*
+import dev.gradienttim.gradeway.platform.CommonCaches
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -27,15 +28,12 @@ import org.koin.core.component.inject
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 @Suppress("LargeClass", "TooManyFunctions")
 class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinComponent {
     private val roleService: RoleService by inject()
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
-
-    private val playerEffectiveWeightCache = ConcurrentHashMap<UUID, Int>()
 
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
@@ -128,33 +126,16 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     }
 
     override fun getEffectiveWeight(id: UUID): Int {
-        val entity = findById(id) ?: return DEFAULT_WEIGHT
-        return getEffectiveWeight(entity)
+        return gradeway.caches.playerEffectiveWeights.get(id)
     }
 
     override fun getEffectiveWeight(entity: PlayerEntity): Int {
-        return playerEffectiveWeightCache.getOrPut(entity.id.value) {
-            transaction(gradeway.database) {
-                resolveWeight(entity)
-            }
-        }
+        return getEffectiveWeight(entity.id.value)
     }
 
     override fun getEffectiveWeight(idOrName: String): Int {
-        val entity = findByIdOrName(idOrName) ?: return DEFAULT_WEIGHT
+        val entity = findByIdOrName(idOrName) ?: return CommonCaches.DEFAULT_WEIGHT
         return getEffectiveWeight(entity)
-    }
-
-    private fun resolveWeight(player: PlayerEntity): Int {
-        if (player.weight != UNSET_WEIGHT) {
-            return player.weight
-        }
-
-        val activeRoleWeight = player.roles
-            .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
-            .maxOfOrNull { playerRoleEntity -> roleService.getEffectiveWeight(playerRoleEntity.role) }
-
-        return activeRoleWeight ?: DEFAULT_WEIGHT
     }
 
     private fun invalidateWeightFor(payload: MessagingPayload) {
@@ -162,14 +143,14 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
             is PlayerChangedPayload -> invalidatePlayerWeight(payload.playerId)
             is PlayerRoleChangedPayload -> invalidatePlayerWeight(payload.playerId)
             is RoleChangedPayload, is GroupRoleChangedPayload, is GroupChangedPayload, is CacheFlushPayload ->
-                playerEffectiveWeightCache.clear()
+                gradeway.caches.playerEffectiveWeights.invalidateAll()
             else -> {}
         }
     }
 
     private fun invalidatePlayerWeight(rawPlayerId: String) {
         val playerId = runCatching { UUID.fromString(rawPlayerId) }.getOrNull() ?: return
-        playerEffectiveWeightCache.remove(playerId)
+        gradeway.caches.playerEffectiveWeights.invalidate(playerId)
     }
 
     override fun findById(id: UUID): DatabasePlayerEntity? {
@@ -943,9 +924,4 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
 
     override fun getPermissions(idOrName: String) =
         permissionService.getPlayerPermissions(idOrName)
-
-    private companion object {
-        const val UNSET_WEIGHT = -1
-        const val DEFAULT_WEIGHT = 0
-    }
 }

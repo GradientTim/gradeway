@@ -29,6 +29,9 @@ interface Caches {
     val groupPermissions: LoadingCache<UUID, Set<GroupPermissionEntity>>
     val playerPermissions: LoadingCache<UUID, Set<PlayerPermissionEntity>>
 
+    val roleEffectiveWeights: LoadingCache<UUID, Int>
+    val playerEffectiveWeights: LoadingCache<UUID, Int>
+
     val roleEffectivePermissions: LoadingCache<UUID, Set<PermissionEntity>>
     val groupEffectivePermissions: LoadingCache<UUID, Set<PermissionEntity>>
     val playerEffectivePermissions: LoadingCache<UUID, Set<PermissionEntity>>
@@ -46,6 +49,11 @@ interface Caches {
         playerPermissions.invalidateAll()
     }
 
+    fun invalidateEntityEffectiveWeights() {
+        roleEffectiveWeights.invalidateAll()
+        playerEffectiveWeights.invalidateAll()
+    }
+
     fun invalidateEntityEffectivePermissions() {
         roleEffectivePermissions.invalidateAll()
         groupEffectivePermissions.invalidateAll()
@@ -55,6 +63,7 @@ interface Caches {
     fun invalidateAll() {
         invalidateEntities()
         invalidateEntityPermissions()
+        invalidateEntityEffectiveWeights()
         invalidateEntityEffectivePermissions()
     }
 }

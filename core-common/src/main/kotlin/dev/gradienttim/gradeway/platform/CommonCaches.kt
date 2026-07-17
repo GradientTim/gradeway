@@ -81,13 +81,30 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
             gradeway.permissions.getPlayerPermissions(id)
         }
 
+    override val roleEffectiveWeights = Caffeine.newBuilder()
+        .maximumSize(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_MAX_SIZE)
+        .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_WRITE_DURATION, TimeUnit.MINUTES)
+        .build<UUID, Int> { id ->
+            transaction(gradeway.database) {
+                resolveEffectivePlayerWeight(players.get(id))
+            }
+        }
+
+    override val playerEffectiveWeights = Caffeine.newBuilder()
+        .maximumSize(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_MAX_SIZE)
+        .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_WRITE_DURATION, TimeUnit.MINUTES)
+        .build<UUID, Int> { id ->
+            transaction(gradeway.database) {
+                resolveEffectiveRoleWeight(roles.get(id))
+            }
+        }
+
     override val roleEffectivePermissions = Caffeine.newBuilder()
         .maximumSize(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_MAX_SIZE)
         .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_WRITE_DURATION, TimeUnit.MINUTES)
         .build<UUID, Set<PermissionEntity>> { id ->
-            val entity = gradeway.roles.findById(id) ?: return@build emptySet()
             transaction(gradeway.database) {
-                resolveRolePermissions(entity)
+                resolveEffectiveRolePermissions(roles.get(id))
             }
         }
 
@@ -95,9 +112,8 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
         .maximumSize(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_MAX_SIZE)
         .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_WRITE_DURATION, TimeUnit.MINUTES)
         .build<UUID, Set<PermissionEntity>> { id ->
-            val entity = gradeway.groups.findById(id) ?: return@build emptySet()
             transaction(gradeway.database) {
-                resolveGroupPermissions(entity)
+                resolveEffectiveGroupPermissions(groups.get(id))
             }
         }
 
@@ -105,13 +121,38 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
         .maximumSize(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_MAX_SIZE)
         .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_PERMISSIONS_WRITE_DURATION, TimeUnit.MINUTES)
         .build<UUID, Set<PermissionEntity>> { id ->
-            val entity = gradeway.players.findById(id) ?: return@build emptySet()
             transaction(gradeway.database) {
-                resolvePlayerPermissions(entity)
+                resolveEffectivePlayerPermissions(players.get(id))
             }
         }
 
-    private fun resolveGroupPermissions(group: GroupEntity): Set<PermissionEntity> {
+    private fun resolveEffectiveRoleWeight(role: RoleEntity): Int {
+        if (role.weight != UNSET_WEIGHT) {
+            return role.weight
+        }
+
+        val groupWeight = role.groups
+            .mapNotNull { roleGroupEntity ->
+                roleGroupEntity.group.defaultWeight.takeIf { it != UNSET_WEIGHT }
+            }
+            .maxOrNull()
+
+        return groupWeight ?: DEFAULT_WEIGHT
+    }
+
+    private fun resolveEffectivePlayerWeight(player: PlayerEntity): Int {
+        if (player.weight != UNSET_WEIGHT) {
+            return player.weight
+        }
+
+        val activeRoleWeight = player.roles
+            .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
+            .maxOfOrNull { playerRoleEntity -> resolveEffectiveRoleWeight(playerRoleEntity.role) }
+
+        return activeRoleWeight ?: DEFAULT_WEIGHT
+    }
+
+    private fun resolveEffectiveGroupPermissions(group: GroupEntity): Set<PermissionEntity> {
         val ownPermissions = group.permissions.filter { it.isEnabled }.map { it.permission }
         val templatePermissions = group.permissionTemplates.flatMap { groupPermissionTemplate ->
             groupPermissionTemplate.permissionTemplate.permissions.map { templatePermission ->
@@ -121,7 +162,7 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
         return (ownPermissions + templatePermissions).toSet()
     }
 
-    private fun resolveRolePermissions(
+    private fun resolveEffectiveRolePermissions(
         role: RoleEntity,
         visitedRoleIds: MutableSet<UUID> = mutableSetOf()
     ): Set<PermissionEntity> {
@@ -135,15 +176,17 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
                 templatePermission.permission
             }
         }
-        val groupPermissions = role.groups.flatMap { roleGroupEntity -> resolveGroupPermissions(roleGroupEntity.group) }
+        val groupPermissions = role.groups.flatMap { roleGroupEntity ->
+            resolveEffectiveGroupPermissions(roleGroupEntity.group)
+        }
         val parentPermissions = role.parents.flatMap { roleParentEntity ->
-            resolveRolePermissions(roleParentEntity.parent, visitedRoleIds)
+            resolveEffectiveRolePermissions(roleParentEntity.parent, visitedRoleIds)
         }
 
         return (ownPermissions + templatePermissions + groupPermissions + parentPermissions).toSet()
     }
 
-    private fun resolvePlayerPermissions(player: PlayerEntity): Set<PermissionEntity> {
+    private fun resolveEffectivePlayerPermissions(player: PlayerEntity): Set<PermissionEntity> {
         val ownPermissions = player.permissions.filter { it.isEnabled }.map { it.permission }
         val templatePermissions = player.permissionTemplates.flatMap { playerPermissionTemplate ->
             playerPermissionTemplate.permissionTemplate.permissions.map { templatePermission ->
@@ -160,7 +203,7 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
 
         val activeRolePermissions = player.roles
             .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
-            .flatMap { playerRoleEntity -> resolveRolePermissions(playerRoleEntity.role) }
+            .flatMap { playerRoleEntity -> resolveEffectiveRolePermissions(playerRoleEntity.role) }
 
         return (ownPermissions + templatePermissions + activeRolePermissions).toSet()
     }
@@ -180,5 +223,10 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
                     gradeway.logger.error("Failed to remove expired roles for ${player.id.value}: $error")
                 }
         }
+    }
+
+    companion object {
+        const val UNSET_WEIGHT = -1
+        const val DEFAULT_WEIGHT = 0
     }
 }

@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.commands.extensions.createGlobalListHandler
 import dev.gradienttim.gradeway.commands.extensions.createScopedListHandler
 import dev.gradienttim.gradeway.commands.extensions.suggestPermissionTemplates
 import dev.gradienttim.gradeway.commands.extensions.suggestPermissions
+import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatePermissionsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
@@ -19,6 +20,7 @@ import dev.gradienttim.gradeway.extensions.likeAsStr
 import dev.gradienttim.gradeway.services.PermissionService.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
@@ -837,13 +839,15 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissions
 
         createScopedListHandler(
             gradeway = gradeway,
-            permission = "gradeway.permissionTemplate.list",
+            permission = "gradeway.permissionTemplate.permissions.list",
             scopeKey = "idOrName",
             hasPermission = hasPermission,
             sourceToAudience = sourceToAudience,
             query = { scope, page, limit ->
-                PermissionTemplatesTable
-                    .select(PermissionTemplatesTable.id, PermissionTemplatesTable.name)
+                PermissionTemplatePermissionsTable
+                    .innerJoin(PermissionTemplatesTable, { templateId }, { id })
+                    .innerJoin(PermissionsTable, { PermissionTemplatePermissionsTable.permissionId }, { id })
+                    .select(PermissionsTable.id, PermissionsTable.value, PermissionsTable.type)
                     .where {
                         (PermissionTemplatesTable.id likeAsStr "$scope%") or
                                 (PermissionTemplatesTable.name.lowerCase() like
@@ -853,22 +857,23 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissions
                     .offset((page - 1).toLong())
                     .map { row ->
                         object {
-                            val id = row[PermissionTemplatesTable.id].value
-                            val name = row[PermissionTemplatesTable.name]
+                            val id = row[PermissionsTable.id].value
+                            val value = row[PermissionsTable.value]
+                            val type = row[PermissionsTable.type]
                         }
                     }
             },
             render = { audience, page, limit, result ->
                 if (result.isEmpty()) {
                     audience.sendMessage(
-                        Component.translatable("gradeway.command.permissionTemplate.list.empty")
+                        Component.translatable("gradeway.command.permissionTemplate.permissions.list.empty")
                     )
                     return@createScopedListHandler
                 }
 
                 audience.sendMessage(
                     Component.translatable(
-                        "gradeway.command.permissionTemplate.list.header",
+                        "gradeway.command.permissionTemplate.permissions.list.header",
                         Component.text(page),
                         Component.text(limit)
                     )
@@ -877,9 +882,10 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissions
                 result.forEach { permission ->
                     audience.sendMessage(
                         Component.translatable(
-                            "gradeway.command.permissionTemplate.list.entry",
+                            "gradeway.command.permissionTemplate.permissions.list.entry",
                             Component.text(permission.id.toString()),
-                            Component.text(permission.name)
+                            Component.text(permission.value),
+                            Component.text(permission.type.name)
                         )
                     )
                 }

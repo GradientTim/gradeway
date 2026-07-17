@@ -24,13 +24,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 
 class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinComponent {
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
-
-    private val roleEffectiveWeightCache = ConcurrentHashMap<UUID, Int>()
 
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
@@ -114,46 +111,30 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun getEffectiveWeight(id: UUID): Int {
-        val entity = findById(id) ?: return DEFAULT_WEIGHT
-        return getEffectiveWeight(entity)
+        return gradeway.caches.roleEffectiveWeights.get(id)
     }
 
     override fun getEffectiveWeight(entity: RoleEntity): Int {
-        return roleEffectiveWeightCache.getOrPut(entity.id.value) {
-            transaction(gradeway.database) {
-                resolveWeight(entity)
-            }
-        }
+        return getEffectiveWeight(entity.id.value)
     }
 
     override fun getEffectiveWeight(idOrName: String): Int {
-        val entity = findByIdOrName(idOrName) ?: return DEFAULT_WEIGHT
+        val entity = findByIdOrName(idOrName) ?: return -1
         return getEffectiveWeight(entity)
-    }
-
-    private fun resolveWeight(role: RoleEntity): Int {
-        if (role.weight != UNSET_WEIGHT) {
-            return role.weight
-        }
-
-        val groupWeight = role.groups
-            .mapNotNull { roleGroupEntity -> roleGroupEntity.group.defaultWeight.takeIf { it != UNSET_WEIGHT } }
-            .maxOrNull()
-        return groupWeight ?: DEFAULT_WEIGHT
     }
 
     private fun invalidateWeightFor(payload: MessagingPayload) {
         when (payload) {
             is RoleChangedPayload -> invalidateRoleWeight(payload.roleId)
             is GroupRoleChangedPayload -> invalidateRoleWeight(payload.roleId)
-            is GroupChangedPayload, is CacheFlushPayload -> roleEffectiveWeightCache.clear()
+            is GroupChangedPayload, is CacheFlushPayload -> gradeway.caches.roleEffectiveWeights.invalidateAll()
             else -> {}
         }
     }
 
     private fun invalidateRoleWeight(rawRoleId: String) {
         val roleId = runCatching { UUID.fromString(rawRoleId) }.getOrNull() ?: return
-        roleEffectiveWeightCache.remove(roleId)
+        gradeway.caches.roleEffectiveWeights.invalidate(roleId)
     }
 
     override fun findById(id: UUID): DatabaseRoleEntity? {
@@ -453,9 +434,4 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
 
     override fun getPermissions(idOrName: String) =
         permissionService.getRolePermissions(idOrName)
-
-    private companion object {
-        const val UNSET_WEIGHT = -1
-        const val DEFAULT_WEIGHT = 0
-    }
 }
