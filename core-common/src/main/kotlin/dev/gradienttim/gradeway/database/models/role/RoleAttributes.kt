@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.columns.adventureKey
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.ReferenceOption
@@ -28,7 +28,7 @@ object RoleAttributesTable : UUIDTable(name = TableConstants.ROLE_ATTRIBUTES_TAB
         onDelete = ReferenceOption.CASCADE
     )
 
-    val type = adventureKey("type")
+    val type = text("type")
     val key = adventureKey("key")
     val value = text("value")
 
@@ -38,14 +38,14 @@ object RoleAttributesTable : UUIDTable(name = TableConstants.ROLE_ATTRIBUTES_TAB
 
 class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttributeEntity {
     companion object : UUIDEntityClass<DatabaseRoleAttributeEntity>(RoleAttributesTable),
-        Serializable<DatabaseRoleAttributeEntity> {
-        override fun serialize(instance: DatabaseRoleAttributeEntity): JsonObject = buildJsonObject {
-            put("roleId", instance.roleId.value.toString())
-            put("type", instance.type.asString())
-            put("key", instance.key.asString())
-            put("value", instance.value)
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+        JsonSerializable<DatabaseRoleAttributeEntity> {
+        override fun serialize(data: DatabaseRoleAttributeEntity): JsonObject = buildJsonObject {
+            put("roleId", data.roleId.value.toString())
+            put("type", data.type)
+            put("key", data.key.asString())
+            put("value", data.value)
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabaseRoleAttributeEntity = new {
@@ -54,7 +54,7 @@ class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttr
                 table = RolesTable
             )
 
-            type = Key.key(json.getValue("type").jsonPrimitive.content)
+            type = json.getValue("type").jsonPrimitive.content
             key = Key.key(json.getValue("key").jsonPrimitive.content)
             value = json.getValue("value").jsonPrimitive.content
 
@@ -75,5 +75,5 @@ class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttr
     override val role by DatabaseRoleEntity referencedOn RoleAttributesTable.roleId
 
     override val attribute: Attribute<*>
-        get() = Attribute.create(type, key, value)
+        get() = Attribute.createUnsafe(type, key, value)
 }

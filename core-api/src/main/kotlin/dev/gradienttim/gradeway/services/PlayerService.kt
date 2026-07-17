@@ -185,7 +185,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
 
     /**
      * Removes every expired, non-paused role from each of the given players in a single batched
-     * operation. Intended for periodic maintenance sweeps over a bounded set of players (e.g. all
+     * operation. Intended for periodic maintenance sweeps over a bounded set of players (e.g., all
      * currently online players) rather than a per-player loop.
      *
      * @param playerIds The unique identifiers of the players whose expired roles should be removed.

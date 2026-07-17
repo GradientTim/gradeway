@@ -4,9 +4,9 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.role
 
-import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
+import dev.gradienttim.gradeway.entity.SharedPermissionTemplateEntity
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents the association between a role and a permission template in the system.
@@ -16,7 +16,7 @@ import java.util.UUID
  * It facilitates the management of permissions by grouping them into reusable templates and associating
  * those templates with roles.
  */
-interface RolePermissionTemplateEntity {
+interface RolePermissionTemplateEntity : SharedPermissionTemplateEntity {
     /**
      * Represents the unique identifier of the associated role in the many-to-many relationship
      * between `RoleEntity` and `PermissionTemplateEntity`.
@@ -26,16 +26,6 @@ interface RolePermissionTemplateEntity {
      * The identifier is stored as an `EntityID` type with a UUID for uniqueness.
      */
     val roleId: EntityID<UUID>
-
-    /**
-     * Represents the unique identifier of the associated permission template
-     * in the many-to-many relationship between `RoleEntity` and `PermissionTemplateEntity`.
-     *
-     * This property links the `RolePermissionTemplateEntity` to a specific `PermissionTemplateEntity`,
-     * allowing roles to reference predefined sets of permissions as templates.
-     * The identifier is stored as an `EntityID` type with a UUID for uniqueness.
-     */
-    val permissionTemplateId: EntityID<UUID>
 
     /**
      * Represents the role associated with a specific relationship in the context of
@@ -50,14 +40,4 @@ interface RolePermissionTemplateEntity {
      * within the system.
      */
     val role: RoleEntity
-
-    /**
-     * Represents a permission template associated with a specific role.
-     *
-     * This variable holds an instance of `PermissionTemplateEntity` that defines
-     * a set of permissions and their assigned scope. It is used to manage and
-     * configure role-specific permission templates within the context of the
-     * `RolePermissionTemplateEntity` class.
-     */
-    val permissionTemplate: PermissionTemplateEntity
 }

@@ -7,7 +7,7 @@ package dev.gradienttim.gradeway.database.models.permission
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
@@ -30,13 +30,13 @@ object PermissionTemplatesTable : UUIDTable(name = TableConstants.PERMISSION_TEM
 
 class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionTemplateEntity, KoinComponent {
     companion object : UUIDEntityClass<DatabasePermissionTemplateEntity>(PermissionTemplatesTable),
-        Serializable<DatabasePermissionTemplateEntity> {
-        override fun serialize(instance: DatabasePermissionTemplateEntity): JsonObject = buildJsonObject {
-            put("id", instance.id.value.toString())
-            put("name", instance.name)
-            put("assignedTo", instance.assignedTo.name)
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+        JsonSerializable<DatabasePermissionTemplateEntity> {
+        override fun serialize(data: DatabasePermissionTemplateEntity): JsonObject = buildJsonObject {
+            put("id", data.id.value.toString())
+            put("name", data.name)
+            put("assignedTo", data.assignedTo.name)
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabasePermissionTemplateEntity {

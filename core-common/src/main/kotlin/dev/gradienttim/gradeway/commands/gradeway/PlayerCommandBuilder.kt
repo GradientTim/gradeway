@@ -6,18 +6,23 @@ package dev.gradienttim.gradeway.commands.gradeway
 
 import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.command.*
-import dev.gradienttim.gradeway.commands.extensions.suggestPlayers
-import dev.gradienttim.gradeway.commands.extensions.suggestRoles
-import dev.gradienttim.gradeway.services.AttributeService.*
-import dev.gradienttim.gradeway.services.PermissionService.*
+import dev.gradienttim.gradeway.commands.extensions.*
+import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
+import dev.gradienttim.gradeway.database.models.player.PlayerAttributesTable
+import dev.gradienttim.gradeway.database.models.player.PlayerPermissionsTable
+import dev.gradienttim.gradeway.database.models.player.PlayersTable
+import dev.gradienttim.gradeway.extensions.formatUTC
+import dev.gradienttim.gradeway.extensions.likeAsStr
 import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.utilities.TimeParser
 import net.kyori.adventure.audience.Audience
-import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
-import java.time.Duration
+import org.jetbrains.exposed.v1.core.innerJoin
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.core.lowerCase
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.jdbc.select
 import java.time.Instant
 import java.util.*
 
@@ -28,6 +33,140 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
 ) {
     literal("player") {
         requires { hasPermission(it, "gradeway.player") }
+
+        literal("create") {
+            requires { hasPermission(it, "gradeway.player.create") }
+
+            string("id") {
+                string("name") {
+                    execute {
+                        val audience = sourceToAudience(source)
+
+                        val id = stringParam("id")
+                        val name = stringParam("name")
+
+                        val uniqueId = runCatching {
+                            UUID.fromString(id)
+                        }.getOrNull()
+
+                        if (uniqueId == null) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.player.create.invalidUuid",
+                                    Component.text(id)
+                                )
+                            )
+                            return@execute
+                        }
+
+                        gradeway.players.create(uniqueId, name)
+                            .onLeft { error ->
+                                if (error is PlayerService.CreatePlayerError.EntityAlreadyExists) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.create.entityAlreadyExists",
+                                            Component.text(id)
+                                        )
+                                    )
+                                    return@execute
+                                }
+                                if (error is PlayerService.CreatePlayerError.InvalidName) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.create.invalidName",
+                                            Component.text(id)
+                                        )
+                                    )
+                                    return@execute
+                                }
+                                if (error is PlayerService.CreatePlayerError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.create.unexpectedError",
+                                            Component.text(id),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@execute
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.create.success",
+                                        Component.text(id),
+                                        Component.text(name)
+                                    )
+                                )
+                            }
+                    }
+                }
+            }
+        }
+
+        literal("delete") {
+            requires { hasPermission(it, "gradeway.player.delete") }
+
+            string("id") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestPlayers(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val id = stringParam("id")
+
+                    val uniqueId = runCatching {
+                        UUID.fromString(id)
+                    }.getOrNull()
+
+                    if (uniqueId == null) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.player.delete.invalidUuid",
+                                Component.text(id)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.players.delete(uniqueId)
+                        .onLeft { error ->
+                            if (error is PlayerService.DeletePlayerError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.delete.entityNotFound",
+                                        Component.text(id)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is PlayerService.DeletePlayerError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.delete.unexpectedError",
+                                        Component.text(id),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.player.delete.success",
+                                    Component.text(id)
+                                )
+                            )
+                        }
+                }
+            }
+        }
 
         literal("modify") {
             string("idOrName") {
@@ -105,6 +244,61 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
                 }
             }
         }
+
+        createGlobalListHandler(
+            gradeway = gradeway,
+            permission = "gradeway.player.list",
+            hasPermission = hasPermission,
+            sourceToAudience = sourceToAudience,
+            query = { page, limit ->
+                PlayersTable
+                    .select(
+                        PlayersTable.id,
+                        PlayersTable.name,
+                        PlayersTable.weight,
+                        PlayersTable.createdAt,
+                        PlayersTable.updatedAt
+                    )
+                    .limit(limit)
+                    .offset((page - 1).toLong())
+                    .map { row ->
+                        object {
+                            val id = row[PlayersTable.id].value
+                            val name = row[PlayersTable.name]
+                            val weight = row[PlayersTable.weight]
+                            val createdAt = row[PlayersTable.createdAt]
+                            val updatedAt = row[PlayersTable.updatedAt]
+                        }
+                    }
+            },
+            render = { audience, page, limit, result ->
+                if (result.isEmpty()) {
+                    audience.sendMessage(Component.translatable("gradeway.command.player.list.empty"))
+                    return@createGlobalListHandler
+                }
+
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.player.list.header",
+                        Component.text(page),
+                        Component.text(limit)
+                    )
+                )
+
+                result.forEach { player ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.player.list.entry",
+                            Component.text(player.id.toString()),
+                            Component.text(player.name),
+                            Component.text(player.weight),
+                            Component.text(player.createdAt.formatUTC()),
+                            Component.text(player.updatedAt.formatUTC())
+                        )
+                    )
+                }
+            }
+        )
     }
 }
 
@@ -425,496 +619,65 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerAttributesBuilder(
     hasPermission: (source: TSource, permission: String) -> Boolean,
     sourceToAudience: (source: TSource) -> Audience,
 ) {
-    fun <TValue : Any> handleAddAttribute(audience: Audience, idOrName: String, attribute: Attribute<TValue>) {
-        gradeway.players.addAttribute(idOrName, attribute)
-            .onLeft { error ->
-                if (error is AddAttributeError.EntityNotFound) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.addAttribute.entityNotFound",
-                            Component.text(idOrName),
-                            Component.text(attribute.key.asString())
-                        )
-                    )
-                    return
+    createEntityAttributeHandler(
+        gradeway = gradeway,
+        entityType = "player",
+        hasPermission = hasPermission,
+        sourceToAudience = sourceToAudience,
+        handleAddAttribute = { idOrName, attribute -> gradeway.players.addAttribute(idOrName, attribute) },
+        handleUpdateAttribute = { idOrName, key, value -> gradeway.players.updateAttribute(idOrName, key, value) },
+        handleRemoveAttribute = { idOrName, key -> gradeway.players.removeAttribute(idOrName, key) },
+        handleClearAttributes = { idOrName -> gradeway.players.clearAttributes(idOrName) },
+        handleListQuery = { scope, page, limit ->
+            PlayerAttributesTable
+                .innerJoin(PlayersTable, { playerId }, { id })
+                .select(
+                    PlayerAttributesTable.type,
+                    PlayerAttributesTable.key,
+                    PlayerAttributesTable.value
+                )
+                .where {
+                    (PlayersTable.id likeAsStr "$scope%") or
+                            (PlayersTable.name.lowerCase() like "${scope.toString().lowercase()}%")
                 }
-                if (error is AddAttributeError.AttributeAlreadyExists) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.addAttribute.attributeAlreadyExists",
-                            Component.text(idOrName),
-                            Component.text(attribute.key.asString())
-                        )
-                    )
-                    return
+                .limit(limit)
+                .offset((page - 1).toLong())
+                .map { row ->
+                    object {
+                        val type = row[PlayerAttributesTable.type]
+                        val key = row[PlayerAttributesTable.key]
+                        val value = row[PlayerAttributesTable.value]
+                    }
                 }
-                if (error is AddAttributeError.Unexpected) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.addAttribute.unexpectedError",
-                            Component.text(idOrName),
-                            Component.text(attribute.key.asString()),
-                            Component.text(error.throwable.message ?: "Unknown")
-                        )
-                    )
-                    return
-                }
+        },
+        handleListRender = { audience, page, limit, result ->
+            if (result.isEmpty()) {
+                audience.sendMessage(
+                    Component.translatable("gradeway.command.player.listAttributes.empty")
+                )
+                return@createEntityAttributeHandler
             }
-            .onRight {
+
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.player.listAttributes.header",
+                    Component.text(page),
+                    Component.text(limit)
+                )
+            )
+
+            result.forEach { attributeEntity ->
                 audience.sendMessage(
                     Component.translatable(
-                        "gradeway.command.player.addAttribute.success",
-                        Component.text(idOrName),
-                        Component.text(attribute.key.asString()),
-                        Component.text(attribute.value.toString())
+                        "gradeway.command.player.listAttributes.entry",
+                        Component.text(attributeEntity.type),
+                        Component.text(attributeEntity.key.asString()),
+                        Component.text(attributeEntity.value)
                     )
                 )
             }
-    }
-
-    fun <TValue : Any> handleUpdateAttribute(audience: Audience, idOrName: String, key: String, value: TValue) {
-        val actualKey = Key.key(key)
-        gradeway.players.updateAttribute(idOrName, Key.key(key), value)
-            .onLeft { error ->
-                if (error is UpdateAttributeError.EntityNotFound) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.updateAttribute.entityNotFound",
-                            Component.text(idOrName),
-                            Component.text(actualKey.asString())
-                        )
-                    )
-                    return
-                }
-                if (error is UpdateAttributeError.AttributeNotExists) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.updateAttribute.attributeNotExists",
-                            Component.text(idOrName),
-                            Component.text(actualKey.asString())
-                        )
-                    )
-                    return
-                }
-                if (error is UpdateAttributeError.Unexpected) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.updateAttribute.unexpectedError",
-                            Component.text(idOrName),
-                            Component.text(actualKey.asString()),
-                            Component.text(error.throwable.message ?: "Unknown")
-                        )
-                    )
-                    return
-                }
-            }
-            .onRight {
-                audience.sendMessage(
-                    Component.translatable(
-                        "gradeway.command.player.updateAttribute.success",
-                        Component.text(idOrName),
-                        Component.text(actualKey.asString()),
-                        Component.text(value.toString())
-                    )
-                )
-            }
-    }
-
-    literal("attributes") {
-        requires { hasPermission(it, "gradeway.player.attributes") }
-
-        literal("add") {
-            requires { hasPermission(it, "gradeway.player.attributes.set") }
-
-            string("key") {
-                literal("string") {
-                    string("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = stringParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.string(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("boolean") {
-                    boolean("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = booleanParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.boolean(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("integer") {
-                    integer("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = intParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.integer(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("long") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.long(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("double") {
-                    double("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = doubleParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.double(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("float") {
-                    float("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = floatParam("value")
-
-                            handleAddAttribute(audience, idOrName, Attribute.float(Key.key(key), value))
-                        }
-                    }
-                }
-
-                literal("uuid") {
-                    string("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = stringParam("value")
-
-                            val uuid = runCatching {
-                                UUID.fromString(value)
-                            }.getOrNull()
-
-                            if (uuid == null) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.addAttribute.invalidUuid",
-                                        Component.text(idOrName),
-                                        Component.text(key),
-                                        Component.text(value)
-                                    )
-                                )
-                                return@execute
-                            }
-
-                            handleAddAttribute(audience, idOrName, Attribute.uuid(Key.key(key), uuid))
-                        }
-                    }
-                }
-
-                literal("instant") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleAddAttribute(
-                                audience,
-                                idOrName,
-                                Attribute.instant(Key.key(key), Instant.ofEpochMilli(value))
-                            )
-                        }
-                    }
-                }
-
-                literal("duration") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleAddAttribute(
-                                audience,
-                                idOrName,
-                                Attribute.duration(Key.key(key), Duration.ofMillis(value))
-                            )
-                        }
-                    }
-                }
-            }
         }
-
-        literal("update") {
-            requires { hasPermission(it, "gradeway.player.attributes.update") }
-
-            string("key") {
-                literal("string") {
-                    string("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = stringParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("boolean") {
-                    boolean("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = booleanParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("integer") {
-                    integer("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = intParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("long") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("double") {
-                    double("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = doubleParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("float") {
-                    float("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = floatParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, value)
-                        }
-                    }
-                }
-
-                literal("uuid") {
-                    string("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = stringParam("value")
-
-                            val uuid = runCatching {
-                                UUID.fromString(value)
-                            }.getOrNull()
-
-                            if (uuid == null) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.updateAttribute.invalidUuid",
-                                        Component.text(idOrName),
-                                        Component.text(key),
-                                        Component.text(value)
-                                    )
-                                )
-                                return@execute
-                            }
-
-                            handleUpdateAttribute(audience, idOrName, key, uuid)
-                        }
-                    }
-                }
-
-                literal("instant") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, Instant.ofEpochMilli(value))
-                        }
-                    }
-                }
-
-                literal("duration") {
-                    long("value") {
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-                            val key = stringParam("key")
-                            val value = longParam("value")
-
-                            handleUpdateAttribute(audience, idOrName, key, Duration.ofMillis(value))
-                        }
-                    }
-                }
-            }
-        }
-
-        literal("remove") {
-            requires { hasPermission(it, "gradeway.player.attributes.remove") }
-
-            string("key") {
-                execute {
-                    val audience = sourceToAudience(source)
-
-                    val idOrName = stringParam("idOrName")
-                    val key = stringParam("key")
-
-                    gradeway.roles.removeAttribute(idOrName, Key.key(key))
-                        .onLeft { error ->
-                            if (error is RemoveAttributeError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.removeAttribute.entityNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(key)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is RemoveAttributeError.AttributeNotExists) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.removeAttribute.attributeNotExists",
-                                        Component.text(idOrName),
-                                        Component.text(key)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is RemoveAttributeError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.removeAttribute.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(key),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    ),
-                                )
-                                return@execute
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.removeAttribute.success",
-                                    Component.text(idOrName),
-                                    Component.text(key)
-                                ),
-                            )
-                        }
-                }
-            }
-        }
-
-        literal("list") {
-            requires { hasPermission(it, "gradeway.player.attributes.list") }
-
-            execute {
-                val audience = sourceToAudience(source)
-
-                val idOrName = stringParam("idOrName")
-
-                val entity = gradeway.players.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.listAttributes.entityNotFound",
-                            Component.text(idOrName)
-                        )
-                    )
-                    return@execute
-                }
-
-                entity.attributes.forEach { attribute ->
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.listAttributes.entry",
-                            Component.text(attribute.key.asString()),
-                            Component.text(attribute.value)
-                        )
-                    )
-                }
-            }
-        }
-    }
+    )
 }
 
 internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
@@ -922,247 +685,73 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerPermissionsBuilder(
     hasPermission: (source: TSource, permission: String) -> Boolean,
     sourceToAudience: (source: TSource) -> Audience,
 ) {
-    literal("permissions") {
-        requires { hasPermission(it, "gradeway.player.permissions") }
-
-        literal("set") {
-            requires { hasPermission(it, "gradeway.player.permissions.set") }
-
-            string("permission") {
-                boolean("status") {
-                    execute {
-                        val audience = sourceToAudience(source)
-
-                        val idOrName = stringParam("idOrName")
-                        val permission = stringParam("permission")
-                        val status = booleanParam("status")
-
-                        gradeway.players.setPermission(idOrName, permission, status)
-                            .onLeft { error ->
-                                if (error is SetPermissionError.EntityNotFound) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.player.setPermission.entityNotFound",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.PermissionAlreadyEnabled) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.player.setPermission.alreadyEnabled",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.PermissionAlreadyDisabled) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.player.setPermission.alreadyDisabled",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.Unexpected) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.player.setPermission.unexpectedError",
-                                            Component.text(idOrName),
-                                            Component.text(permission),
-                                            Component.text(error.throwable.message ?: "Unknown")
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                            }
-                            .onRight {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.setPermission.success",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                            }
+    createEntityPermissionHandler(
+        gradeway = gradeway,
+        entityType = "player",
+        hasPermission = hasPermission,
+        sourceToAudience = sourceToAudience,
+        handleSetPermission = { idOrName, permission, status ->
+            gradeway.players.setPermission(idOrName, permission, status)
+        },
+        handleUnsetPermission = { idOrName, permission -> gradeway.players.unsetPermission(idOrName, permission) },
+        handleClearPermissions = { idOrName -> gradeway.players.clearPermissions(idOrName) },
+        handleLinkTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.linkTemplateToPlayer(templateIdOrName, idOrName)
+        },
+        handleUnlinkTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.unlinkTemplateFromPlayer(templateIdOrName, idOrName)
+        },
+        handleApplyTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.applyTemplateToPlayer(templateIdOrName, idOrName)
+        },
+        handleRevokeTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.revokeTemplateFromPlayer(templateIdOrName, idOrName)
+        },
+        handleListQuery = { scope, page, limit ->
+            PlayerPermissionsTable
+                .innerJoin(PlayersTable, { playerId }, { id })
+                .innerJoin(PermissionsTable, { PlayerPermissionsTable.permissionId }, { id })
+                .select(PermissionsTable.value, PermissionsTable.type, PlayerPermissionsTable.isEnabled)
+                .where {
+                    (PlayersTable.id likeAsStr "$scope%") or
+                            (PlayersTable.name.lowerCase() like "${scope.toString().lowercase()}%")
+                }
+                .limit(limit)
+                .offset((page - 1).toLong())
+                .map { row ->
+                    object {
+                        val value = row[PermissionsTable.value]
+                        val type = row[PermissionsTable.type]
+                        val isEnabled = row[PlayerPermissionsTable.isEnabled]
                     }
                 }
-
-                execute {
-                    val audience = sourceToAudience(source)
-
-                    val idOrName = stringParam("idOrName")
-                    val permission = stringParam("permission")
-
-                    gradeway.players.setPermission(idOrName, permission, true)
-                        .onLeft { error ->
-                            if (error is SetPermissionError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.setPermission.entityNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is SetPermissionError.PermissionAlreadyEnabled) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.setPermission.alreadyEnabled",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is SetPermissionError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.setPermission.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(permission),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    ),
-                                )
-                                return@execute
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.setPermission.success",
-                                    Component.text(idOrName),
-                                    Component.text(permission)
-                                ),
-                            )
-                        }
-                }
+        },
+        handleListRender = { audience, page, limit, result ->
+            if (result.isEmpty()) {
+                audience.sendMessage(
+                    Component.translatable("gradeway.command.player.listPermissions.empty")
+                )
+                return@createEntityPermissionHandler
             }
-        }
 
-        literal("unset") {
-            requires { hasPermission(it, "gradeway.player.permissions.unset") }
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.player.listPermissions.header",
+                    Component.text(page),
+                    Component.text(limit)
+                )
+            )
 
-            string("permission") {
-                execute {
-                    val audience = sourceToAudience(source)
-
-                    val idOrName = stringParam("idOrName")
-                    val permission = stringParam("permission")
-
-                    gradeway.players.unsetPermission(idOrName, permission)
-                        .onLeft { error ->
-                            if (error is UnsetPermissionError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.unsetPermission.entityNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is UnsetPermissionError.PermissionNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.setPermission.permissionNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is UnsetPermissionError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.player.unsetPermission.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(permission),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    ),
-                                )
-                                return@execute
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.unsetPermission.success",
-                                    Component.text(idOrName),
-                                    Component.text(permission)
-                                ),
-                            )
-                        }
-                }
-            }
-        }
-
-        literal("clear") {
-            requires { hasPermission(it, "gradeway.player.permissions.clear") }
-
-            execute {
-                val audience = sourceToAudience(source)
-
-                val idOrName = stringParam("idOrName")
-
-                gradeway.players.clearPermissions(idOrName)
-                    .onLeft { error ->
-                        if (error is ClearPermissionError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.clearPermission.entityNotFound",
-                                    Component.text(idOrName),
-                                ),
-                            )
-                            return@execute
-                        }
-                        if (error is ClearPermissionError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.clearPermissions.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                ),
-                            )
-                            return@execute
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.player.clearPermissions.success",
-                                Component.text(idOrName),
-                            ),
-                        )
-                    }
-            }
-        }
-
-        literal("list") {
-            requires { hasPermission(it, "gradeway.player.permissions.list") }
-
-            execute {
-                val audience = sourceToAudience(source)
-
-                val idOrName = stringParam("idOrName")
-
-                val entity = gradeway.players.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.player.notFound",
-                            Component.text(idOrName)
-                        )
+            result.forEach { permissionEntity ->
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.player.listPermissions.entry",
+                        Component.text(permissionEntity.value),
+                        Component.text(permissionEntity.type.name),
+                        Component.text(permissionEntity.isEnabled)
                     )
-                    return@execute
-                }
+                )
             }
         }
-    }
+    )
 }

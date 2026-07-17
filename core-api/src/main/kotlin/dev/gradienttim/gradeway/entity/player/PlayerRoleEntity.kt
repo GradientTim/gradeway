@@ -7,7 +7,7 @@ package dev.gradienttim.gradeway.entity.player
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents the association between a player and a role, defining their relationship and state.
@@ -94,7 +94,7 @@ interface PlayerRoleEntity {
      *
      * This property establishes a reference to a specific `RoleEntity` instance, encapsulating
      * attributes such as the role's unique identifier, name, weight, permissions, and associated
-     * metadata (e.g., creation and update timestamps). It is utilized to define the role-related
+     * metadata (e.g., creation and update timestamps). It is used to define the role-related
      * state and functionality linked to the player.
      */
     val role: RoleEntity

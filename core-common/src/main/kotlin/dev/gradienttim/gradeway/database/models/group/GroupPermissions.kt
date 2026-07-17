@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
@@ -43,11 +43,11 @@ object GroupPermissionsTable : CompositeIdTable(name = TableConstants.GROUP_PERM
 
 class DatabaseGroupPermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(id), GroupPermissionEntity {
     companion object : CompositeEntityClass<DatabaseGroupPermissionEntity>(GroupPermissionsTable),
-        Serializable<DatabaseGroupPermissionEntity> {
-        override fun serialize(instance: DatabaseGroupPermissionEntity): JsonObject = buildJsonObject {
-            put("groupId", instance.groupId.value.toString())
-            put("permissionId", instance.permissionId.value.toString())
-            put("isEnabled", instance.isEnabled)
+        JsonSerializable<DatabaseGroupPermissionEntity> {
+        override fun serialize(data: DatabaseGroupPermissionEntity): JsonObject = buildJsonObject {
+            put("groupId", data.groupId.value.toString())
+            put("permissionId", data.permissionId.value.toString())
+            put("isEnabled", data.isEnabled)
         }
 
         override fun deserialize(json: JsonObject): DatabaseGroupPermissionEntity = new {

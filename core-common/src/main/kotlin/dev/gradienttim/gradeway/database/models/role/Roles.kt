@@ -11,7 +11,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import dev.gradienttim.gradeway.services.GroupService
 import dev.gradienttim.gradeway.services.RoleService
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -34,13 +34,13 @@ object RolesTable : UUIDTable(name = TableConstants.ROLES_TABLE_NAME) {
 }
 
 class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinComponent {
-    companion object : UUIDEntityClass<DatabaseRoleEntity>(RolesTable), Serializable<DatabaseRoleEntity> {
-        override fun serialize(instance: DatabaseRoleEntity): JsonObject = buildJsonObject {
-            put("id", instance.id.value.toString())
-            put("name", instance.name)
-            put("weight", instance.weight)
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+    companion object : UUIDEntityClass<DatabaseRoleEntity>(RolesTable), JsonSerializable<DatabaseRoleEntity> {
+        override fun serialize(data: DatabaseRoleEntity): JsonObject = buildJsonObject {
+            put("id", data.id.value.toString())
+            put("name", data.name)
+            put("weight", data.weight)
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabaseRoleEntity {

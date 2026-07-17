@@ -177,28 +177,28 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      * Clears all permissions associated with the entity identified by the given unique identifier.
      *
      * @param id The unique identifier of the entity whose permissions are to be cleared.
-     * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs
+     * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the specified entity.
      *
      * @param entity The entity whose permissions are to be cleared.
-     * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs during
+     * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs during
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(entity: TEntity): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPermissions(entity: TEntity): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the entity identified by the given unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the entity whose permissions are to be cleared.
-     * @return An [Either] containing either a [PermissionService.ClearPermissionError] if an error occurs during
+     * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs during
      *         or `true` if the update succeeds.
      */
-    fun clearPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks whether the entity identified by the given ID has the specified permission.

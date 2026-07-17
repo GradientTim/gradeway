@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
 import java.util.*
@@ -27,7 +28,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> addAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to the specified entity.
@@ -40,7 +41,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> addAttribute(
         entity: TEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to an entity identified by the given unique identifier or name.
@@ -53,7 +54,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> addAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a specific entity.
@@ -68,7 +69,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for the specified entity.
@@ -83,7 +84,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
         entity: TEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for an entity identified by the given unique identifier or name.
@@ -98,7 +99,7 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes an attribute identified by the given key from an entity specified by its unique identifier.

@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway
 
-import arrow.core.Either
 import dev.gradienttim.gradeway.managers.*
+import dev.gradienttim.gradeway.platform.Caches
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.utilities.lifecycle.*
@@ -35,6 +35,8 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
      * of invocation, making it suitable for scenarios where precise timing is required.
      */
     val now: () -> Instant
+
+    val caches: Caches
 
     /**
      * Logger instance used to log informational, warning, and error messages within the `GradewayLifecycle` class.
@@ -240,53 +242,4 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
      * impacting permissible operations like a load, unload, and reload.
      */
     val state: GradewayState
-
-    /**
-     * Initializes and prepares the implementing instance of the `GradewayLifecycle` interface.
-     *
-     * This method is used to bootstrap the required services and perform necessary setup operations
-     * to make the instance fully functional. It should typically be called before any other methods
-     * or operations of the implementing instance are invoked.
-     *
-     * Implementers can define custom logic for initializing resources such as connections,
-     * dependencies, or any other preparatory steps required to ensure the Gradeway ecosystem
-     * is fully operational.
-     *
-     * Note: It is the responsibility of the caller to ensure this method is called at the correct
-     * lifecycle stage where initialization is appropriate.
-     *
-     * @return `true` when Gradway was successfully loaded, `false` otherwise.
-     */
-    override fun load(): Either<Throwable, Unit>
-
-    /**
-     * Cleans up and releases resources used by the implementing instance of the `GradewayLifecycle` interface.
-     *
-     * This method is used to properly shut down the instance by disposing of any acquired resources,
-     * closing connections, and performing necessary teardown operations to ensure the system
-     * transitions into a clean state. It is typically called when the instance is no longer needed
-     * or before the application terminates.
-     *
-     * Implementers can define custom logic for safely releasing resources such as cached data,
-     * external integrations, or any other dependencies that may need explicit cleanup.
-     *
-     * Note: It is the caller's responsibility to ensure that this method is invoked at the appropriate
-     * lifecycle stage to avoid resource leaks.
-     *
-     * @return `true` when Gradway was successfully unloaded, `false` otherwise.
-     */
-    override fun unload(): Either<Throwable, Unit>
-
-    /**
-     * Reloads the Gradeway system, refreshing its current state by reinitializing its components.
-     *
-     * This method is used to restart or reset the internal state of the Gradeway system, ensuring
-     * that the latest configurations, dependencies, and resources are loaded. It typically involves
-     * unloading and reloading the system's components, such as services, databases, or configuration
-     * files.
-     *
-     * @return `Either` containing a `Throwable` if an error occurred during the reload operation,
-     *         or `Unit` if the operation completed successfully.
-     */
-    override fun reload(): Either<Throwable, Unit>
 }

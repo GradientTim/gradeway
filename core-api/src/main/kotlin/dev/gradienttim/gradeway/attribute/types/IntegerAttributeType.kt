@@ -8,18 +8,12 @@ import dev.gradienttim.gradeway.attribute.AttributeType
 import net.kyori.adventure.key.Key
 import kotlin.reflect.KClass
 
-object IntegerAttributeType : AttributeType<Int> {
+object IntegerAttributeType : AttributeType<Int>() {
+    override val type: String = "integer"
     override val klass: KClass<Int> = Int::class
-    override fun key() = Key.key("attribute", "integer")
+    override val unsafe: Boolean = true
+    override val fallback: (attributeKey: Key) -> Int = { 0 }
 
     override fun serialize(value: Int): String = value.toString()
-    override fun deserialize(value: String): Int = value.toInt()
-
-    override fun equals(other: Any?): Boolean {
-        if (other === this) return true
-        if (other !is AttributeType<*>) return false
-        return other.key() == key()
-    }
-
-    override fun hashCode(): Int = key().hashCode()
+    override fun deserialize(value: String): Int? = value.toIntOrNull()
 }

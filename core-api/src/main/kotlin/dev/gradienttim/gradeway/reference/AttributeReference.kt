@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.reference
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -44,7 +45,9 @@ interface AttributeReference<TReference> {
      *           already existing, or an unexpected error.
      *         - Contains [Unit] upon successful addition of the attribute.
      */
-    fun <TValue : Any> addAttribute(attribute: Attribute<TValue>): Either<AttributeService.AddAttributeError, Unit>
+    fun <TValue : Any> addAttribute(
+        attribute: Attribute<TValue>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an attribute associated with the specified key.
@@ -61,7 +64,10 @@ interface AttributeReference<TReference> {
      *           or an unexpected error.
      *         - Contains [Unit] upon successful update of the attribute.
      */
-    fun <TValue : Any> updateAttribute(key: Key, value: TValue): Either<AttributeService.UpdateAttributeError, Unit>
+    fun <TValue : Any> updateAttribute(
+        key: Key,
+        value: TValue
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes the attribute associated with the specified key.

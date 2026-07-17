@@ -34,7 +34,7 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
      * Represents the name of the role entity. This is a mutable property that typically stores the
      * unique display name or identifier associated with a `RoleEntity`.
      */
-    var name: String
+    val name: String
 
     /**
      * Represents the weight of the role, which can be used to define its relative importance,
@@ -45,7 +45,7 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
      * such as defining the order of roles in a list or determining the overriding precedence
      * in a role-based access control system.
      */
-    var weight: Int
+    val weight: Int
 
     /**
      * The timestamp representing when the role entity was created.
@@ -117,7 +117,7 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
     override val permissionTemplates: SizedIterable<RolePermissionTemplateEntity>
 
     /**
-     * Represents the collection of parent-role relationships for this role entity, i.e. the roles
+     * Represents the collection of parent-role relationships for this role entity, i.e., the roles
      * this role inherits attributes and permissions from.
      *
      * Each entry is a [RoleParentEntity] linking this role (as the child) to one of its parent roles.
@@ -125,7 +125,7 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
     val parents: SizedIterable<RoleParentEntity>
 
     /**
-     * Represents the collection of child-role relationships for this role entity, i.e. the roles
+     * Represents the collection of child-role relationships for this role entity, i.e., the roles
      * that inherit attributes and permissions from this role.
      *
      * Each entry is a [RoleParentEntity] linking this role (as the parent) to one of its child roles.

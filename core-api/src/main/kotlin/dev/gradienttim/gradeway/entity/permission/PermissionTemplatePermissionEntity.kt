@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.permission
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import java.util.UUID
+import java.util.*
 
 /**
  * Defines the association between a permission and a permission template.

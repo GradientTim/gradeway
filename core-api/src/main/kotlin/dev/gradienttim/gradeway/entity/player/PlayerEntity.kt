@@ -36,7 +36,7 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
      * Represents the name of the player entity. This is a mutable property that typically stores the
      * unique display name or identifier associated with a `PlayerEntity`.
      */
-    var name: String
+    val name: String
 
     /**
      * Represents the weight of the player, which can be used to define its relative importance,
@@ -48,7 +48,7 @@ interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
      * indicate greater importance or precedence, while a lower weight could represent lesser
      * priority.
      */
-    var weight: Int
+    val weight: Int
 
     /**
      * Represents the primary role identifier associated with a player entity.

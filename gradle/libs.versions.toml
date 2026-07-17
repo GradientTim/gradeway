@@ -15,6 +15,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [libraries]
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.4" }
 koin-core = { module = "io.insert-koin:koin-core", version = "4.1.1" }
 mojang-brigadier = { module = "com.mojang:brigadier", version = "1.0.18" }
 google-devtools-ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.3.5" }

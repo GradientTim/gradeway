@@ -8,6 +8,8 @@ import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.managers.*
+import dev.gradienttim.gradeway.platform.Caches
+import dev.gradienttim.gradeway.platform.CommonCaches
 import dev.gradienttim.gradeway.platform.CommonEnvironment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.services.*
@@ -33,6 +35,7 @@ class CommonGradeway(
     override val directory: File,
 ) : GradewayLifecycle, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
+    override val caches: Caches by inject()
     override var backgroundScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override val permissions: PermissionService by inject()
@@ -82,6 +85,7 @@ class CommonGradeway(
         }
 
         val commonModule = module {
+            single<Caches> { CommonCaches(this@CommonGradeway) }
             single<Gradeway> { this@CommonGradeway }
         }
 
@@ -108,6 +112,7 @@ class CommonGradeway(
         if (!state.allowUnload) raise(GradewayAlreadyUnloadedThrowable())
         state = GradewayState.PROCESSING
 
+        caches.invalidateAll()
         backgroundScope.cancel()
 
         confirmations.unload().onLeft { raise(it) }

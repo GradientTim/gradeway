@@ -7,14 +7,21 @@ package dev.gradienttim.gradeway.commands.gradeway
 import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.command.*
+import dev.gradienttim.gradeway.commands.extensions.createEntityPermissionHandler
 import dev.gradienttim.gradeway.commands.extensions.createGlobalListHandler
 import dev.gradienttim.gradeway.commands.extensions.suggestGroups
 import dev.gradienttim.gradeway.commands.extensions.suggestRoles
+import dev.gradienttim.gradeway.database.models.group.GroupPermissionsTable
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
+import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
+import dev.gradienttim.gradeway.extensions.likeAsStr
 import dev.gradienttim.gradeway.services.GroupService
-import dev.gradienttim.gradeway.services.PermissionService.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import org.jetbrains.exposed.v1.core.innerJoin
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.core.lowerCase
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
@@ -507,247 +514,77 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.groupPermissionsBuilder(
     hasPermission: (source: TSource, permission: String) -> Boolean,
     sourceToAudience: (source: TSource) -> Audience,
 ) {
-    literal("permissions") {
-        requires { hasPermission(it, "gradeway.group.permissions") }
-
-        literal("set") {
-            requires { hasPermission(it, "gradeway.group.permissions.set") }
-
-            string("permission") {
-                boolean("status") {
-                    execute {
-                        val audience = sourceToAudience(source)
-
-                        val idOrName = stringParam("idOrName")
-                        val permission = stringParam("permission")
-                        val status = booleanParam("status")
-
-                        gradeway.groups.setPermission(idOrName, permission, status)
-                            .onLeft { error ->
-                                if (error is SetPermissionError.EntityNotFound) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.group.setPermission.entityNotFound",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.PermissionAlreadyEnabled) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.group.setPermission.alreadyEnabled",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.PermissionAlreadyDisabled) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.group.setPermission.alreadyDisabled",
-                                            Component.text(idOrName),
-                                            Component.text(permission)
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                                if (error is SetPermissionError.Unexpected) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.group.setPermission.unexpectedError",
-                                            Component.text(idOrName),
-                                            Component.text(permission),
-                                            Component.text(error.throwable.message ?: "Unknown")
-                                        ),
-                                    )
-                                    return@execute
-                                }
-                            }
-                            .onRight {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setPermission.success",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                            }
+    createEntityPermissionHandler(
+        gradeway = gradeway,
+        entityType = "group",
+        hasPermission = hasPermission,
+        sourceToAudience = sourceToAudience,
+        handleSetPermission = { idOrName, permission, status ->
+            gradeway.groups.setPermission(
+                idOrName,
+                permission,
+                status
+            )
+        },
+        handleUnsetPermission = { idOrName, permission -> gradeway.groups.unsetPermission(idOrName, permission) },
+        handleClearPermissions = { idOrName -> gradeway.groups.clearPermissions(idOrName) },
+        handleLinkTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.linkTemplateToGroup(templateIdOrName, idOrName)
+        },
+        handleUnlinkTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.unlinkTemplateFromGroup(templateIdOrName, idOrName)
+        },
+        handleApplyTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.applyTemplateToGroup(templateIdOrName, idOrName)
+        },
+        handleRevokeTemplate = { idOrName, templateIdOrName ->
+            gradeway.permissions.revokeTemplateFromGroup(templateIdOrName, idOrName)
+        },
+        handleListQuery = { scope, page, limit ->
+            GroupPermissionsTable
+                .innerJoin(GroupsTable, { groupId }, { id })
+                .innerJoin(PermissionsTable, { GroupPermissionsTable.permissionId }, { id })
+                .select(PermissionsTable.value, PermissionsTable.type, GroupPermissionsTable.isEnabled)
+                .where {
+                    (GroupsTable.id likeAsStr "$scope%") or
+                            (GroupsTable.name.lowerCase() like "${scope.toString().lowercase()}%")
+                }
+                .limit(limit)
+                .offset((page - 1).toLong())
+                .map { row ->
+                    object {
+                        val value = row[PermissionsTable.value]
+                        val type = row[PermissionsTable.type]
+                        val isEnabled = row[GroupPermissionsTable.isEnabled]
                     }
                 }
+        },
+        handleListRender = { audience, page, limit, result ->
+            if (result.isEmpty()) {
+                audience.sendMessage(
+                    Component.translatable("gradeway.command.group.listPermissions.empty")
+                )
+                return@createEntityPermissionHandler
+            }
 
-                execute {
-                    val audience = sourceToAudience(source)
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.group.listPermissions.header",
+                    Component.text(page),
+                    Component.text(limit)
+                )
+            )
 
-                    val idOrName = stringParam("idOrName")
-                    val permission = stringParam("permission")
-
-                    gradeway.groups.setPermission(idOrName, permission, true)
-                        .onLeft { error ->
-                            if (error is SetPermissionError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setPermission.entityNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is SetPermissionError.PermissionAlreadyEnabled) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setPermission.alreadyEnabled",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is SetPermissionError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setPermission.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(permission),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    ),
-                                )
-                                return@execute
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.setPermission.success",
-                                    Component.text(idOrName),
-                                    Component.text(permission)
-                                ),
-                            )
-                        }
-                }
+            result.forEach { permissionEntity ->
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.group.listPermissions.entry",
+                        Component.text(permissionEntity.value),
+                        Component.text(permissionEntity.type.name),
+                        Component.text(permissionEntity.isEnabled)
+                    )
+                )
             }
         }
-
-        literal("unset") {
-            requires { hasPermission(it, "gradeway.group.permissions.unset") }
-
-            string("permission") {
-                execute {
-                    val audience = sourceToAudience(source)
-
-                    val idOrName = stringParam("idOrName")
-                    val permission = stringParam("permission")
-
-                    gradeway.groups.unsetPermission(idOrName, permission)
-                        .onLeft { error ->
-                            if (error is UnsetPermissionError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.unsetPermission.entityNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is UnsetPermissionError.PermissionNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setPermission.permissionNotFound",
-                                        Component.text(idOrName),
-                                        Component.text(permission)
-                                    ),
-                                )
-                                return@execute
-                            }
-                            if (error is UnsetPermissionError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.unsetPermission.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(permission),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    ),
-                                )
-                                return@execute
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.unsetPermission.success",
-                                    Component.text(idOrName),
-                                    Component.text(permission)
-                                ),
-                            )
-                        }
-                }
-            }
-        }
-
-        literal("clear") {
-            requires { hasPermission(it, "gradeway.group.permissions.clear") }
-
-            execute {
-                val audience = sourceToAudience(source)
-
-                val idOrName = stringParam("idOrName")
-
-                gradeway.groups.clearPermissions(idOrName)
-                    .onLeft { error ->
-                        if (error is ClearPermissionError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.clearPermission.entityNotFound",
-                                    Component.text(idOrName),
-                                ),
-                            )
-                            return@execute
-                        }
-                        if (error is ClearPermissionError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.clearPermissions.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                ),
-                            )
-                            return@execute
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.group.clearPermissions.success",
-                                Component.text(idOrName),
-                            ),
-                        )
-                    }
-            }
-        }
-
-//        literal("list") {
-//            requires { hasPermission(it, "gradeway.group.permissions.list") }
-//
-//            execute {
-//                val audience = sourceToAudience(source)
-//
-//                val idOrName = stringParam("idOrName")
-//
-//                val entity = gradeway.groups.findByIdOrName(idOrName)
-//                if (entity == null) {
-//                    audience.sendMessage(
-//                        Component.translatable(
-//                            "gradeway.command.group.notFound",
-//                            Component.text(idOrName)
-//                        )
-//                    )
-//                    return@execute
-//                }
-//            }
-//        }
-    }
+    )
 }

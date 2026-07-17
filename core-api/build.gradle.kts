@@ -12,6 +12,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.apache.commons.compress)
 
+    api(libs.caffeine)
     api(libs.koin.core)
     api(libs.kyori.adventure)
     api(libs.bundles.exposed)

@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
@@ -51,14 +51,14 @@ object PlayerRolesTable : CompositeIdTable(name = TableConstants.PLAYER_ROLES_TA
 
 class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id), PlayerRoleEntity {
     companion object : CompositeEntityClass<DatabasePlayerRoleEntity>(PlayerRolesTable),
-        Serializable<DatabasePlayerRoleEntity> {
-        override fun serialize(instance: DatabasePlayerRoleEntity): JsonObject = buildJsonObject {
-            put("playerId", instance.playerId.value.toString())
-            put("roleId", instance.roleId.value.toString())
-            put("untilAt", instance.untilAt?.toEpochMilli())
-            put("pausedAt", instance.pausedAt?.toEpochMilli())
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+        JsonSerializable<DatabasePlayerRoleEntity> {
+        override fun serialize(data: DatabasePlayerRoleEntity): JsonObject = buildJsonObject {
+            put("playerId", data.playerId.value.toString())
+            put("roleId", data.roleId.value.toString())
+            put("untilAt", data.untilAt?.toEpochMilli())
+            put("pausedAt", data.pausedAt?.toEpochMilli())
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabasePlayerRoleEntity = new {

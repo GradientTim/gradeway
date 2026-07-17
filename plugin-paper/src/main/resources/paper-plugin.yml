@@ -5,4 +5,4 @@ api-version: 26.2
 version: 0.1.0
 author: GradientTim
 
-main: dev.gradienttim.gradeway.bukkit.GradewayPlugin
+main: dev.gradienttim.gradeway.paper.GradewayPlugin

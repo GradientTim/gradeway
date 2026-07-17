@@ -6,7 +6,7 @@ package dev.gradienttim.gradeway.database.models.permission
 
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -24,11 +24,11 @@ object PermissionsTable : UUIDTable(name = TableConstants.PERMISSIONS_TABLE_NAME
 
 class DatabasePermissionEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionEntity {
     companion object : UUIDEntityClass<DatabasePermissionEntity>(PermissionsTable),
-        Serializable<DatabasePermissionEntity> {
-        override fun serialize(instance: DatabasePermissionEntity): JsonObject = buildJsonObject {
-            put("id", instance.id.value.toString())
-            put("value", instance.value)
-            put("type", instance.type.name)
+        JsonSerializable<DatabasePermissionEntity> {
+        override fun serialize(data: DatabasePermissionEntity): JsonObject = buildJsonObject {
+            put("id", data.id.value.toString())
+            put("value", data.value)
+            put("type", data.type.name)
         }
 
         override fun deserialize(json: JsonObject): DatabasePermissionEntity {

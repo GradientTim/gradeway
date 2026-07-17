@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RoleGroupsTable
 import dev.gradienttim.gradeway.entity.group.GroupEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.java.UUIDTable
@@ -28,13 +28,13 @@ object GroupsTable : UUIDTable(name = TableConstants.GROUPS_TABLE_NAME) {
 }
 
 class DatabaseGroupEntity(id: EntityID<UUID>) : UUIDEntity(id), GroupEntity {
-    companion object : UUIDEntityClass<DatabaseGroupEntity>(GroupsTable), Serializable<DatabaseGroupEntity> {
-        override fun serialize(instance: DatabaseGroupEntity): JsonObject = buildJsonObject {
-            put("id", instance.id.value.toString())
-            put("name", instance.name)
-            put("defaultWeight", instance.defaultWeight)
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+    companion object : UUIDEntityClass<DatabaseGroupEntity>(GroupsTable), JsonSerializable<DatabaseGroupEntity> {
+        override fun serialize(data: DatabaseGroupEntity): JsonObject = buildJsonObject {
+            put("id", data.id.value.toString())
+            put("name", data.name)
+            put("defaultWeight", data.defaultWeight)
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabaseGroupEntity {

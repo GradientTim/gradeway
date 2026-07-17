@@ -4,15 +4,37 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.attribute
 
-import net.kyori.adventure.key.Keyed
+import dev.gradienttim.gradeway.utilities.Typed
+import net.kyori.adventure.key.Key
 import kotlin.reflect.KClass
 
-interface AttributeType<T : Any> : Keyed {
+abstract class AttributeType<T : Any> : Typed {
     /**
      * Represents the Kotlin class reference for the generic type [T] associated with this attribute type.
      * This property provides metadata about the type, enabling reflective operations and type-related processing.
      */
-    val klass: KClass<T>
+    abstract val klass: KClass<T>
+
+    /**
+     * Indicates whether the attribute type can be considered unsafe.
+     *
+     * This property is typically used to signify that the handling or usage of this
+     * attribute type comes with potential risks and should be approached with care.
+     * It may influence serialization, deserialization, or other behaviors.
+     */
+    abstract val unsafe: Boolean
+
+    /**
+     * A function that determines a default fallback value for a given attribute key.
+     *
+     * This is invoked when no explicit value for the requested attribute key is available.
+     * The fallback mechanism ensures that a valid value of type [T] can always be obtained
+     * even if the key does not directly correspond to an existing value in the attribute system.
+     *
+     * @param attributeKey The [Key] for which the fallback value is to be determined.
+     * @return A default value of type [T] associated with the given attribute key.
+     */
+    abstract val fallback: (attributeKey: Key) -> T
 
     /**
      * Serializes the given value into its string representation.
@@ -20,7 +42,7 @@ interface AttributeType<T : Any> : Keyed {
      * @param value The value to serialize.
      * @return A string representation of the given value.
      */
-    fun serialize(value: T): String
+    abstract fun serialize(value: T): String
 
     /**
      * Deserializes the given string into a value of type [T].
@@ -28,7 +50,7 @@ interface AttributeType<T : Any> : Keyed {
      * @param value The string to deserialize.
      * @return The deserialized value of type [T].
      */
-    fun deserialize(value: String): T
+    abstract fun deserialize(value: String): T?
 
     /**
      * Checks whether this attribute type is equal to another object.
@@ -36,12 +58,16 @@ interface AttributeType<T : Any> : Keyed {
      * @param other The object to compare against.
      * @return True if this attribute type is equal to the given object, false otherwise.
      */
-    override fun equals(other: Any?): Boolean
+    override fun equals(other: Any?): Boolean {
+        if (other === this) return true
+        if (other !is AttributeType<*>) return false
+        return other.type == type
+    }
 
     /**
      * Returns the hash code of this attribute type.
      *
      * @return The hash code value for this attribute type.
      */
-    override fun hashCode(): Int
+    override fun hashCode(): Int = type.hashCode()
 }

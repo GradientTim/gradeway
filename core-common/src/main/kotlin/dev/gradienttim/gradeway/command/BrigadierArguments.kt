@@ -65,21 +65,27 @@ fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.boolean(
 fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionType(
     name: String,
     builder: RequiredArgumentBuilder<TCommandSource, String>.() -> Unit,
-): RequiredArgumentBuilder<TCommandSource, String> = string(name, builder = builder)
-    .suggests { _, builder ->
+): RequiredArgumentBuilder<TCommandSource, String> = string(name) {
+    suggests { _, builder ->
         PermissionEntity.Type.entries.forEach { type ->
             builder.suggest(type.name)
         }
         return@suggests builder.buildFuture()
     }
 
+    builder()
+}
+
 fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionTemplateAssignedTo(
     name: String,
     builder: RequiredArgumentBuilder<TCommandSource, String>.() -> Unit,
-): RequiredArgumentBuilder<TCommandSource, String> = string(name, builder = builder)
-    .suggests { _, builder ->
+): RequiredArgumentBuilder<TCommandSource, String> = string(name) {
+    suggests { _, builder ->
         PermissionTemplateEntity.AssignedTo.entries.forEach { assignedTo ->
             builder.suggest(assignedTo.name)
         }
         return@suggests builder.buildFuture()
     }
+
+    builder()
+}

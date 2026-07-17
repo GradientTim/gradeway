@@ -66,40 +66,16 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
                     RolePermissionTemplatesTable
                 )
 
+                val tableStates = tables.map { it to it.exists() }
+
                 // Tables that already exist may have been created by an older version of Gradeway and can be
                 // missing columns/constraints introduced since; freshly created tables below already match the
                 // current definitions exactly and must be excluded here, or Exposed re-detects their own
                 // brand-new constraints as missing and tries to add them a second time.
-                val existingTables = tables.filter { it.exists() }
+                val existingTables = tableStates.filter { (_, exists) -> exists }.map { (table, _) -> table }
+                val nonExistingTables = tableStates.filter { (_, exists) -> !exists }.map { (table, _) -> table }
 
-                SchemaUtils.create(
-                    GroupsTable,
-                    GroupPermissionsTable,
-                    GroupPermissionTemplatesTable
-                )
-
-                SchemaUtils.create(
-                    PermissionsTable,
-                    PermissionTemplatePermissionsTable,
-                    PermissionTemplatesTable
-                )
-
-                SchemaUtils.create(
-                    PlayersTable,
-                    PlayerRolesTable,
-                    PlayerAttributesTable,
-                    PlayerPermissionsTable,
-                    PlayerPermissionTemplatesTable,
-                )
-
-                SchemaUtils.create(
-                    RolesTable,
-                    RoleGroupsTable,
-                    RoleParentsTable,
-                    RoleAttributesTable,
-                    RolePermissionsTable,
-                    RolePermissionTemplatesTable
-                )
+                SchemaUtils.create(*nonExistingTables.toTypedArray())
 
                 if (existingTables.isNotEmpty()) {
                     val migrationStatements = MigrationUtils.statementsRequiredForDatabaseMigration(

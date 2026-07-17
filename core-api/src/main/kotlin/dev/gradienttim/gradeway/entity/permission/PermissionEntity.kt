@@ -27,7 +27,7 @@ interface PermissionEntity {
      * might require exact matching, pattern matching, or prefix/suffix
      * validation based on the entity's defined behavior.
      */
-    var value: String
+    val value: String
 
     /**
      * Defines the matching strategy used for permission validation.
@@ -41,7 +41,7 @@ interface PermissionEntity {
      * - `ENDS_WITH`: Matches if the permission string ends with the specified value.
      * - `REGEX`: Matches based on a regular expression pattern defined in the value.
      */
-    var type: Type
+    val type: Type
 
     /**
      * A property that retrieves a compiled regular expression from the `value` of this permission entity.

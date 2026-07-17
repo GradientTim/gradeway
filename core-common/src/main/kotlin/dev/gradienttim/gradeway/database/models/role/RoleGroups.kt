@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupEntity
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -34,10 +34,10 @@ object RoleGroupsTable : CompositeIdTable(name = TableConstants.ROLE_GROUPS_TABL
 
 class DatabaseRoleGroupEntity(id: EntityID<CompositeID>) : CompositeEntity(id), RoleGroupEntity {
     companion object : CompositeEntityClass<DatabaseRoleGroupEntity>(RoleGroupsTable),
-        Serializable<DatabaseRoleGroupEntity> {
-        override fun serialize(instance: DatabaseRoleGroupEntity): JsonObject = buildJsonObject {
-            put("roleId", instance.roleId.value.toString())
-            put("groupId", instance.groupId.value.toString())
+        JsonSerializable<DatabaseRoleGroupEntity> {
+        override fun serialize(data: DatabaseRoleGroupEntity): JsonObject = buildJsonObject {
+            put("roleId", data.roleId.value.toString())
+            put("groupId", data.groupId.value.toString())
         }
 
         override fun deserialize(json: JsonObject): DatabaseRoleGroupEntity = new {

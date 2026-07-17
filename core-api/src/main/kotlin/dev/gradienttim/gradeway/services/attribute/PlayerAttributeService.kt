@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.attribute
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.AttributeService
@@ -28,7 +29,7 @@ interface PlayerAttributeService {
     fun <TValue : Any> addPlayerAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds a new attribute to the given player entity.
@@ -40,7 +41,7 @@ interface PlayerAttributeService {
     fun <TValue : Any> addPlayerAttribute(
         entity: PlayerEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds a new attribute to a player identified by their unique ID or name.
@@ -52,7 +53,7 @@ interface PlayerAttributeService {
     fun <TValue : Any> addPlayerAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the attribute of a player identified by their unique ID.
@@ -66,7 +67,7 @@ interface PlayerAttributeService {
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the specified attribute of a player entity with a new value.
@@ -81,7 +82,7 @@ interface PlayerAttributeService {
         entity: PlayerEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the attribute of a player identified by their unique ID or name.
@@ -95,7 +96,7 @@ interface PlayerAttributeService {
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes a specific attribute from a player identified by their unique ID.

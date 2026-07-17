@@ -9,7 +9,7 @@ import dev.gradienttim.gradeway.services.PermissionService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents a permission template entity that can be used to manage sets of permissions
@@ -90,21 +90,24 @@ interface PermissionTemplateEntity {
      *
      * The `AssignedTo` enum defines the scope or target to which a permission
      * can be applied. It includes options for assignments to all targets,
-     * specific roles, or individual players.
+     * specific roles, individual players, or groups.
      *
      * Enum Constants:
      * - `ALL`: Indicates the permission applies to all targets.
      * - `ROLE`: Indicates the permission is assigned to specific roles.
      * - `PLAYER`: Indicates the permission is assigned to individual players.
+     * - `GROUP`: Indicates the permission is assigned to individual groups.
      *
      * Properties:
      * - `allowForRole`: Returns true if the permission is applicable to roles, otherwise false.
-     * - `allowForPlayer`: Returns true if the permission is applicable to individual players, otherwise false.
+     * - `allowForPlayer`: Returns true if the permission is applicable to players, otherwise false.
+     * - `allowForGroup`: Returns true if the permission is applicable to groups, otherwise false.
      */
     enum class AssignedTo {
         ALL,
         ROLE,
         PLAYER,
+        GROUP,
         ;
 
         val allowForRole: Boolean
@@ -112,5 +115,8 @@ interface PermissionTemplateEntity {
 
         val allowForPlayer: Boolean
             get() = this == ALL || this == PLAYER
+
+        val allowForGroup: Boolean
+            get() = this == ALL || this == GROUP
     }
 }

@@ -13,11 +13,24 @@ import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+
+internal fun SuggestionsBuilder.suggestAttributeTypes(remaining: String) {
+    var itemKeys = AttributeTypeRegistry.items.map { it.type.lowercase() }
+
+    if (remaining.isNotEmpty()) {
+        itemKeys = itemKeys.filter { it.startsWith(remaining) }
+    }
+
+    itemKeys.forEach { itemKey ->
+        suggest(itemKey)
+    }
+}
 
 internal fun SuggestionsBuilder.suggestPlayers(gradeway: CommonGradeway, remaining: String) {
     val entities = transaction(gradeway.database) {

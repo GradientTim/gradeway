@@ -17,7 +17,7 @@ import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -151,7 +151,7 @@ class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
     )
 
     private fun <ID : Any, T : Entity<ID>, C> backupEntry(entityClass: C): BackupEntry
-            where C : EntityClass<ID, T>, C : Serializable<T> = BackupEntry(
+            where C : EntityClass<ID, T>, C : JsonSerializable<T> = BackupEntry(
         name = entityClass.table.tableName.replaceFirst(gradeway.configs.config.database.prefix, ""),
         write = { entityClass.all().map(entityClass::serialize) },
         read = { json -> entityClass.deserialize(json) },

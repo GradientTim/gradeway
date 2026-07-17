@@ -5,11 +5,11 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.paper
 
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
+import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.paper.listeners.ConnectionListener
 import dev.gradienttim.gradeway.paper.messaging.PaperPluginMessageDriver
 import dev.gradienttim.gradeway.paper.permission.GradewayPermissibleBase
-import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
-import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands

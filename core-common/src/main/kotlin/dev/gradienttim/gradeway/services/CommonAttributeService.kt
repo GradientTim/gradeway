@@ -36,7 +36,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addRoleAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = either {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = roleService.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addRoleAttribute(entity, attribute)
     }
@@ -44,10 +44,10 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addRoleAttribute(
         entity: RoleEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = addEntityAttribute(entity, attribute) {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(entity, attribute) {
         DatabaseRoleAttributeEntity.new {
             this.roleId = entity.id
-            this.type = attribute.type.key()
+            this.type = attribute.type.type
             this.key = attribute.key
             this.value = attribute.type.serialize(attribute.value)
         }
@@ -56,7 +56,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addRoleAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = either {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addRoleAttribute(entity, attribute)
     }
@@ -65,7 +65,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either {
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity = roleService.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updateRoleAttribute(entity, key, value)
     }
@@ -74,13 +74,13 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: RoleEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = updateEntityAttribute(entity, key, value)
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = updateEntityAttribute(entity, key, value)
 
     override fun <TValue : Any> updateRoleAttribute(
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either {
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updateRoleAttribute(entity, key, value)
     }
@@ -155,7 +155,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addPlayerAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = either {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = playerService.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addPlayerAttribute(entity, attribute)
     }
@@ -163,10 +163,10 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addPlayerAttribute(
         entity: PlayerEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = addEntityAttribute(entity, attribute) {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(entity, attribute) {
         DatabasePlayerAttributeEntity.new {
             this.playerId = entity.id
-            this.type = attribute.type.key()
+            this.type = attribute.type.type
             this.key = attribute.key
             this.value = attribute.type.serialize(attribute.value)
         }
@@ -175,7 +175,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     override fun <TValue : Any> addPlayerAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit> = either {
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = playerService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addPlayerAttribute(entity, attribute)
     }
@@ -184,7 +184,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either {
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity = playerService.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updatePlayerAttribute(entity, key, value)
     }
@@ -193,13 +193,13 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: PlayerEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = updateEntityAttribute(entity, key, value)
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = updateEntityAttribute(entity, key, value)
 
     override fun <TValue : Any> updatePlayerAttribute(
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either {
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity =
             playerService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updatePlayerAttribute(entity, key, value)
@@ -314,30 +314,38 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         entity: AttributeReference<out SharedAttributeEntity>,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit> = either<AttributeService.UpdateAttributeError, Unit> {
-        transaction(gradeway.database) {
-            val attribute = entity.attributes.find { it.key == key }
-            if (attribute == null) {
-                raise(AttributeService.UpdateAttributeError.AttributeNotExists)
-            }
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> =
+        either<AttributeService.UpdateAttributeError, SharedAttributeEntity> {
+            transaction(gradeway.database) {
+                val attribute = entity.attributes.find { it.key == key }
+                if (attribute == null) {
+                    raise(AttributeService.UpdateAttributeError.AttributeNotExists)
+                }
 
-            if (attribute !is Entity<*>) {
-                val throwable = Throwable("Attribute is not a database Entity")
-                raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
-            }
+                if (attribute !is Entity<*>) {
+                    val throwable = Throwable("Attribute is not a database Entity")
+                    raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
+                }
 
-            @Suppress("UNCHECKED_CAST")
-            val attributeType = AttributeTypeRegistry.find(attribute.type) as? AttributeType<TValue>
-                ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered)
+                @Suppress("UNCHECKED_CAST")
+                val attributeType = AttributeTypeRegistry.find(attribute.type) as? AttributeType<TValue>
+                    ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered(attribute.type))
 
-            try {
-                attribute.value = attributeType.serialize(value)
-                attribute.flush()
-            } catch (throwable: Throwable) {
-                raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
+                try {
+                    var tempValue = value
+                    if (attributeType.unsafe) {
+                        tempValue = attributeType.deserialize(value.toString()) ?: attributeType.fallback(key)
+                    }
+
+                    attribute.value = attributeType.serialize(tempValue)
+                    attribute.flush()
+
+                    attribute
+                } catch (throwable: Throwable) {
+                    raise(AttributeService.UpdateAttributeError.Unexpected(throwable))
+                }
             }
-        }
-    }.onRight { publishAttributeChanged(entity, key, MessagingAction.UPDATED) }
+        }.onRight { publishAttributeChanged(entity, key, MessagingAction.UPDATED) }
 
     private fun removeEntityAttribute(
         entity: AttributeReference<out SharedAttributeEntity>,

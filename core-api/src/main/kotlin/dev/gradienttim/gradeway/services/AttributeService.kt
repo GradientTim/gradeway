@@ -25,7 +25,7 @@ interface AttributeService : RoleAttributeService, PlayerAttributeService {
     sealed interface UpdateAttributeError {
         object EntityNotFound : UpdateAttributeError
         object AttributeNotExists : UpdateAttributeError
-        object AttributeTypeNotRegistered : UpdateAttributeError
+        data class AttributeTypeNotRegistered(val type: String) : UpdateAttributeError
         data class Unexpected(val throwable: Throwable) : UpdateAttributeError
     }
 

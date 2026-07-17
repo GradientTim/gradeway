@@ -12,5 +12,6 @@ repositories {
 dependencies {
     api(project(":core-common"))
 
+    implementation("org.incendo:cloud-paper:2.0.0-beta.10")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.9-alpha")
 }

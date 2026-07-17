@@ -9,18 +9,15 @@ import net.kyori.adventure.key.Key
 import java.time.Duration
 import kotlin.reflect.KClass
 
-object DurationAttributeType : AttributeType<Duration> {
+object DurationAttributeType : AttributeType<Duration>() {
+    override val type: String = "duration"
     override val klass: KClass<Duration> = Duration::class
-    override fun key() = Key.key("attribute", "duration")
+    override val unsafe: Boolean = true
+    override val fallback: (attributeKey: Key) -> Duration = { Duration.ZERO }
 
     override fun serialize(value: Duration): String = value.toMillis().toString()
-    override fun deserialize(value: String): Duration = Duration.ofMillis(value.toLong())
-
-    override fun equals(other: Any?): Boolean {
-        if (other === this) return true
-        if (other !is AttributeType<*>) return false
-        return other.key() == key()
+    override fun deserialize(value: String): Duration? {
+        val millis = value.toLongOrNull() ?: return null
+        return Duration.ofMillis(millis)
     }
-
-    override fun hashCode(): Int = key().hashCode()
 }

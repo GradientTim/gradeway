@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTemplateEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
 import dev.gradienttim.gradeway.entity.group.GroupPermissionTemplateEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -40,10 +40,10 @@ object GroupPermissionTemplatesTable : CompositeIdTable(name = TableConstants.GR
 class DatabaseGroupPermissionTemplateEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
     GroupPermissionTemplateEntity {
     companion object : CompositeEntityClass<DatabaseGroupPermissionTemplateEntity>(GroupPermissionTemplatesTable),
-        Serializable<DatabaseGroupPermissionTemplateEntity> {
-        override fun serialize(instance: DatabaseGroupPermissionTemplateEntity): JsonObject = buildJsonObject {
-            put("groupId", instance.groupId.value.toString())
-            put("permissionTemplateId", instance.permissionTemplateId.value.toString())
+        JsonSerializable<DatabaseGroupPermissionTemplateEntity> {
+        override fun serialize(data: DatabaseGroupPermissionTemplateEntity): JsonObject = buildJsonObject {
+            put("groupId", data.groupId.value.toString())
+            put("permissionTemplateId", data.permissionTemplateId.value.toString())
         }
 
         override fun deserialize(json: JsonObject): DatabaseGroupPermissionTemplateEntity = new {

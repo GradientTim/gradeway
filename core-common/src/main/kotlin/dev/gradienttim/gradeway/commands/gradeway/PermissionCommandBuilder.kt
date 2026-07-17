@@ -146,7 +146,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
         }
 
         literal("modify") {
-            string("id") {
+            string("idOrValue") {
                 suggestsDebounced { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
@@ -161,30 +161,16 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                         execute {
                             val audience = sourceToAudience(source)
 
-                            val id = stringParam("id")
+                            val idOrValue = stringParam("idOrValue")
                             val value = stringParam("value")
 
-                            val uniqueId = runCatching {
-                                UUID.fromString(id)
-                            }.getOrNull()
-
-                            if (uniqueId == null) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.permission.setValue.invalidUuid",
-                                        Component.text(id)
-                                    )
-                                )
-                                return@execute
-                            }
-
-                            gradeway.permissions.updatePermissionValue(uniqueId, value)
+                            gradeway.permissions.updatePermissionValue(idOrValue, value)
                                 .onLeft { error ->
                                     if (error is UpdatePermissionValueError.EntityNotFound) {
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setValue.entityNotFound",
-                                                Component.text(id)
+                                                Component.text(idOrValue)
                                             )
                                         )
                                         return@execute
@@ -193,7 +179,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setValue.valueAlreadySet",
-                                                Component.text(id),
+                                                Component.text(idOrValue),
                                                 Component.text(value)
                                             )
                                         )
@@ -203,7 +189,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setValue.unexpectedError",
-                                                Component.text(id),
+                                                Component.text(idOrValue),
                                                 Component.text(value),
                                                 Component.text(error.throwable.message ?: "Unknown")
                                             )
@@ -215,7 +201,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                     audience.sendMessage(
                                         Component.translatable(
                                             "gradeway.command.permission.setValue.success",
-                                            Component.text(id),
+                                            Component.text(idOrValue),
                                             Component.text(value)
                                         )
                                     )
@@ -231,42 +217,28 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                         execute {
                             val audience = sourceToAudience(source)
 
-                            val id = stringParam("id")
+                            val idOrValue = stringParam("idOrValue")
                             val rawType = stringParam("type").lowercase()
-
-                            val uniqueId = runCatching {
-                                UUID.fromString(id)
-                            }.getOrNull()
-
-                            if (uniqueId == null) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.permission.setType.invalidUuid",
-                                        Component.text(id)
-                                    )
-                                )
-                                return@execute
-                            }
 
                             val type = PermissionEntity.Type.entries.find { it.name.lowercase() == rawType }
                             if (type == null) {
                                 audience.sendMessage(
                                     Component.translatable(
                                         "gradeway.command.permission.setType.typeNotFound",
-                                        Component.text(id),
+                                        Component.text(idOrValue),
                                         Component.text(rawType)
                                     )
                                 )
                                 return@execute
                             }
 
-                            gradeway.permissions.updatePermissionType(uniqueId, type)
+                            gradeway.permissions.updatePermissionType(idOrValue, type)
                                 .onLeft { error ->
                                     if (error is UpdatePermissionTypeError.EntityNotFound) {
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setType.entityNotFound",
-                                                Component.text(id)
+                                                Component.text(idOrValue)
                                             )
                                         )
                                         return@execute
@@ -275,7 +247,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setType.typeAlreadySet",
-                                                Component.text(id),
+                                                Component.text(idOrValue),
                                                 Component.text(type.name)
                                             )
                                         )
@@ -285,7 +257,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                         audience.sendMessage(
                                             Component.translatable(
                                                 "gradeway.command.permission.setType.unexpectedError",
-                                                Component.text(id),
+                                                Component.text(idOrValue),
                                                 Component.text(type.name),
                                                 Component.text(error.throwable.message ?: "Unknown")
                                             )
@@ -297,7 +269,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
                                     audience.sendMessage(
                                         Component.translatable(
                                             "gradeway.command.permission.setType.success",
-                                            Component.text(id),
+                                            Component.text(idOrValue),
                                             Component.text(type.name)
                                         )
                                     )
@@ -617,276 +589,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplateBuilder(
                     }
                 }
 
-                literal("permissions") {
-                    requires { hasPermission(it, "gradeway.permissionTemplate.permissions") }
-
-                    literal("add") {
-                        requires { hasPermission(it, "gradeway.permissionTemplate.permissions.add") }
-
-                        string("permissionId") {
-                            suggestsDebounced { builder ->
-                                val remaining = builder.remaining
-                                if (remaining.isNotEmpty()) {
-                                    builder.suggestPermissions(gradeway, remaining.lowercase())
-                                }
-                            }
-
-                            execute {
-                                val audience = sourceToAudience(source)
-
-                                val idOrName = stringParam("idOrName")
-                                val permissionId = stringParam("permissionId")
-
-                                val permissionUniqueId = runCatching {
-                                    UUID.fromString(permissionId)
-                                }.getOrNull()
-
-                                if (permissionUniqueId == null) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.permissionTemplate.addPermission.invalidUuid",
-                                            Component.text(permissionId)
-                                        )
-                                    )
-                                    return@execute
-                                }
-
-                                gradeway.permissions.addPermissionToTemplate(idOrName, permissionUniqueId)
-                                    .onLeft { error ->
-                                        if (error is AddPermissionToTemplateError.EntityNotFound) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.addPermission.entityNotFound",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is AddPermissionToTemplateError.TargetNotFound) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.addPermission.targetNotFound",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is AddPermissionToTemplateError.PermissionAlreadyExists) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.addPermission.alreadyExists",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is AddPermissionToTemplateError.Unexpected) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.addPermission.unexpectedError",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId),
-                                                    Component.text(error.throwable.message ?: "Unknown")
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                    }
-                                    .onRight {
-                                        audience.sendMessage(
-                                            Component.translatable(
-                                                "gradeway.command.permissionTemplate.addPermission.success",
-                                                Component.text(idOrName),
-                                                Component.text(permissionId)
-                                            )
-                                        )
-                                    }
-                            }
-                        }
-                    }
-
-                    literal("remove") {
-                        requires { hasPermission(it, "gradeway.permissionTemplate.permissions.remove") }
-
-                        string("permissionId") {
-                            suggestsDebounced { builder ->
-                                val remaining = builder.remaining
-                                if (remaining.isNotEmpty()) {
-                                    builder.suggestPermissions(gradeway, remaining.lowercase())
-                                }
-                            }
-
-                            execute {
-                                val audience = sourceToAudience(source)
-
-                                val idOrName = stringParam("idOrName")
-                                val permissionId = stringParam("permissionId")
-
-                                val permissionUniqueId = runCatching {
-                                    UUID.fromString(permissionId)
-                                }.getOrNull()
-
-                                if (permissionUniqueId == null) {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.permissionTemplate.removePermission.invalidUuid",
-                                            Component.text(permissionId)
-                                        )
-                                    )
-                                    return@execute
-                                }
-
-                                gradeway.permissions.removePermissionFromTemplate(idOrName, permissionUniqueId)
-                                    .onLeft { error ->
-                                        if (error is RemovePermissionFromTemplateError.EntityNotFound) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.removePermission.entityNotFound",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is RemovePermissionFromTemplateError.TargetNotFound) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.removePermission.targetNotFound",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is RemovePermissionFromTemplateError.PermissionNotExists) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.removePermission.notExists",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId)
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                        if (error is RemovePermissionFromTemplateError.Unexpected) {
-                                            audience.sendMessage(
-                                                Component.translatable(
-                                                    "gradeway.command.permissionTemplate.removePermission.unexpectedError",
-                                                    Component.text(idOrName),
-                                                    Component.text(permissionId),
-                                                    Component.text(error.throwable.message ?: "Unknown")
-                                                )
-                                            )
-                                            return@execute
-                                        }
-                                    }
-                                    .onRight {
-                                        audience.sendMessage(
-                                            Component.translatable(
-                                                "gradeway.command.permissionTemplate.removePermission.success",
-                                                Component.text(idOrName),
-                                                Component.text(permissionId)
-                                            )
-                                        )
-                                    }
-                            }
-                        }
-                    }
-
-                    literal("clear") {
-                        requires { hasPermission(it, "gradeway.permissionTemplate.permissions.clear") }
-
-                        execute {
-                            val audience = sourceToAudience(source)
-
-                            val idOrName = stringParam("idOrName")
-
-                            gradeway.permissions.clearPermissionsFromTemplate(idOrName)
-                                .onLeft { error ->
-                                    if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
-                                        audience.sendMessage(
-                                            Component.translatable(
-                                                "gradeway.command.permissionTemplate.clearPermissions.entityNotFound",
-                                                Component.text(idOrName)
-                                            )
-                                        )
-                                        return@execute
-                                    }
-                                    if (error is ClearPermissionsFromTemplateError.Unexpected) {
-                                        audience.sendMessage(
-                                            Component.translatable(
-                                                "gradeway.command.permissionTemplate.clearPermissions.unexpectedError",
-                                                Component.text(idOrName),
-                                                Component.text(error.throwable.message ?: "Unknown")
-                                            )
-                                        )
-                                        return@execute
-                                    }
-                                }
-                                .onRight {
-                                    audience.sendMessage(
-                                        Component.translatable(
-                                            "gradeway.command.permissionTemplate.clearPermissions.success",
-                                            Component.text(idOrName)
-                                        )
-                                    )
-                                }
-                        }
-                    }
-
-                    createScopedListHandler(
-                        gradeway = gradeway,
-                        permission = "gradeway.permissionTemplate.list",
-                        scopeKey = "idOrName",
-                        hasPermission = hasPermission,
-                        sourceToAudience = sourceToAudience,
-                        query = { scope, page, limit ->
-                            PermissionTemplatesTable
-                                .select(PermissionTemplatesTable.id, PermissionTemplatesTable.name)
-                                .where {
-                                    (PermissionTemplatesTable.id likeAsStr "$scope%") or
-                                            (PermissionTemplatesTable.name.lowerCase() like "$scope%")
-                                }
-                                .limit(limit)
-                                .offset((page - 1).toLong())
-                                .map { row ->
-                                    object {
-                                        val id = row[PermissionTemplatesTable.id].value
-                                        val name = row[PermissionTemplatesTable.name]
-                                    }
-                                }
-                        },
-                        render = { audience, page, limit, result ->
-                            if (result.isEmpty()) {
-                                audience.sendMessage(
-                                    Component.translatable("gradeway.command.permissionTemplate.list.empty")
-                                )
-                                return@createScopedListHandler
-                            }
-
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permissionTemplate.list.header",
-                                    Component.text(page),
-                                    Component.text(limit)
-                                )
-                            )
-
-                            result.forEach { permission ->
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.permissionTemplate.list.entry",
-                                        Component.text(permission.id.toString()),
-                                        Component.text(permission.name)
-                                    )
-                                )
-                            }
-                        }
-                    )
-                }
+                permissionTemplatePermissionsBuilder(gradeway, hasPermission, sourceToAudience)
             }
         }
 
@@ -927,6 +630,256 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplateBuilder(
                             "gradeway.command.permissionTemplate.list.entry",
                             Component.text(permissionTemplate.id.toString()),
                             Component.text(permissionTemplate.name)
+                        )
+                    )
+                }
+            }
+        )
+    }
+}
+
+internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissionsBuilder(
+    gradeway: CommonGradeway,
+    hasPermission: (source: TSource, permission: String) -> Boolean,
+    sourceToAudience: (source: TSource) -> Audience,
+) {
+    literal("permissions") {
+        requires { hasPermission(it, "gradeway.permissionTemplate.permissions") }
+
+        literal("add") {
+            requires { hasPermission(it, "gradeway.permissionTemplate.permissions.add") }
+
+            string("permissionIdOrValue") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestPermissions(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val permissionIdOrValue = stringParam("permissionIdOrValue")
+
+                    gradeway.permissions.addPermissionToTemplate(idOrName, permissionIdOrValue)
+                        .onLeft { error ->
+                            if (error is AddPermissionToTemplateError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.addPermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddPermissionToTemplateError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.addPermission.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddPermissionToTemplateError.PermissionAlreadyExists) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.addPermission.alreadyExists",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is AddPermissionToTemplateError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.addPermission.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.permissionTemplate.addPermission.success",
+                                    Component.text(idOrName),
+                                    Component.text(permissionIdOrValue)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("remove") {
+            requires { hasPermission(it, "gradeway.permissionTemplate.permissions.remove") }
+
+            string("permissionIdOrValue") {
+                suggestsDebounced { builder ->
+                    val remaining = builder.remaining
+                    if (remaining.isNotEmpty()) {
+                        builder.suggestPermissions(gradeway, remaining.lowercase())
+                    }
+                }
+
+                execute {
+                    val audience = sourceToAudience(source)
+
+                    val idOrName = stringParam("idOrName")
+                    val permissionIdOrValue = stringParam("permissionIdOrValue")
+
+                    gradeway.permissions.removePermissionFromTemplate(idOrName, permissionIdOrValue)
+                        .onLeft { error ->
+                            if (error is RemovePermissionFromTemplateError.EntityNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.removePermission.entityNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemovePermissionFromTemplateError.TargetNotFound) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.removePermission.targetNotFound",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemovePermissionFromTemplateError.PermissionNotExists) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.removePermission.notExists",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is RemovePermissionFromTemplateError.Unexpected) {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.removePermission.unexpectedError",
+                                        Component.text(idOrName),
+                                        Component.text(permissionIdOrValue),
+                                        Component.text(error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.permissionTemplate.removePermission.success",
+                                    Component.text(idOrName),
+                                    Component.text(permissionIdOrValue)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("clear") {
+            requires { hasPermission(it, "gradeway.permissionTemplate.permissions.clear") }
+
+            execute {
+                val audience = sourceToAudience(source)
+
+                val idOrName = stringParam("idOrName")
+
+                gradeway.permissions.clearPermissionsFromTemplate(idOrName)
+                    .onLeft { error ->
+                        if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.permissionTemplate.clearPermissions.entityNotFound",
+                                    Component.text(idOrName)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ClearPermissionsFromTemplateError.Unexpected) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.permissionTemplate.clearPermissions.unexpectedError",
+                                    Component.text(idOrName),
+                                    Component.text(error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@execute
+                        }
+                    }
+                    .onRight {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.permissionTemplate.clearPermissions.success",
+                                Component.text(idOrName)
+                            )
+                        )
+                    }
+            }
+        }
+
+        createScopedListHandler(
+            gradeway = gradeway,
+            permission = "gradeway.permissionTemplate.list",
+            scopeKey = "idOrName",
+            hasPermission = hasPermission,
+            sourceToAudience = sourceToAudience,
+            query = { scope, page, limit ->
+                PermissionTemplatesTable
+                    .select(PermissionTemplatesTable.id, PermissionTemplatesTable.name)
+                    .where {
+                        (PermissionTemplatesTable.id likeAsStr "$scope%") or
+                                (PermissionTemplatesTable.name.lowerCase() like
+                                        "${scope.toString().lowercase()}%")
+                    }
+                    .limit(limit)
+                    .offset((page - 1).toLong())
+                    .map { row ->
+                        object {
+                            val id = row[PermissionTemplatesTable.id].value
+                            val name = row[PermissionTemplatesTable.name]
+                        }
+                    }
+            },
+            render = { audience, page, limit, result ->
+                if (result.isEmpty()) {
+                    audience.sendMessage(
+                        Component.translatable("gradeway.command.permissionTemplate.list.empty")
+                    )
+                    return@createScopedListHandler
+                }
+
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.permissionTemplate.list.header",
+                        Component.text(page),
+                        Component.text(limit)
+                    )
+                )
+
+                result.forEach { permission ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.permissionTemplate.list.entry",
+                            Component.text(permission.id.toString()),
+                            Component.text(permission.name)
                         )
                     )
                 }

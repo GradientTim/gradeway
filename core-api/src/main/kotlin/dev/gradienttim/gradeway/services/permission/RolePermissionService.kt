@@ -195,28 +195,28 @@ interface RolePermissionService {
      * Clears all permissions associated with a role identified by its unique UUID.
      *
      * @param id The unique identifier of the role whose permissions need to be cleared.
-     * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
+     * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the provided role entity.
      *
      * @param entity The role entity whose permissions need to be cleared.
-     * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
+     * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the role whose permissions need to be cleared.
-     * @return Either an instance of `PermissionService.ClearPermissionError` if an error occurs,
+     * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks whether an entity with the given ID has the specified role permission.

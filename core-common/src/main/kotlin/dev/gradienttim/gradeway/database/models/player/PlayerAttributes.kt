@@ -8,7 +8,7 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.columns.adventureKey
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
-import dev.gradienttim.gradeway.utilities.Serializable
+import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.ReferenceOption
@@ -28,7 +28,7 @@ object PlayerAttributesTable : UUIDTable(name = TableConstants.PLAYER_ATTRIBUTES
         onDelete = ReferenceOption.CASCADE
     )
 
-    val type = adventureKey("type")
+    val type = text("type")
     val key = adventureKey("key")
     val value = text("value")
 
@@ -38,14 +38,14 @@ object PlayerAttributesTable : UUIDTable(name = TableConstants.PLAYER_ATTRIBUTES
 
 class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerAttributeEntity {
     companion object : UUIDEntityClass<DatabasePlayerAttributeEntity>(PlayerAttributesTable),
-        Serializable<DatabasePlayerAttributeEntity> {
-        override fun serialize(instance: DatabasePlayerAttributeEntity): JsonObject = buildJsonObject {
-            put("playerId", instance.playerId.value.toString())
-            put("type", instance.type.asString())
-            put("key", instance.key.asString())
-            put("value", instance.value)
-            put("createdAt", instance.createdAt.toEpochMilli())
-            put("updatedAt", instance.updatedAt.toEpochMilli())
+        JsonSerializable<DatabasePlayerAttributeEntity> {
+        override fun serialize(data: DatabasePlayerAttributeEntity): JsonObject = buildJsonObject {
+            put("playerId", data.playerId.value.toString())
+            put("type", data.type)
+            put("key", data.key.asString())
+            put("value", data.value)
+            put("createdAt", data.createdAt.toEpochMilli())
+            put("updatedAt", data.updatedAt.toEpochMilli())
         }
 
         override fun deserialize(json: JsonObject): DatabasePlayerAttributeEntity = new {
@@ -54,7 +54,7 @@ class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), Player
                 table = PlayersTable
             )
 
-            type = Key.key(json.getValue("type").jsonPrimitive.content)
+            type = json.getValue("type").jsonPrimitive.content
             key = Key.key(json.getValue("key").jsonPrimitive.content)
             value = json.getValue("value").jsonPrimitive.content
 
@@ -75,5 +75,5 @@ class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), Player
     override val player by DatabasePlayerEntity referencedOn PlayerAttributesTable.playerId
 
     override val attribute: Attribute<*>
-        get() = Attribute.create(type, key, value)
+        get() = Attribute.createUnsafe(type, key, value)
 }

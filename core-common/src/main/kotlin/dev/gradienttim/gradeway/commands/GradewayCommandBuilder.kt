@@ -5,13 +5,16 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.commands
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
+import dev.gradienttim.gradeway.BuildInfo
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.command.command
 import dev.gradienttim.gradeway.command.execute
 import dev.gradienttim.gradeway.command.literal
 import dev.gradienttim.gradeway.commands.gradeway.*
+import dev.gradienttim.gradeway.extensions.formatUTC
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import java.time.Instant
 
 fun <TSource> gradewayCommandBuilder(
     gradeway: CommonGradeway,
@@ -51,10 +54,24 @@ fun <TSource> gradewayCommandBuilder(
 
         execute {
             val audience = sourceToAudience(source)
-            audience.sendMessage(Component.translatable("gradeway.command.usage.version"))
-            if (hasPermission(source, "gradeway.usage")) {
-                audience.sendMessage(Component.translatable("gradeway.command.usage.help"))
+
+            var commitHash = BuildInfo.GIT_COMMIT_HASH
+            if (BuildInfo.GIT_IS_DIRTY) {
+                commitHash += "-dirty"
             }
+
+            val buildTimestamp = Instant
+                .parse(BuildInfo.BUILD_TIMESTAMP)
+                .formatUTC()
+
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.about.info",
+                    Component.text(BuildInfo.VERSION),
+                    Component.text(commitHash),
+                    Component.text(buildTimestamp)
+                )
+            )
         }
     }
 }

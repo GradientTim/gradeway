@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents a parent-child relationship between two role entities within the system.

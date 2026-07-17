@@ -1,3 +1,5 @@
+import dev.detekt.gradle.Detekt
+
 plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
@@ -24,5 +26,11 @@ spotless {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt")
         licenseHeaderFile(rootProject.file(".assets/LICENSE_HEADER"))
+    }
+}
+
+tasks {
+    withType<Detekt>().configureEach {
+        exclude("**/Build*.kt")
     }
 }

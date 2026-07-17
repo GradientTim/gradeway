@@ -9,18 +9,15 @@ import net.kyori.adventure.key.Key
 import java.time.Instant
 import kotlin.reflect.KClass
 
-object InstantAttributeType : AttributeType<Instant> {
+object InstantAttributeType : AttributeType<Instant>() {
+    override val type: String = "instant"
     override val klass: KClass<Instant> = Instant::class
-    override fun key() = Key.key("attribute", "boolean")
+    override val unsafe: Boolean = true
+    override val fallback: (attributeKey: Key) -> Instant = { Instant.EPOCH }
 
     override fun serialize(value: Instant): String = value.toEpochMilli().toString()
-    override fun deserialize(value: String): Instant = Instant.ofEpochMilli(value.toLong())
-
-    override fun equals(other: Any?): Boolean {
-        if (other === this) return true
-        if (other !is AttributeType<*>) return false
-        return other.key() == key()
+    override fun deserialize(value: String): Instant? {
+        val millis = value.toLongOrNull() ?: return null
+        return Instant.ofEpochMilli(millis)
     }
-
-    override fun hashCode(): Int = key().hashCode()
 }

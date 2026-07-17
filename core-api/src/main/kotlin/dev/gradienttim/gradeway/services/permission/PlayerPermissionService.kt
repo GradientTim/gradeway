@@ -184,28 +184,28 @@ interface PlayerPermissionService {
      * Clears all permissions associated with a specific player, identified by their unique identifier.
      *
      * @param id The unique identifier of the player whose permissions should be removed.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified player.
      *
      * @param entity The [PlayerEntity] representing the player whose permissions should be cleared.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the player whose permissions should be removed.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if a player, identified by their unique identifier, has a specific permission.

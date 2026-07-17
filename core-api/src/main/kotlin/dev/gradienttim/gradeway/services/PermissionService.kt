@@ -269,8 +269,8 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
         data class Unexpected(val throwable: Throwable) : BulkUnsetPermissionError
     }
 
-    sealed interface ClearPermissionError {
-        object EntityNotFound : ClearPermissionError
-        data class Unexpected(val throwable: Throwable) : ClearPermissionError
+    sealed interface ClearPermissionsError {
+        object EntityNotFound : ClearPermissionsError
+        data class Unexpected(val throwable: Throwable) : ClearPermissionsError
     }
 }

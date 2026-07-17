@@ -286,7 +286,7 @@ class LuckPermsMigrationStrategy(val gradeway: CommonGradeway) : MigrationStrate
             val attribute = Attribute.string(key, value)
             DatabaseRoleAttributeEntity.new {
                 this.roleId = EntityID(roleId, RolesTable)
-                this.type = attribute.type.key()
+                this.type = attribute.type.type
                 this.key = attribute.key
                 this.value = attribute.type.serialize(attribute.value)
             }
@@ -296,7 +296,7 @@ class LuckPermsMigrationStrategy(val gradeway: CommonGradeway) : MigrationStrate
             val attribute = Attribute.string(key, value)
             DatabasePlayerAttributeEntity.new {
                 this.playerId = EntityID(playerId, PlayersTable)
-                this.type = attribute.type.key()
+                this.type = attribute.type.type
                 this.key = attribute.key
                 this.value = attribute.type.serialize(attribute.value)
             }

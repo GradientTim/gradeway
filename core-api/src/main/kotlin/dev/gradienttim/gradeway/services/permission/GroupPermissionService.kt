@@ -184,28 +184,28 @@ interface GroupPermissionService {
      * Clears all permissions associated with a specific group, identified by their unique identifier.
      *
      * @param id The unique identifier of the group whose permissions should be removed.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(id: UUID): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearGroupPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified group.
      *
      * @param entity The [GroupEntity] representing the group whose permissions should be cleared.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(entity: GroupEntity): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearGroupPermissions(entity: GroupEntity): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific group, identified by their unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the group whose permissions should be removed.
-     * @return An [Either] containing a [PermissionService.ClearPermissionError] if an error occurs,
+     * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(idOrName: String): Either<PermissionService.ClearPermissionError, Unit>
+    fun clearGroupPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if a group, identified by their unique identifier, has a specific permission.

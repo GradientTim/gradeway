@@ -1,4 +1,5 @@
 plugins {
+    alias(libs.plugins.shadow)
     alias(libs.plugins.kotlin.jvm)
 }
 
@@ -9,7 +10,6 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core-api"))
     implementation(project(":core-common"))
 
     compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")

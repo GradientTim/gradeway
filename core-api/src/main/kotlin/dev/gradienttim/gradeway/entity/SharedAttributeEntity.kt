@@ -43,7 +43,7 @@ interface SharedAttributeEntity {
      * be helpful in managing and differentiating attributes within an entity. The type key is
      * a fundamental property used in operations such as validation, serialization, or entity behavior control.
      */
-    val type: Key
+    val type: String
 
     /**
      * Represents the stored value of a shared attribute entity.

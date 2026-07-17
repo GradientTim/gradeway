@@ -6,10 +6,10 @@ package dev.gradienttim.gradeway.registries
 
 import dev.gradienttim.gradeway.attribute.AttributeType
 import dev.gradienttim.gradeway.attribute.types.*
-import dev.gradienttim.gradeway.registry.KeyedRegistry
+import dev.gradienttim.gradeway.registry.TypedRegistry
 import kotlin.reflect.KClass
 
-object AttributeTypeRegistry : KeyedRegistry<AttributeType<*>>() {
+object AttributeTypeRegistry : TypedRegistry<AttributeType<*>>() {
     fun findByKlass(klass: KClass<*>) = items.find { it.klass == klass }
 
     init {

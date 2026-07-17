@@ -6,21 +6,17 @@ package dev.gradienttim.gradeway.attribute.types
 
 import dev.gradienttim.gradeway.attribute.AttributeType
 import net.kyori.adventure.key.Key
-import java.util.UUID
+import java.util.*
 import kotlin.reflect.KClass
 
-object UUIDAttributeType : AttributeType<UUID> {
+object UUIDAttributeType : AttributeType<UUID>() {
+    override val type: String = "uuid"
     override val klass: KClass<UUID> = UUID::class
-    override fun key() = Key.key("attribute", "uuid")
+    override val unsafe: Boolean = true
+    override val fallback: (attributeKey: Key) -> UUID = { UUID.nameUUIDFromBytes(ByteArray(0)) }
 
     override fun serialize(value: UUID): String = value.toString()
-    override fun deserialize(value: String): UUID = UUID.fromString(value)
-
-    override fun equals(other: Any?): Boolean {
-        if (other === this) return true
-        if (other !is AttributeType<*>) return false
-        return other.key() == key()
-    }
-
-    override fun hashCode(): Int = key().hashCode()
+    override fun deserialize(value: String): UUID? = runCatching {
+        UUID.fromString(value)
+    }.getOrNull()
 }

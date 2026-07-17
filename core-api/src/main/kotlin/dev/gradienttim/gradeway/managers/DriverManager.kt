@@ -9,6 +9,17 @@ import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.utilities.lifecycle.Loadable
 import dev.gradienttim.gradeway.utilities.lifecycle.Unloadable
 
+/**
+ * Manages the lifecycle and registration of drivers in the system.
+ *
+ * The `DriverManager` interface provides functionality for loading, unloading,
+ * discovering, and registering drivers. Drivers can be identified and categorized
+ * based on their type, such as `DATABASE` or `MESSAGING`, and can either be loaded
+ * externally or registered programmatically.
+ *
+ * This interface extends the `Loadable` and `Unloadable` contracts, ensuring the
+ * ability to initialize or release resources required for driver management.
+ */
 interface DriverManager : Loadable, Unloadable {
     /**
      * Finds and returns a driver matching the provided ID and type, if available.

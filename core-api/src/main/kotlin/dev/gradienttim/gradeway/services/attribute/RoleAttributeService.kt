@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.attribute
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
@@ -29,7 +30,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         id: UUID,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to a specific role entity.
@@ -42,7 +43,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         entity: RoleEntity,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to a role identified by its unique ID or name.
@@ -55,7 +56,7 @@ interface RoleAttributeService {
     fun <TValue : Any> addRoleAttribute(
         idOrName: String,
         attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, Unit>
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID.
@@ -70,7 +71,7 @@ interface RoleAttributeService {
         id: UUID,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a specific role entity.
@@ -85,7 +86,7 @@ interface RoleAttributeService {
         entity: RoleEntity,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID or name.
@@ -100,7 +101,7 @@ interface RoleAttributeService {
         idOrName: String,
         key: Key,
         value: TValue
-    ): Either<AttributeService.UpdateAttributeError, Unit>
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID.

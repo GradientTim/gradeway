@@ -18,21 +18,9 @@ import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isValidName
-import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
-import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
-import dev.gradienttim.gradeway.messaging.payloads.PlayerChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.PlayerRoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.RoleChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.*
 import net.kyori.adventure.key.Key
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.inList
-import org.jetbrains.exposed.v1.core.isNull
-import org.jetbrains.exposed.v1.core.less
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -164,8 +152,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
 
         val activeRoleWeight = player.roles
             .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
-            .map { playerRoleEntity -> roleService.getEffectiveWeight(playerRoleEntity.role) }
-            .maxOrNull()
+            .maxOfOrNull { playerRoleEntity -> roleService.getEffectiveWeight(playerRoleEntity.role) }
+
         return activeRoleWeight ?: DEFAULT_WEIGHT
     }
 

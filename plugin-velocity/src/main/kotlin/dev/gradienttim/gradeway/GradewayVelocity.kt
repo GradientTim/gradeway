@@ -26,7 +26,7 @@ import java.nio.file.Path
     id = "gradeway",
     name = "Gradeway",
     authors = ["GradientTim"],
-    version = "0.1.0",
+    version = BuildInfo.VERSION,
 )
 class GradewayVelocity @Inject constructor(
     val server: ProxyServer,
