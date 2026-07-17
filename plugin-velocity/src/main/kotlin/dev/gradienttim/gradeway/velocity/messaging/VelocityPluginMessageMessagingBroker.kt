@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.messaging
+package dev.gradienttim.gradeway.velocity.messaging
 
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PluginMessageEvent
@@ -10,6 +10,7 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import dev.gradienttim.gradeway.constants.MessagingConstants
+import dev.gradienttim.gradeway.messaging.MessagingBroker
 
 /**
  * A [MessagingBroker] backed by vanilla Minecraft plugin messaging channels, acting as the relay

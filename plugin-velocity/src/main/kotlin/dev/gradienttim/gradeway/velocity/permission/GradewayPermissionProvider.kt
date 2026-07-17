@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.permission
+package dev.gradienttim.gradeway.velocity.permission
 
 import com.velocitypowered.api.permission.PermissionFunction
 import com.velocitypowered.api.permission.PermissionProvider

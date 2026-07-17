@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway
+package dev.gradienttim.gradeway.velocity
 
 import com.google.inject.Inject
 import com.velocitypowered.api.command.BrigadierCommand
@@ -13,11 +13,13 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
+import dev.gradienttim.gradeway.BuildInfo
+import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
 import dev.gradienttim.gradeway.driver.meta.DriverType
-import dev.gradienttim.gradeway.listeners.ConnectionListener
-import dev.gradienttim.gradeway.listeners.PermissionListener
-import dev.gradienttim.gradeway.messaging.VelocityPluginMessageDriver
+import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
+import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
+import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
 import org.slf4j.Logger
 import java.nio.file.Path

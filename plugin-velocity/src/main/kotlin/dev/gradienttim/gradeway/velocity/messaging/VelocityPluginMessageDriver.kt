@@ -2,11 +2,12 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.messaging
+package dev.gradienttim.gradeway.velocity.messaging
 
 import com.velocitypowered.api.proxy.ProxyServer
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
+import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.Environment
 
 class VelocityPluginMessageDriver(

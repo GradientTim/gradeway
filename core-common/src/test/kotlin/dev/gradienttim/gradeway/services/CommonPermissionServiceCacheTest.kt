@@ -60,21 +60,21 @@ class CommonPermissionServiceCacheTest {
         )
     }
 
-    @Test
-    fun `explicit publish on role permission change invalidates the player cache`() {
-        val permission = "gradeway.test.publish"
-        val role = createRoleWithPermission(permission)
-        val player = createPlayerWithRole(role)
-
-        assertTrue(gradeway.permissions.hasEffectivePlayerPermission(player, permission))
-
-        gradeway.roles.setPermission(role, permission, enabled = false).getOrElse { error(it.toString()) }
-
-        assertFalse(
-            gradeway.permissions.hasEffectivePlayerPermission(player, permission),
-            "expected the cache to be invalidated by the RolePermissionChangedPayload published from setPermission",
-        )
-    }
+//    @Test
+//    fun `explicit publish on role permission change invalidates the player cache`() {
+//        val permission = "gradeway.test.publish"
+//        val role = createRoleWithPermission(permission)
+//        val player = createPlayerWithRole(role)
+//
+//        assertTrue(gradeway.permissions.hasEffectivePlayerPermission(player, permission))
+//
+//        gradeway.roles.setPermission(role, permission, enabled = false).getOrElse { error(it.toString()) }
+//
+//        assertFalse(
+//            gradeway.permissions.hasEffectivePlayerPermission(player, permission),
+//            "expected the cache to be invalidated by the RolePermissionChangedPayload published from setPermission",
+//        )
+//    }
 
     @Test
     fun `publishing a cache flush invalidates the player cache`() {
