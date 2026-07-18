@@ -5,17 +5,17 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.paper
 
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.commands.gradewayCommandBuilder
+import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
 import dev.gradienttim.gradeway.paper.listeners.ConnectionListener
 import dev.gradienttim.gradeway.paper.messaging.PaperPluginMessageDriver
 import dev.gradienttim.gradeway.paper.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.platform.CommonLogger
-import io.papermc.paper.command.brigadier.CommandSourceStack
-import io.papermc.paper.command.brigadier.Commands
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import org.bukkit.entity.Player
 import org.bukkit.plugin.java.JavaPlugin
+import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.paper.PaperCommandManager
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
@@ -71,21 +71,18 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerCommands() {
-        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
-            val registrar = it.registrar()
-            registerGradewayCommand(registrar)
-        }
-    }
+        val audienceProvider = PaperAudienceProvider()
+        val commandManager = PaperCommandManager.builder()
+            .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
+            .buildOnEnable(this)
 
-    private fun registerGradewayCommand(registrar: Commands) {
-        val gradewayCommand = gradewayCommandBuilder<CommandSourceStack>(
-            gradeway = gradeway,
+        createGradewayCommand(
             literal = "gradeway",
-            hasPermission = { source, permission -> source.sender.hasPermission(permission) },
-            sourceToAudience = { source -> source.sender },
-        ).build()
-
-        registrar.register(gradewayCommand, listOf("gw", "gradewayp", "gwpaper", "gwp"))
+            aliases = arrayOf("gw", "gradewayp", "gwpaper", "gwp"),
+            gradeway = gradeway,
+            commandManager = commandManager,
+            audienceProvider = audienceProvider
+        )
     }
 
     private fun initializeEntityPermissionHandle() {

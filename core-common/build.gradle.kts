@@ -8,13 +8,11 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven("https://libraries.minecraft.net")
 }
 
 dependencies {
     api(project(":core-api"))
 
-    implementation(libs.mojang.brigadier)
     implementation(libs.apache.commons.compress)
     implementation(libs.apache.commons.configuration2)
 
@@ -26,6 +24,7 @@ dependencies {
     api(libs.koin.core)
     api(libs.bundles.exposed)
     implementation(libs.bundles.exposed.migration)
+    api(libs.bundles.cloud)
     api(libs.bundles.ktoml)
     api(libs.bundles.kyori)
     api(libs.bundles.arrow)

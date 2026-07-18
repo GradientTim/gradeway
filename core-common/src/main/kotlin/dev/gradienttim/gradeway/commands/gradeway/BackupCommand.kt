@@ -4,17 +4,18 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
-import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.managers.BackupManager
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import org.incendo.cloud.kotlin.MutableCommandBuilder
+import org.incendo.cloud.minecraft.extras.AudienceProvider
+import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
+import org.incendo.cloud.parser.standard.StringParser.stringParser
 
-internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
+internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
     gradeway: CommonGradeway,
-    hasPermission: (source: TSource, permission: String) -> Boolean,
-    sourceToAudience: (source: TSource) -> Audience,
+    audienceProvider: AudienceProvider<C>,
 ) {
     fun handleImport(audience: Audience, fileName: String, wipe: Boolean = true) {
         gradeway.backups.import(fileName, wipe)
@@ -59,14 +60,12 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
             }
     }
 
-    literal("backup") {
-        requires { hasPermission(it, "gradeway.backup") }
+    registerCopy("backup") {
+        registerCopy("export") {
+            permission("gradeway.backup.export")
 
-        literal("export") {
-            requires { hasPermission(it, "gradeway.backup.export") }
-
-            execute {
-                val audience = sourceToAudience(source)
+            handler { context ->
+                val audience = audienceProvider.apply(context.sender())
 
                 gradeway.backups.export()
                     .onLeft { error ->
@@ -76,7 +75,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
                                     "gradeway.command.backup.export.fileAlreadyExists"
                                 )
                             )
-                            return@execute
+                            return@handler
                         }
                         if (error is BackupManager.ExportError.Unexpected) {
                             audience.sendMessage(
@@ -85,7 +84,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
                                     Component.text(error.throwable.message ?: "Unknown")
                                 )
                             )
-                            return@execute
+                            return@handler
                         }
                     }
                     .onRight { file ->
@@ -99,28 +98,19 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.backupBuilder(
             }
         }
 
-        literal("import") {
-            requires { hasPermission(it, "gradeway.backup.import") }
+        registerCopy("import") {
+            permission("gradeway.backup.import")
 
-            string("file") {
-                boolean("wipe") {
-                    execute {
-                        val audience = sourceToAudience(source)
+            required("file", stringParser())
+            optional("wipe", booleanParser())
 
-                        val file = stringParam("file")
-                        val wipe = booleanParam("wipe")
+            handler { context ->
+                val audience = audienceProvider.apply(context.sender())
 
-                        handleImport(audience, file, wipe)
-                    }
-                }
+                val file = context.get<String>("file")
+                val wipe = context.getOrDefault("wipe", true)
 
-                execute {
-                    val audience = sourceToAudience(source)
-
-                    val file = stringParam("file")
-
-                    handleImport(audience, file)
-                }
+                handleImport(audience, file, wipe)
             }
         }
     }
