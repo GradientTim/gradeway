@@ -2,29 +2,35 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.paper
+package dev.gradienttim.gradeway.bukkit
 
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.bukkit.command.BukkitAudienceProvider
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
-import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
 import dev.gradienttim.gradeway.platform.CommonLogger
+import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.paper.PaperCommandManager
+import org.incendo.cloud.paper.LegacyPaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
+    var adventure: BukkitAudiences? = null
+        internal set
+
     val gradeway = CommonGradeway(
-        logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
+        logger = CommonLogger.fromJavaLogger(logger),
         directory = dataFolder,
     )
 
     override fun onEnable() {
+        adventure = BukkitAudiences.create(this)
+
         gradeway.load()
             .onLeft { throwable ->
-                slF4JLogger.error("Failed to load Gradeway: ${throwable.message}")
+                logger.severe("Failed to load Gradeway: ${throwable.message}")
                 server.pluginManager.disablePlugin(this)
             }
             .onRight {
@@ -36,7 +42,7 @@ class GradewayPlugin : JavaPlugin() {
 
                 gradeway.enable()
                     .onLeft { throwable ->
-                        slF4JLogger.error("Failed to enable Gradeway: ${throwable.message}")
+                        logger.severe("Failed to enable Gradeway: ${throwable.message}")
                     }
                     .onRight {
                         registerEvents()
@@ -46,11 +52,14 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     override fun onDisable() {
+        adventure?.close()
+        adventure = null
+
         gradeway.disable()
-            .onLeft { slF4JLogger.error("Failed to disable Gradeway: ${it.message}") }
+            .onLeft { logger.severe("Failed to disable Gradeway: ${it.message}") }
             .onRight {
                 gradeway.unload()
-                    .onLeft { slF4JLogger.error("Failed to unload Gradeway: ${it.message}") }
+                    .onLeft { logger.severe("Failed to unload Gradeway: ${it.message}") }
             }
     }
 
@@ -59,14 +68,15 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerCommands() {
-        val audienceProvider = PaperAudienceProvider()
-        val commandManager = PaperCommandManager.builder()
-            .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
-            .buildOnEnable(this)
+        val audienceProvider = BukkitAudienceProvider(this)
+        val commandManager = LegacyPaperCommandManager.createNative(
+            this,
+            ExecutionCoordinator.simpleCoordinator()
+        )
 
         createGradewayCommand(
             literal = "gradeway",
-            aliases = arrayOf("gw", "gradewayp", "gwpaper", "gwp"),
+            aliases = arrayOf("gw", "gradewayb", "gwbukkit", "gwb"),
             gradeway = gradeway,
             commandManager = commandManager,
             audienceProvider = audienceProvider

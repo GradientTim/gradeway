@@ -42,11 +42,9 @@ class VelocityPluginMessageMessagingBroker(
     }
 
     override fun publish(channel: String, payload: ByteArray): Boolean {
-        var sent = false
-        server.allServers.forEach { registeredServer ->
-            sent = registeredServer.sendPluginMessage(identifier, payload) || sent
+        return server.allServers.any { registeredServer ->
+            registeredServer.sendPluginMessage(identifier, payload)
         }
-        return sent
     }
 
     override fun subscribe(channel: String, listener: (payload: ByteArray) -> Unit): Boolean {

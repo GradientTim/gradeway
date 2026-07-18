@@ -2,7 +2,7 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.paper.permission
+package dev.gradienttim.gradeway.bukkit.permission
 
 import dev.gradienttim.gradeway.Gradeway
 import org.bukkit.entity.Player

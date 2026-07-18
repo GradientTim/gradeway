@@ -2,15 +2,15 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.paper.messaging
+package dev.gradienttim.gradeway.bungee.messaging
 
+import dev.gradienttim.gradeway.bungee.GradewayPlugin
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.Environment
-import org.bukkit.plugin.java.JavaPlugin
 
-class PaperPluginMessageDriver(private val plugin: JavaPlugin) : Driver(), MessagingAdapter {
+class PluginMessageDriver(val plugin: GradewayPlugin) : Driver(), MessagingAdapter {
     override fun createMessagingBroker(environment: Environment): MessagingBroker =
-        PaperPluginMessageMessagingBroker(plugin)
+        PluginMessageMessagingBroker(plugin)
 }

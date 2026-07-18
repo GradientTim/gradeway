@@ -20,6 +20,9 @@ include(
 )
 
 include(
+    "plugin-bukkit",
+    "plugin-bukkit-shared",
+    "plugin-bungeecord",
     "plugin-paper",
     "plugin-velocity",
 )
