@@ -11,7 +11,10 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
-import kotlinx.coroutines.*
+import dev.gradienttim.gradeway.CommonGradeway
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.milliseconds
@@ -46,9 +49,8 @@ inline fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.executeWith(
     execute(it)
 }
 
-private val commandSuggestionScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-
 fun <S, T> RequiredArgumentBuilder<S, T>.suggestsDebounced(
+    gradeway: CommonGradeway,
     delayMillis: Long = 250,
     block: suspend (builder: SuggestionsBuilder) -> Unit
 ): RequiredArgumentBuilder<S, T> {
@@ -59,7 +61,7 @@ fun <S, T> RequiredArgumentBuilder<S, T>.suggestsDebounced(
 
         val future = CompletableFuture<Suggestions>()
 
-        searchJob = commandSuggestionScope.launch {
+        searchJob = gradeway.backgroundScope.launch {
             try {
                 delay(delayMillis.milliseconds)
                 block(builder)

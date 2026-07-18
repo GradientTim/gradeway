@@ -91,7 +91,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
             requires { hasPermission(it, "gradeway.role.delete") }
 
             string("id") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -152,7 +152,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleBuilder(
 
         literal("modify") {
             string("idOrName") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -413,7 +413,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleParentsBuilder(
             requires { hasPermission(it, "gradeway.role.parents.add") }
 
             string("parentId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -521,7 +521,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.roleParentsBuilder(
             requires { hasPermission(it, "gradeway.role.parents.remove") }
 
             string("parentId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())

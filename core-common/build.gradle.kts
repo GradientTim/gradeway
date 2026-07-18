@@ -21,6 +21,8 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.protobuf)
 
+    implementation("io.github.cdimascio:dotenv-java:3.2.0")
+
     api(libs.koin.core)
     api(libs.bundles.exposed)
     implementation(libs.bundles.exposed.migration)
@@ -50,19 +52,19 @@ tasks {
 
         val packageName = "dev.gradienttim.gradeway"
 
-        val projectVersion = rootProject.version.toString()
-
-        val gitCommitHash = providers.exec {
-            commandLine("git", "rev-parse", "--short", "HEAD")
-        }.standardOutput.asText.map { it.trim() }.orElse("unknown")
-
-        val gitDirty = providers.exec {
-            commandLine("git", "status", "--porcelain")
-        }.standardOutput.asText.map { it.isNotBlank() }.orElse(false)
-
-        val buildTimestamp = Instant.now().toString()
-
         doLast {
+            val projectVersion = rootProject.version.toString()
+
+            val gitCommitHash = providers.exec {
+                commandLine("git", "rev-parse", "--short", "HEAD")
+            }.standardOutput.asText.map { it.trim() }.orElse("unknown")
+
+            val gitDirty = providers.exec {
+                commandLine("git", "status", "--porcelain")
+            }.standardOutput.asText.map { it.isNotBlank() }.orElse(false)
+
+            val buildTimestamp = Instant.now().toString()
+
             val packageDir = generatedSourceDir.get().asFile.resolve(packageName)
             packageDir.mkdirs()
 

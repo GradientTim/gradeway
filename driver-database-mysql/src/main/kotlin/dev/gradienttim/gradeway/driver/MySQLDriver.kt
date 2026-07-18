@@ -41,7 +41,9 @@ class MySQLDriver : Driver(), DatabaseAdapter {
         )
 
         return MysqlDataSource().apply {
-            setUrl("jdbc:mysql://$databaseHostName:$databaseHostPort/$databaseName")
+            this.serverName = databaseHostName
+            this.portNumber = databaseHostPort
+            this.databaseName = databaseName
 
             databaseUserName?.let { user = it }
             databaseUserPassword?.let { password = it }

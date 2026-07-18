@@ -16,6 +16,8 @@ import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionTem
 import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
+import dev.gradienttim.gradeway.extensions.limitedTo
+import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -37,7 +39,11 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
-    private val directory = gradeway.directory.createDirectoryIfNotExists("backups")
+    private val directory = gradeway.directory.createDirectoryIfNotExists(
+        name = "backups",
+        requiresRead = true,
+        requiresWrite = true
+    )
 
     // Parent-before-child order: every table only ever references tables earlier in this list, so
     // the same list drives export, import and (reversed) the pre-import wipe without needing a
@@ -92,13 +98,16 @@ class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun import(fileName: String, wipe: Boolean): Either<BackupManager.ImportError, Unit> = either {
-        val file = File(directory, fileName)
-        if (!file.exists()) {
+        val file = directory.resolveWithinDirectory(fileName)
+        if (file == null || !file.exists()) {
             raise(BackupManager.ImportError.FileNotFound)
         }
 
         try {
-            TarArchiveInputStream(GzipCompressorInputStream(file.inputStream())).use { stream ->
+            TarArchiveInputStream(
+                GzipCompressorInputStream(file.inputStream())
+                    .limitedTo(gradeway.configs.config.backup.maxImportSizeBytes)
+            ).use { stream ->
                 transaction(gradeway.database) {
                     if (wipe) {
                         backupEntries.asReversed().forEach { it.wipe() }

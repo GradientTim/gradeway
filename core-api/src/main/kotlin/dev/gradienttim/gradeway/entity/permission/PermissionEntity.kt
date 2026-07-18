@@ -52,12 +52,6 @@ interface PermissionEntity {
      * @return A `Regex` object compiled from the `value` of this entity.
      */
     val regex: Regex
-        get() {
-            if (type != Type.REGEX) {
-                error("This permission is not a Regex type.")
-            }
-            return Regex(value)
-        }
 
     /**
      * Validates whether the given permission string matches this entity based on its type.

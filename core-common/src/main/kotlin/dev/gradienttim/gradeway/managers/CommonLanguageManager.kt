@@ -20,7 +20,11 @@ import java.util.*
 import kotlin.io.path.*
 
 class CommonLanguageManager(val gradeway: CommonGradeway) : LanguageManager {
-    private val directory = gradeway.directory.createDirectoryIfNotExists("languages")
+    private val directory = gradeway.directory.createDirectoryIfNotExists(
+        name = "languages",
+        requiresRead = true,
+        requiresWrite = true
+    )
     private lateinit var translator: MiniMessageTranslationStore
 
     override fun load(): Either<Throwable, Unit> = either {

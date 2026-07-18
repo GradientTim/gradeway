@@ -17,7 +17,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
-import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.platform.CommonCaches
 import net.kyori.adventure.key.Key
@@ -43,7 +43,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         id: UUID,
         name: String
     ): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> = either {
-        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.CreatePlayerError.InvalidName)
         }
         if (existsById(id)) {
@@ -80,7 +80,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         entity: PlayerEntity,
         name: String
     ): Either<PlayerService.SetNameError, Boolean> = either {
-        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.SetNameError.InvalidName)
         }
         if (entity !is DatabasePlayerEntity) {
@@ -160,7 +160,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     }
 
     override fun findByName(name: String): DatabasePlayerEntity? {
-        if (!name.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return transaction(gradeway.database) {
@@ -171,7 +171,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
     override fun findByIdOrName(value: String): DatabasePlayerEntity? {
         if (
             value.length <= TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH &&
-            !value.isValidName(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)
+            !value.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)
         ) {
             return null
         }

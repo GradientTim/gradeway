@@ -96,7 +96,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.groupBuilder(
             requires { hasPermission(it, "gradeway.group.delete") }
 
             string("idOrName") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestGroups(gradeway, remaining.lowercase())
@@ -144,7 +144,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.groupBuilder(
 
         literal("modify") {
             string("idOrName") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestGroups(gradeway, remaining.lowercase())
@@ -333,7 +333,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.groupRolesBuilder(
             requires { hasPermission(it, "gradeway.group.roles.add") }
 
             string("roleId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -422,7 +422,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.groupRolesBuilder(
             requires { hasPermission(it, "gradeway.group.roles.remove") }
 
             string("roleId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())

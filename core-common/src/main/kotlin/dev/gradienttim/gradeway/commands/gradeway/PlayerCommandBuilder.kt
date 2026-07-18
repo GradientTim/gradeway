@@ -108,7 +108,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
             requires { hasPermission(it, "gradeway.player.delete") }
 
             string("id") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPlayers(gradeway, remaining.lowercase())
@@ -170,7 +170,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerBuilder(
 
         literal("modify") {
             string("idOrName") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPlayers(gradeway, remaining.lowercase())
@@ -395,7 +395,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
             requires { hasPermission(it, "gradeway.player.roles.add") }
 
             string("roleId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -441,7 +441,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
             requires { hasPermission(it, "gradeway.player.roles.remove") }
 
             string("roleId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())
@@ -527,8 +527,10 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.playerRolesBuilder(
         }
 
         literal("setPrimary") {
+            requires { hasPermission(it, "gradeway.player.roles.setPrimary") }
+
             string("roleId") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestRoles(gradeway, remaining.lowercase())

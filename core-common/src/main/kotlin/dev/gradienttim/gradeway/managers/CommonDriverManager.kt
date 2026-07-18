@@ -21,7 +21,11 @@ import java.util.zip.ZipFile
 
 class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
     private val drivers = mutableSetOf<Driver>()
-    private val directory = gradeway.directory.createDirectoryIfNotExists("drivers")
+    private val directory = gradeway.directory.createDirectoryIfNotExists(
+        name = "drivers",
+        requiresRead = true,
+        requiresWrite = false
+    )
 
     override fun load(): Either<Throwable, Unit> = either {
         try {
@@ -68,19 +72,19 @@ class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
     @OptIn(ExperimentalSerializationApi::class)
     private fun loadDriver(file: File) {
         val zipFile = ZipFile(file)
-        val configEntry = zipFile.getEntry(DriverResolver.DRIVER_CONFIG_FILE)
-        if (configEntry == null) {
-            gradeway.logger.error("Unable to load driver '${file.name}': No driver config found.")
-            return
-        }
-
-        val configStream = zipFile.getInputStream(configEntry)
-        if (configStream == null) {
-            gradeway.logger.error("Unable to load driver '${file.name}': Failed to open stream of config.")
-            return
-        }
-
         try {
+            val configEntry = zipFile.getEntry(DriverResolver.DRIVER_CONFIG_FILE)
+            if (configEntry == null) {
+                gradeway.logger.error("Unable to load driver '${file.name}': No driver config found.")
+                return
+            }
+
+            val configStream = zipFile.getInputStream(configEntry)
+            if (configStream == null) {
+                gradeway.logger.error("Unable to load driver '${file.name}': Failed to open stream of config.")
+                return
+            }
+
             val config = configStream.use { Json.decodeFromStream<DriverConfig>(it) }
             val driverClassLoader = URLClassLoader(
                 arrayOf(file.toURI().toURL()),

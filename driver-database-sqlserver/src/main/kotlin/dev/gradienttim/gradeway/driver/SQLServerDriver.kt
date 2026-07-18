@@ -29,7 +29,7 @@ class SQLServerDriver : Driver(), DatabaseAdapter {
 
         val databaseHostPort = environment.intDefault(
             names = arrayOf("GRADEWAY_DATABASE_PORT", "GRADEWAY_SQLSERVER_PORT"),
-            default = 32768
+            default = 1433
         )
 
         val databaseUserName = environment.string(
@@ -41,7 +41,9 @@ class SQLServerDriver : Driver(), DatabaseAdapter {
         )
 
         return SQLServerDataSource().apply {
-            url = "jdbc:sqlserver://$databaseHostName:$databaseHostPort/$databaseName"
+            this.serverName = databaseHostName
+            this.portNumber = databaseHostPort
+            this.databaseName = databaseName
 
             databaseUserName?.let { user = it }
             databaseUserPassword?.let { setPassword(it) }

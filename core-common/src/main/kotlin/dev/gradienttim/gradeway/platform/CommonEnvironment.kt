@@ -7,8 +7,8 @@ package dev.gradienttim.gradeway.platform
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.extensions.get
+import io.github.cdimascio.dotenv.Dotenv
 import java.io.File
-import java.util.*
 
 class CommonEnvironment(val gradeway: CommonGradeway) : Environment {
     private val config: GradewayConfig = gradeway.configs.config
@@ -23,7 +23,6 @@ class CommonEnvironment(val gradeway: CommonGradeway) : Environment {
         }
     }
 
-    @Suppress("ForbiddenComment")
     private fun loadFromFile(file: File) {
         if (!file.exists()) return
         if (!file.canRead()) {
@@ -31,11 +30,15 @@ class CommonEnvironment(val gradeway: CommonGradeway) : Environment {
             return
         }
 
-        // TODO: replace with a dotenv library to support advanced edge cases like VAR="${OTHER}"
-        val properties = Properties()
-        file.inputStream().use { properties.load(it) }
+        val dotenv = Dotenv.configure()
+            .directory(gradeway.directory.absolutePath)
+            .ignoreIfMalformed()
+            .ignoreIfMissing()
+            .load()
 
-        properties.forEach { (key, value) -> variables[key.toString()] = value }
+        dotenv.entries(Dotenv.Filter.DECLARED_IN_ENV_FILE).forEach { entry ->
+            variables[entry.key] = entry.value
+        }
     }
 
     override fun int(vararg names: String): Int? = string(*names)?.toIntOrNull()

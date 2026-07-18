@@ -41,6 +41,22 @@ class DatabasePermissionEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionE
         }
     }
 
-    override var value by PermissionsTable.value
+    override var value: String
+        get() = PermissionsTable.value.getValue(this, ::value)
+        set(newValue) {
+            PermissionsTable.value.setValue(this, ::value, newValue)
+            cachedRegex = null
+        }
+
     override var type by PermissionsTable.type
+
+    override val regex: Regex
+        get() {
+            if (type != PermissionEntity.Type.REGEX) {
+                error("This permission is not a Regex type.")
+            }
+            return cachedRegex ?: Regex(value).also { cachedRegex = it }
+        }
+
+    private var cachedRegex: Regex? = null
 }

@@ -15,7 +15,7 @@ import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
-import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
@@ -34,7 +34,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun create(name: String): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = either {
-        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
         if (existsByName(name)) {
@@ -68,7 +68,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun setName(entity: RoleEntity, name: String): Either<RoleService.SetNameError, Boolean> = either {
-        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.SetNameError.InvalidName)
         }
         if (entity !is DatabaseRoleEntity) {
@@ -144,7 +144,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     }
 
     override fun findByName(name: String): DatabaseRoleEntity? {
-        if (!name.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return transaction(gradeway.database) {
@@ -155,7 +155,7 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     override fun findByIdOrName(value: String): DatabaseRoleEntity? {
         if (
             value.length <= TableConstants.ROLES_TABLE_MAX_NAME_LENGTH &&
-            !value.isValidName(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)
+            !value.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)
         ) {
             return null
         }

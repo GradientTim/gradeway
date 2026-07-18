@@ -363,7 +363,7 @@ internal fun <TSource, TListResult> ArgumentBuilder<TSource, *>.createEntityPerm
                 requires { hasPermission(it, "gradeway.$entityType.permissionTemplate.link") }
 
                 string("templateIdOrName") {
-                    suggestsDebounced { builder ->
+                    suggestsDebounced(gradeway) { builder ->
                         val remaining = builder.remaining
                         if (remaining.isNotEmpty()) {
                             builder.suggestPermissionTemplates(gradeway, remaining.lowercase())
@@ -447,7 +447,7 @@ internal fun <TSource, TListResult> ArgumentBuilder<TSource, *>.createEntityPerm
                 requires { hasPermission(it, "gradeway.$entityType.permissionTemplate.unlink") }
 
                 string("templateIdOrName") {
-                    suggestsDebounced { builder ->
+                    suggestsDebounced(gradeway) { builder ->
                         val remaining = builder.remaining
                         if (remaining.isNotEmpty()) {
                             builder.suggestPermissionTemplates(gradeway, remaining.lowercase())
@@ -521,7 +521,7 @@ internal fun <TSource, TListResult> ArgumentBuilder<TSource, *>.createEntityPerm
                 requires { hasPermission(it, "gradeway.$entityType.permissionTemplate.apply") }
 
                 string("templateIdOrName") {
-                    suggestsDebounced { builder ->
+                    suggestsDebounced(gradeway) { builder ->
                         val remaining = builder.remaining
                         if (remaining.isNotEmpty()) {
                             builder.suggestPermissionTemplates(gradeway, remaining.lowercase())
@@ -595,7 +595,7 @@ internal fun <TSource, TListResult> ArgumentBuilder<TSource, *>.createEntityPerm
                 requires { hasPermission(it, "gradeway.$entityType.permissionTemplate.revoke") }
 
                 string("templateIdOrName") {
-                    suggestsDebounced { builder ->
+                    suggestsDebounced(gradeway) { builder ->
                         val remaining = builder.remaining
                         if (remaining.isNotEmpty()) {
                             builder.suggestPermissionTemplates(gradeway, remaining.lowercase())

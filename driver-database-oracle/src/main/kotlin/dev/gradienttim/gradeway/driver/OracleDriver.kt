@@ -41,7 +41,9 @@ class OracleDriver : Driver(), DatabaseAdapter {
         )
 
         return OracleDataSource().apply {
-            url = "jdbc:oracle:thin://$databaseHostName:$databaseHostPort/$databaseName"
+            this.serverName = databaseHostName
+            this.portNumber = databaseHostPort
+            this.databaseName = databaseName
 
             databaseUserName?.let { user = it }
             databaseUserPassword?.let { setPassword(it) }

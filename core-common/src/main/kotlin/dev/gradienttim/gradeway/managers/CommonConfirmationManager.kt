@@ -9,6 +9,7 @@ import arrow.core.raise.either
 import dev.gradienttim.gradeway.managers.CommonConfirmationManager.Companion.JOB_ID_ALPHABET
 import dev.gradienttim.gradeway.managers.CommonConfirmationManager.Companion.JOB_ID_LENGTH
 import dev.gradienttim.gradeway.managers.ConfirmationManager.*
+import net.kyori.adventure.audience.Audience
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -47,16 +48,20 @@ class CommonConfirmationManager : ConfirmationManager {
         }
     }
 
-    override fun request(task: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String> = either {
+    override fun request(
+        sender: Audience,
+        task: () -> Unit,
+        onTimeout: (id: String) -> Unit
+    ): Either<RequestJobError, String> = either {
         try {
             val id = generateJobId()
 
             val scheduler = executorService.schedule({
                 onTimeout(id)
-                cancel(id)
+                cancel(sender, id)
             }, 1L, TimeUnit.MINUTES)
 
-            if (!jobs.add(Job(id, task, scheduler))) {
+            if (!jobs.add(Job(id, task, scheduler, sender))) {
                 scheduler.cancel(true)
                 raise(RequestJobError.FailedToRegister)
             }
@@ -67,8 +72,12 @@ class CommonConfirmationManager : ConfirmationManager {
         }
     }
 
-    override fun confirm(id: String): Either<ConfirmJobError, Unit> = either {
+    override fun confirm(sender: Audience, id: String): Either<ConfirmJobError, Unit> = either {
         val job = find(id) ?: raise(ConfirmJobError.NotRegistered)
+
+        if (job.sender != sender) {
+            raise(ConfirmJobError.WrongSender)
+        }
 
         try {
             job.cancel()
@@ -79,8 +88,12 @@ class CommonConfirmationManager : ConfirmationManager {
         }
     }
 
-    override fun cancel(id: String): Either<CancelJobError, Unit> = either {
+    override fun cancel(sender: Audience, id: String): Either<CancelJobError, Unit> = either {
         val job = find(id) ?: raise(CancelJobError.NotRegistered)
+
+        if (job.sender != sender) {
+            raise(CancelJobError.WrongSender)
+        }
 
         try {
             job.cancel()

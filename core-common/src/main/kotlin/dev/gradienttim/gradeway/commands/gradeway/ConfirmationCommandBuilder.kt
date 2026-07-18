@@ -28,12 +28,21 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.confirmationBuilder(
 
                 val jobId = stringParam("jobId")
 
-                gradeway.confirmations.confirm(jobId)
+                gradeway.confirmations.confirm(audience, jobId)
                     .onLeft { error ->
                         if (error is ConfirmationManager.ConfirmJobError.NotRegistered) {
                             audience.sendMessage(
                                 Component.translatable(
                                     "gradeway.command.confirmJob.notRegistered",
+                                    Component.text(jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.ConfirmJobError.WrongSender) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.confirmJob.wrongSender",
                                     Component.text(jobId)
                                 )
                             )
@@ -71,12 +80,21 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.confirmationBuilder(
 
                 val jobId = stringParam("jobId")
 
-                gradeway.confirmations.cancel(jobId)
+                gradeway.confirmations.cancel(audience, jobId)
                     .onLeft { error ->
                         if (error is ConfirmationManager.CancelJobError.NotRegistered) {
                             audience.sendMessage(
                                 Component.translatable(
                                     "gradeway.command.cancelJob.notRegistered",
+                                    Component.text(jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.CancelJobError.WrongSender) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.cancelJob.wrongSender",
                                     Component.text(jobId)
                                 )
                             )

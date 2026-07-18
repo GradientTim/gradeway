@@ -654,7 +654,7 @@ style:
     maxJumpCount: 1
   MagicNumber:
     active: true
-    excludes: ['**/test/**', '**/*.kts']
+    excludes: ['**/test/**', '**/*.kts', '**/dev/gradienttim/gradeway/config/**']
     ignoreNumbers:
       - '-1'
       - '0'

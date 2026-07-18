@@ -149,7 +149,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionBuilder(
 
         literal("modify") {
             string("idOrValue") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPermissions(gradeway, remaining.lowercase())
@@ -386,7 +386,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplateBuilder(
             requires { hasPermission(it, "gradeway.permissionTemplate.delete") }
 
             string("id") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPermissionTemplates(gradeway, remaining.lowercase())
@@ -448,7 +448,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplateBuilder(
 
         literal("modify") {
             string("idOrName") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPermissionTemplates(gradeway, remaining.lowercase())
@@ -652,7 +652,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissions
             requires { hasPermission(it, "gradeway.permissionTemplate.permissions.add") }
 
             string("permissionIdOrValue") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPermissions(gradeway, remaining.lowercase())
@@ -726,7 +726,7 @@ internal fun <TSource> ArgumentBuilder<TSource, *>.permissionTemplatePermissions
             requires { hasPermission(it, "gradeway.permissionTemplate.permissions.remove") }
 
             string("permissionIdOrValue") {
-                suggestsDebounced { builder ->
+                suggestsDebounced(gradeway) { builder ->
                     val remaining = builder.remaining
                     if (remaining.isNotEmpty()) {
                         builder.suggestPermissions(gradeway, remaining.lowercase())

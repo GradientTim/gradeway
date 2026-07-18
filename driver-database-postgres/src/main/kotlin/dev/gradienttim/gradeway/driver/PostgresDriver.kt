@@ -41,7 +41,9 @@ class PostgresDriver : Driver(), DatabaseAdapter {
         )
 
         return PGSimpleDataSource().apply {
-            setUrl("jdbc:postgresql://$databaseHostName:$databaseHostPort/$databaseName")
+            this.serverNames = arrayOf(databaseHostName)
+            this.portNumbers = IntArray(databaseHostPort)
+            this.databaseName = databaseName
 
             databaseUserName?.let { user = it }
             databaseUserPassword?.let { password = it }

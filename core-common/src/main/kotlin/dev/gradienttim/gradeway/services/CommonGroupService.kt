@@ -16,7 +16,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isUuid
-import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.services.GroupService.*
@@ -36,7 +36,7 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
         name: String,
         builder: GroupEntity.() -> Unit
     ): Either<CreateGroupError, GroupEntity> = either {
-        if (!name.isValidName(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
             raise(CreateGroupError.InvalidName)
         }
 
@@ -84,7 +84,7 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
     }
 
     override fun setName(entity: GroupEntity, name: String): Either<SetNameError, Unit> = either {
-        if (!name.isValidName(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
             raise(SetNameError.InvalidName)
         }
 
@@ -157,7 +157,7 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
     }
 
     override fun findByIdOrName(value: String): GroupEntity? {
-        if (!value.isUuid() && !value.isValidName(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
+        if (!value.isUuid() && !value.isNameValid(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return try {

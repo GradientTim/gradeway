@@ -31,7 +31,7 @@ import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isUuid
-import dev.gradienttim.gradeway.extensions.isValidName
+import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.PermissionReference
 import org.jetbrains.exposed.v1.core.*
@@ -219,7 +219,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     override fun createTemplate(
         name: String
     ): Either<PermissionService.CreateTemplateError, PermissionTemplateEntity> = either {
-        if (!name.isValidName(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
             raise(PermissionService.CreateTemplateError.InvalidName)
         }
 
@@ -267,7 +267,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
             raise(PermissionService.SetNameTemplateError.Unexpected(throwable))
         }
 
-        if (!name.isValidName(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
             raise(PermissionService.SetNameTemplateError.InvalidName)
         }
 
@@ -345,7 +345,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     override fun findTemplateByName(name: String): PermissionTemplateEntity? {
-        if (!name.isValidName(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
+        if (!name.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return try {
@@ -359,7 +359,7 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
     }
 
     override fun findTemplateByIdOrName(value: String): PermissionTemplateEntity? {
-        if (!value.isUuid() && !value.isValidName(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
+        if (!value.isUuid() && !value.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
             return null
         }
         return try {
@@ -2259,9 +2259,10 @@ class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> =
         setEntityPermission(entity, permission, enabled) { permissionEntity ->
-            DatabasePlayerPermissionEntity.new {
-                this.playerId = entity.id
+            DatabaseGroupPermissionEntity.new {
+                this.groupId = entity.id
                 this.permissionId = permissionEntity.id
+                this.isEnabled = enabled
             }
         }
 

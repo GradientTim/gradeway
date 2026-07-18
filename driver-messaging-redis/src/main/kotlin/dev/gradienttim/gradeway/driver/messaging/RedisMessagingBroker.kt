@@ -40,6 +40,11 @@ class RedisMessagingBroker(val builder: StandaloneClientBuilder<RedisClient>) : 
         val client = redisClient ?: return false
 
         try {
+            if (activePubSubs.containsKey(channel)) {
+                activePubSubs[channel]!!.unsubscribe()
+                activePubSubs.remove(channel)
+            }
+
             val channelBytes = channelToBytes(channel)
 
             val jedisPubSub = object : BinaryJedisPubSub() {
