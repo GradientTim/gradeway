@@ -12,8 +12,8 @@ object IntegerAttributeType : AttributeType<Int>() {
     override val type: String = "integer"
     override val klass: KClass<Int> = Int::class
     override val unsafe: Boolean = true
-    override val fallback: (attributeKey: Key) -> Int = { 0 }
 
     override fun serialize(value: Int): String = value.toString()
     override fun deserialize(value: String): Int? = value.toIntOrNull()
+    override fun fallback(attributeKey: Key): Int = 0
 }

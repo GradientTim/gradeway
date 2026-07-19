@@ -12,8 +12,8 @@ object LongAttributeType : AttributeType<Long>() {
     override val type: String = "long"
     override val klass: KClass<Long> = Long::class
     override val unsafe: Boolean = true
-    override val fallback: (attributeKey: Key) -> Long = { 0L }
 
     override fun serialize(value: Long): String = value.toString()
     override fun deserialize(value: String): Long? = value.toLongOrNull()
+    override fun fallback(attributeKey: Key): Long = 0L
 }

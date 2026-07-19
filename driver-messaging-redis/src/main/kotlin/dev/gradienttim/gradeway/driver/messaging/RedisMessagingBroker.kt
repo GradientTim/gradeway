@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.driver.messaging
 
+import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import redis.clients.jedis.BinaryJedisPubSub
 import redis.clients.jedis.RedisClient
@@ -12,7 +13,10 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
-class RedisMessagingBroker(val builder: StandaloneClientBuilder<RedisClient>) : MessagingBroker {
+class RedisMessagingBroker(
+    val builder: StandaloneClientBuilder<RedisClient>,
+    messagingAuthenticator: MessagingAuthenticator,
+) : MessagingBroker(messagingAuthenticator) {
     private var redisClient: RedisClient? = null
     private val activePubSubs = ConcurrentHashMap<String, BinaryJedisPubSub>()
 
@@ -28,7 +32,7 @@ class RedisMessagingBroker(val builder: StandaloneClientBuilder<RedisClient>) : 
         redisClient = null
     }
 
-    override fun publish(channel: String, payload: ByteArray): Boolean {
+    override fun publishAuthenticated(channel: String, payload: ByteArray): Boolean {
         val client = redisClient ?: return false
 
         return runCatching {
@@ -36,7 +40,7 @@ class RedisMessagingBroker(val builder: StandaloneClientBuilder<RedisClient>) : 
         }.isSuccess
     }
 
-    override fun subscribe(channel: String, listener: (payload: ByteArray) -> Unit): Boolean {
+    override fun subscribeChannel(channel: String): Boolean {
         val client = redisClient ?: return false
 
         try {
@@ -49,7 +53,7 @@ class RedisMessagingBroker(val builder: StandaloneClientBuilder<RedisClient>) : 
 
             val jedisPubSub = object : BinaryJedisPubSub() {
                 override fun onMessage(ch: ByteArray, message: ByteArray) {
-                    runCatching { listener(message) }
+                    runCatching { dispatch(message) }
                 }
             }
 

@@ -18,6 +18,8 @@ dependencies {
     api(libs.bundles.exposed)
     api(libs.bundles.arrow)
     compileOnly(libs.bundles.ktoml)
+
+    testImplementation(kotlin("test"))
 }
 
 tasks {
@@ -25,5 +27,9 @@ tasks {
         compilerOptions {
             freeCompilerArgs.set(listOf("-Xexplicit-backing-fields"))
         }
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }

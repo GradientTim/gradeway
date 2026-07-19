@@ -13,10 +13,13 @@ object UUIDAttributeType : AttributeType<UUID>() {
     override val type: String = "uuid"
     override val klass: KClass<UUID> = UUID::class
     override val unsafe: Boolean = true
-    override val fallback: (attributeKey: Key) -> UUID = { UUID(0, 0) }
 
     override fun serialize(value: UUID): String = value.toString()
     override fun deserialize(value: String): UUID? = runCatching {
         UUID.fromString(value)
     }.getOrNull()
+
+    override fun fallback(attributeKey: Key): UUID = EMPTY_UUID
+
+    val EMPTY_UUID = UUID(0, 0)
 }

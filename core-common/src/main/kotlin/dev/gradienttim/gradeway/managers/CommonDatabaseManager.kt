@@ -68,10 +68,6 @@ class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
 
                 val tableStates = tables.map { it to it.exists() }
 
-                // Tables that already exist may have been created by an older version of Gradeway and can be
-                // missing columns/constraints introduced since; freshly created tables below already match the
-                // current definitions exactly and must be excluded here, or Exposed re-detects their own
-                // brand-new constraints as missing and tries to add them a second time.
                 val existingTables = tableStates.filter { (_, exists) -> exists }.map { (table, _) -> table }
                 val nonExistingTables = tableStates.filter { (_, exists) -> !exists }.map { (table, _) -> table }
 

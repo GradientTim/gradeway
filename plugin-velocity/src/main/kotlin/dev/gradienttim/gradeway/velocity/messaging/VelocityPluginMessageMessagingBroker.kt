@@ -10,6 +10,7 @@ import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import dev.gradienttim.gradeway.constants.MessagingConstants
+import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 
 /**
@@ -21,15 +22,20 @@ import dev.gradienttim.gradeway.messaging.MessagingBroker
  * [CommonMessagingManager][dev.gradienttim.gradeway.managers.CommonMessagingManager] already
  * filters out self-originated payloads by `serverId`.
  *
+ * [MessagingBroker] authenticates every message on top of the [ServerConnection] origin check
+ * already performed in [onPluginMessage] - the backend side of this channel cannot tell a relayed
+ * message from one sent directly by a connecting player's client, so it relies on that same
+ * shared secret.
+ *
  * @property server The proxy server used to register the channel and reach backend servers.
  * @property plugin The plugin instance this broker's event listener is registered under.
  */
 class VelocityPluginMessageMessagingBroker(
     private val server: ProxyServer,
     private val plugin: Any,
-) : MessagingBroker {
+    messagingAuthenticator: MessagingAuthenticator,
+) : MessagingBroker(messagingAuthenticator) {
     private val identifier = MinecraftChannelIdentifier.from(MessagingConstants.SYNC_CHANNEL)
-    private var listener: ((payload: ByteArray) -> Unit)? = null
 
     override fun open() {
         server.channelRegistrar.register(identifier)
@@ -41,16 +47,13 @@ class VelocityPluginMessageMessagingBroker(
         server.channelRegistrar.unregister(identifier)
     }
 
-    override fun publish(channel: String, payload: ByteArray): Boolean {
+    override fun publishAuthenticated(channel: String, payload: ByteArray): Boolean {
         return server.allServers.any { registeredServer ->
             registeredServer.sendPluginMessage(identifier, payload)
         }
     }
 
-    override fun subscribe(channel: String, listener: (payload: ByteArray) -> Unit): Boolean {
-        this.listener = listener
-        return true
-    }
+    override fun subscribeChannel(channel: String): Boolean = true
 
     @Subscribe
     fun onPluginMessage(event: PluginMessageEvent) {
@@ -60,7 +63,8 @@ class VelocityPluginMessageMessagingBroker(
         if (source !is ServerConnection) return
 
         event.result = PluginMessageEvent.ForwardResult.handled()
-        listener?.invoke(event.data)
-        publish(MessagingConstants.SYNC_CHANNEL, event.data)
+
+        val verifiedPayload = dispatch(event.data) ?: return
+        publish(MessagingConstants.SYNC_CHANNEL, verifiedPayload)
     }
 }

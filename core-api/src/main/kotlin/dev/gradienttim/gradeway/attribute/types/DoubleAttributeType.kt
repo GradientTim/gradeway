@@ -12,8 +12,8 @@ object DoubleAttributeType : AttributeType<Double>() {
     override val type: String = "double"
     override val klass: KClass<Double> = Double::class
     override val unsafe: Boolean = true
-    override val fallback: (attributeKey: Key) -> Double = { 0.0 }
 
     override fun serialize(value: Double): String = value.toString()
     override fun deserialize(value: String): Double? = value.toDoubleOrNull()
+    override fun fallback(attributeKey: Key): Double = 0.0
 }

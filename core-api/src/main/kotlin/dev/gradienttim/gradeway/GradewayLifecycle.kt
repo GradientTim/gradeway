@@ -36,6 +36,19 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
      */
     val now: () -> Instant
 
+    /**
+     * Provides centralized access to caching functionality within the Gradeway lifecycle.
+     *
+     * The `caches` property encapsulates an instance of the [Caches] interface, which is responsible
+     * for managing in-memory caches for various entity types and their related permissions. This
+     * includes support for role, group, player, and permission entities, as well as their permissions,
+     * effective weights, and effective permissions.
+     *
+     * Using these caches can significantly improve performance by reducing redundant computations
+     * and database queries, particularly for frequently accessed data. The caches also provide
+     * mechanisms for invalidating their data when changes occur, ensuring consistency across
+     * the application.
+     */
     val caches: Caches
 
     /**

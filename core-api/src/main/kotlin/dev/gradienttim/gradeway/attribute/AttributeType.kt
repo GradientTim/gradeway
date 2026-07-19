@@ -25,18 +25,6 @@ abstract class AttributeType<T : Any> : Typed {
     abstract val unsafe: Boolean
 
     /**
-     * A function that determines a default fallback value for a given attribute key.
-     *
-     * This is invoked when no explicit value for the requested attribute key is available.
-     * The fallback mechanism ensures that a valid value of type [T] can always be obtained
-     * even if the key does not directly correspond to an existing value in the attribute system.
-     *
-     * @param attributeKey The [Key] for which the fallback value is to be determined.
-     * @return A default value of type [T] associated with the given attribute key.
-     */
-    abstract val fallback: (attributeKey: Key) -> T
-
-    /**
      * Serializes the given value into its string representation.
      *
      * @param value The value to serialize.
@@ -51,6 +39,17 @@ abstract class AttributeType<T : Any> : Typed {
      * @return The deserialized value of type [T].
      */
     abstract fun deserialize(value: String): T?
+
+    /**
+     * A function that determines a default fallback value for a given attribute key.
+     *
+     * The fallback mechanism ensures that a valid value of type [T] can always be obtained
+     * even if the key does not directly correspond to an existing value in the attribute system.
+     *
+     * @param attributeKey The key for which the fallback value is required.
+     * @return The fallback value of type [T] associated with the specified key.
+     */
+    abstract fun fallback(attributeKey: Key): T
 
     /**
      * Checks whether this attribute type is equal to another object.

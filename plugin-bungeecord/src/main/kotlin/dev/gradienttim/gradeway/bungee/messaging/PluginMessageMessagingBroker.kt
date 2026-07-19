@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.bungee.messaging
 
 import dev.gradienttim.gradeway.bungee.GradewayPlugin
 import dev.gradienttim.gradeway.constants.MessagingConstants
+import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import net.md_5.bungee.api.connection.Server
 import net.md_5.bungee.api.event.PluginMessageEvent
@@ -21,14 +22,17 @@ import net.md_5.bungee.event.EventHandler
  * [CommonMessagingManager][dev.gradienttim.gradeway.managers.CommonMessagingManager] already
  * filters out self-originated payloads by `serverId`.
  *
+ * [MessagingBroker] authenticates every message on top of the [Server] origin check already
+ * performed in [onPluginMessage] - the backend side of this channel cannot tell a relayed message
+ * from one sent directly by a connecting player's client, so it relies on that same shared secret.
+ *
  * @property plugin The plugin used to register the channel, reach backend servers, and register
  * this broker's event listener under.
  */
 class PluginMessageMessagingBroker(
     private val plugin: GradewayPlugin,
-) : MessagingBroker, Listener {
-    private var listener: ((payload: ByteArray) -> Unit)? = null
-
+    messagingAuthenticator: MessagingAuthenticator,
+) : MessagingBroker(messagingAuthenticator), Listener {
     override fun open() {
         plugin.proxy.registerChannel(MessagingConstants.SYNC_CHANNEL)
         plugin.proxy.pluginManager.registerListener(plugin, this)
@@ -39,16 +43,13 @@ class PluginMessageMessagingBroker(
         plugin.proxy.unregisterChannel(MessagingConstants.SYNC_CHANNEL)
     }
 
-    override fun publish(channel: String, payload: ByteArray): Boolean {
+    override fun publishAuthenticated(channel: String, payload: ByteArray): Boolean {
         return plugin.proxy.servers.values.any { server ->
             server.sendData(channel, payload, true)
         }
     }
 
-    override fun subscribe(channel: String, listener: (payload: ByteArray) -> Unit): Boolean {
-        this.listener = listener
-        return true
-    }
+    override fun subscribeChannel(channel: String): Boolean = true
 
     @EventHandler
     fun onPluginMessage(event: PluginMessageEvent) {
@@ -56,7 +57,8 @@ class PluginMessageMessagingBroker(
         if (event.sender !is Server) return
 
         event.isCancelled = true
-        listener?.invoke(event.data)
-        publish(MessagingConstants.SYNC_CHANNEL, event.data)
+
+        val verifiedPayload = dispatch(event.data) ?: return
+        publish(MessagingConstants.SYNC_CHANNEL, verifiedPayload)
     }
 }
