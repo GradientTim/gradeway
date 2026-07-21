@@ -86,7 +86,7 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
         .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_WRITE_DURATION, TimeUnit.MINUTES)
         .build<UUID, Int> { id ->
             transaction(gradeway.database) {
-                resolveEffectivePlayerWeight(players.get(id))
+                resolveEffectiveRoleWeight(roles.get(id))
             }
         }
 
@@ -95,7 +95,7 @@ class CommonCaches(val gradeway: CommonGradeway) : Caches {
         .expireAfterWrite(CacheConstants.ENTITY_EFFECTIVE_WEIGHT_WRITE_DURATION, TimeUnit.MINUTES)
         .build<UUID, Int> { id ->
             transaction(gradeway.database) {
-                resolveEffectiveRoleWeight(roles.get(id))
+                resolveEffectivePlayerWeight(players.get(id))
             }
         }
 

@@ -148,8 +148,16 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         }
     }
 
+    /**
+     * Invalidates both the effective-weight cache and the underlying raw player-entity cache that
+     * feeds it: [dev.gradienttim.gradeway.platform.CommonCaches.resolveEffectivePlayerWeight] reads
+     * the player's own `weight` field off the cached [PlayerEntity], so leaving that entity cached
+     * would let a weight change keep resolving to its stale pre-change value until the entity
+     * cache's own TTL separately expires.
+     */
     private fun invalidatePlayerWeight(rawPlayerId: String) {
         val playerId = runCatching { UUID.fromString(rawPlayerId) }.getOrNull() ?: return
+        gradeway.caches.players.invalidate(playerId)
         gradeway.caches.playerEffectiveWeights.invalidate(playerId)
     }
 
@@ -196,7 +204,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         return getPrimaryRole(entity)
     }
 
-    override fun getPrimaryRole(entity: PlayerEntity): RoleEntity? = entity.primaryRole
+    override fun getPrimaryRole(entity: PlayerEntity): RoleEntity? =
+        transaction(gradeway.database) { entity.primaryRole }
 
     override fun addRole(
         playerId: UUID,

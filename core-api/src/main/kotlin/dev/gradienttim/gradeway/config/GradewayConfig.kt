@@ -124,6 +124,6 @@ data class GradewayConfig(
     )
 
     companion object {
-        const val LATEST_VERSION: Int = 2
+        const val LATEST_VERSION: Int = 1
     }
 }

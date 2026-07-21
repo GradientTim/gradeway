@@ -42,6 +42,22 @@ data class PermissionTemplatePermissionChangedPayload(
 ) : MessagingPayload
 
 /**
+ * Signals that every permission on a permission template was cleared at once.
+ *
+ * Published instead of one [PermissionTemplatePermissionChangedPayload] per removed permission
+ * when a bulk clear removes all of a template's permissions in a single operation, since
+ * receivers are expected to treat this as an invalidation signal and re-read current state
+ * rather than apply per-entry deltas anyway (see [MessagingPayload]).
+ *
+ * @property templateId The unique identifier of the affected permission template.
+ */
+@Serializable
+@SerialName("permission_template_permissions_cleared")
+data class PermissionTemplatePermissionsClearedPayload(
+    val templateId: String
+) : MessagingPayload
+
+/**
  * Signals that a permission template was linked to or unlinked from a role.
  *
  * @property templateId The unique identifier of the affected permission template.

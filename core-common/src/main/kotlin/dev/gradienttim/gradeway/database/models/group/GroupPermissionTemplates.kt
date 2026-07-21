@@ -35,6 +35,12 @@ object GroupPermissionTemplatesTable : CompositeIdTable(name = TableConstants.GR
         onUpdate = ReferenceOption.CASCADE,
         onDelete = ReferenceOption.CASCADE
     )
+
+    init {
+        addIdColumn(groupId)
+        addIdColumn(permissionTemplateId)
+        uniqueIndex(groupId, permissionTemplateId)
+    }
 }
 
 class DatabaseGroupPermissionTemplateEntity(id: EntityID<CompositeID>) : CompositeEntity(id),

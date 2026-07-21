@@ -35,6 +35,12 @@ object PlayerPermissionTemplatesTable : CompositeIdTable(name = TableConstants.P
         onUpdate = ReferenceOption.CASCADE,
         onDelete = ReferenceOption.CASCADE
     )
+
+    init {
+        addIdColumn(playerId)
+        addIdColumn(permissionTemplateId)
+        uniqueIndex(playerId, permissionTemplateId)
+    }
 }
 
 class DatabasePlayerPermissionTemplateEntity(id: EntityID<CompositeID>) : CompositeEntity(id),

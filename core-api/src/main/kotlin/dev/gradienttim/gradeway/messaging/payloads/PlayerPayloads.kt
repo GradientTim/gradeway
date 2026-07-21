@@ -54,3 +54,19 @@ data class PlayerPermissionChangedPayload(
     val playerId: String,
     val permission: String
 ) : MessagingPayload
+
+/**
+ * Signals that every permission on a player was cleared at once.
+ *
+ * Published instead of one [PlayerPermissionChangedPayload] per removed permission when a bulk
+ * clear removes all of a player's permissions in a single operation, since receivers are
+ * expected to treat this as an invalidation signal and re-read current state rather than apply
+ * per-entry deltas anyway (see [MessagingPayload]).
+ *
+ * @property playerId The unique identifier of the affected player.
+ */
+@Serializable
+@SerialName("player_permissions_cleared")
+data class PlayerPermissionsClearedPayload(
+    val playerId: String
+) : MessagingPayload

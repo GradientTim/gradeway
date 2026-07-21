@@ -52,3 +52,19 @@ data class RoleParentChangedPayload(
     val parentRoleId: String,
     val action: MessagingAction
 ) : MessagingPayload
+
+/**
+ * Signals that every permission on a role was cleared at once.
+ *
+ * Published instead of one [RolePermissionChangedPayload] per removed permission when a bulk
+ * clear removes all of a role's permissions in a single operation, since receivers are expected
+ * to treat this as an invalidation signal and re-read current state rather than apply per-entry
+ * deltas anyway (see [MessagingPayload]).
+ *
+ * @property roleId The unique identifier of the affected role.
+ */
+@Serializable
+@SerialName("role_permissions_cleared")
+data class RolePermissionsClearedPayload(
+    val roleId: String
+) : MessagingPayload

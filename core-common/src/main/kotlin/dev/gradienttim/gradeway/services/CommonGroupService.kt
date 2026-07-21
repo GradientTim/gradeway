@@ -230,7 +230,7 @@ class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinCompo
         role: RoleEntity
     ): Either<AddTargetError, RoleGroupEntity> = either {
         transaction(gradeway.database) {
-            if (role.groups.any { it.roleId.value == role.id.value }) {
+            if (role.groups.any { it.groupId.value == group.id.value }) {
                 raise(AddTargetError.AlreadyInGroup)
             }
 

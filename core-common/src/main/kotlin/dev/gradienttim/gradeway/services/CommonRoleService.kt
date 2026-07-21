@@ -127,13 +127,24 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
         when (payload) {
             is RoleChangedPayload -> invalidateRoleWeight(payload.roleId)
             is GroupRoleChangedPayload -> invalidateRoleWeight(payload.roleId)
-            is GroupChangedPayload, is CacheFlushPayload -> gradeway.caches.roleEffectiveWeights.invalidateAll()
+            is GroupChangedPayload, is CacheFlushPayload -> {
+                gradeway.caches.roles.invalidateAll()
+                gradeway.caches.roleEffectiveWeights.invalidateAll()
+            }
             else -> {}
         }
     }
 
+    /**
+     * Invalidates both the effective-weight cache and the underlying raw role-entity cache that
+     * feeds it: [dev.gradienttim.gradeway.platform.CommonCaches.resolveEffectiveRoleWeight] reads
+     * the role's own `weight` field off the cached [RoleEntity], so leaving that entity cached
+     * would let a weight change keep resolving to its stale pre-change value until the entity
+     * cache's own TTL separately expires.
+     */
     private fun invalidateRoleWeight(rawRoleId: String) {
         val roleId = runCatching { UUID.fromString(rawRoleId) }.getOrNull() ?: return
+        gradeway.caches.roles.invalidate(roleId)
         gradeway.caches.roleEffectiveWeights.invalidate(roleId)
     }
 

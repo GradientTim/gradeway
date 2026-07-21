@@ -51,6 +51,60 @@ class MessagingPayloadSerializationTest {
     }
 
     @Test
+    fun `role permissions cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = RolePermissionsClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `group permissions cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = GroupPermissionsClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `player permissions cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = PlayerPermissionsClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `role attributes cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = RoleAttributesClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `player attributes cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = PlayerAttributesClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
+    fun `permission template permissions cleared payload round trips through ProtoBuf`() {
+        val payload: MessagingPayload = PermissionTemplatePermissionsClearedPayload(UUID.randomUUID().toString())
+
+        val decoded = ProtoBuf.decodeFromByteArray<MessagingPayload>(ProtoBuf.encodeToByteArray(payload))
+
+        assertEquals(payload, decoded)
+    }
+
+    @Test
     fun `cache flush payload round trips through ProtoBuf`() {
         val payload: MessagingPayload = CacheFlushPayload
 

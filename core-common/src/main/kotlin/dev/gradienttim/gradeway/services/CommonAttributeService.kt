@@ -19,7 +19,9 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributeChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributesClearedPayload
 import dev.gradienttim.gradeway.messaging.payloads.RoleAttributeChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.RoleAttributesClearedPayload
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key
@@ -130,7 +132,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     }
 
     override fun hasRoleAttribute(entity: RoleEntity, key: Key): Boolean {
-        return entity.attributes.any { it.key == key }
+        return transaction(gradeway.database) { entity.attributes.any { it.key == key } }
     }
 
     override fun hasRoleAttribute(idOrName: String, key: Key): Boolean {
@@ -144,7 +146,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     }
 
     override fun getRoleAttribute(entity: RoleEntity, key: Key): RoleAttributeEntity? {
-        return entity.attributes.find { it.key == key }
+        return transaction(gradeway.database) { entity.attributes.find { it.key == key } }
     }
 
     override fun getRoleAttribute(idOrName: String, key: Key): RoleAttributeEntity? {
@@ -252,7 +254,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     }
 
     override fun hasPlayerAttribute(entity: PlayerEntity, key: Key): Boolean {
-        return entity.attributes.any { it.key == key }
+        return transaction(gradeway.database) { entity.attributes.any { it.key == key } }
     }
 
     override fun hasPlayerAttribute(idOrName: String, key: Key): Boolean {
@@ -266,7 +268,7 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
     }
 
     override fun getPlayerAttribute(entity: PlayerEntity, key: Key): PlayerAttributeEntity? {
-        return entity.attributes.find { it.key == key }
+        return transaction(gradeway.database) { entity.attributes.find { it.key == key } }
     }
 
     override fun getPlayerAttribute(idOrName: String, key: Key): PlayerAttributeEntity? {
@@ -288,6 +290,22 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
         val payload: MessagingPayload = when (entity) {
             is RoleEntity -> RoleAttributeChangedPayload(entity.id.value.toString(), key.asString(), action)
             is PlayerEntity -> PlayerAttributeChangedPayload(entity.id.value.toString(), key.asString(), action)
+            else -> return
+        }
+        gradeway.messaging.publish(payload)
+    }
+
+    /**
+     * Publishes a single general "all attributes cleared" [MessagingPayload] for [entity],
+     * matching its concrete kind (role or player). Used by [clearEntityAttributes] instead of
+     * publishing one [publishAttributeChanged] per removed key, since receivers treat any
+     * payload as an invalidation signal and re-read current state rather than apply the
+     * payload's fields directly (see [MessagingPayload]).
+     */
+    private fun publishAttributesCleared(entity: AttributeReference<out SharedAttributeEntity>) {
+        val payload: MessagingPayload = when (entity) {
+            is RoleEntity -> RoleAttributesClearedPayload(entity.id.value.toString())
+            is PlayerEntity -> PlayerAttributesClearedPayload(entity.id.value.toString())
             else -> return
         }
         gradeway.messaging.publish(payload)
@@ -372,25 +390,21 @@ class CommonAttributeService(val gradeway: CommonGradeway) : AttributeService, K
 
     private fun clearEntityAttributes(
         entity: AttributeReference<out SharedAttributeEntity>
-    ): Either<AttributeService.ClearAttributesError, Unit> {
-        val clearedKeys = transaction(gradeway.database) { entity.attributes.map { it.key } }
-
-        return either {
-            transaction(gradeway.database) {
-                if (entity.attributes.empty()) {
-                    raise(AttributeService.ClearAttributesError.NoAttributesFound)
-                }
-
-                try {
-                    entity.attributes.forEach { attributeEntity ->
-                        if (attributeEntity is Entity<*>) {
-                            attributeEntity.delete()
-                        }
-                    }
-                } catch (throwable: Throwable) {
-                    raise(AttributeService.ClearAttributesError.Unexpected(throwable))
-                }
+    ): Either<AttributeService.ClearAttributesError, Unit> = either {
+        transaction(gradeway.database) {
+            if (entity.attributes.empty()) {
+                raise(AttributeService.ClearAttributesError.NoAttributesFound)
             }
-        }.onRight { clearedKeys.forEach { publishAttributeChanged(entity, it, MessagingAction.DELETED) } }
-    }
+
+            try {
+                entity.attributes.forEach { attributeEntity ->
+                    if (attributeEntity is Entity<*>) {
+                        attributeEntity.delete()
+                    }
+                }
+            } catch (throwable: Throwable) {
+                raise(AttributeService.ClearAttributesError.Unexpected(throwable))
+            }
+        }
+    }.onRight { publishAttributesCleared(entity) }
 }

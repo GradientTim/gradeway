@@ -52,3 +52,19 @@ data class GroupPermissionChangedPayload(
     val groupId: String,
     val permission: String
 ) : MessagingPayload
+
+/**
+ * Signals that every permission on a group was cleared at once.
+ *
+ * Published instead of one [GroupPermissionChangedPayload] per removed permission when a bulk
+ * clear removes all of a group's permissions in a single operation, since receivers are expected
+ * to treat this as an invalidation signal and re-read current state rather than apply per-entry
+ * deltas anyway (see [MessagingPayload]).
+ *
+ * @property groupId The unique identifier of the affected group.
+ */
+@Serializable
+@SerialName("group_permissions_cleared")
+data class GroupPermissionsClearedPayload(
+    val groupId: String
+) : MessagingPayload

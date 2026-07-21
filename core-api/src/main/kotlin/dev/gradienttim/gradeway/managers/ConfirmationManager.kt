@@ -25,7 +25,8 @@ interface ConfirmationManager : Loadable, Unloadable, Disableable {
      * @param sender The sender who requested the task.
      * @param task The function representing the task to be scheduled for execution.
      * @param onTimeout The function to invoke when the task times out. Receives the task's unique identifier as a parameter.
-     * @return An Either containing a [RequestJobError] if the task scheduling fails, or a String representing the unique identifier of the scheduled task if successful.
+     * @return An Either containing a [RequestJobError] if the task scheduling fails,
+     *         or a String representing the unique identifier of the scheduled task if successful.
      */
     fun request(sender: Audience, task: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String>
 
@@ -73,10 +74,10 @@ interface ConfirmationManager : Loadable, Unloadable, Disableable {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Job) return false
-            return id == other.id
+            return id == other.id && sender == other.sender
         }
 
-        override fun hashCode(): Int = id.hashCode()
+        override fun hashCode(): Int = 31 * id.hashCode() + sender.hashCode()
     }
 
     sealed interface RequestJobError {

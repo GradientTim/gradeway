@@ -12,7 +12,6 @@ import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import dev.gradienttim.gradeway.strategies.LuckPermsMigrationStrategy
 import dev.gradienttim.gradeway.strategy.MigrationStrategy
-import java.io.File
 
 class CommonMigrationManager(val gradeway: CommonGradeway) : MigrationManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
@@ -28,7 +27,7 @@ class CommonMigrationManager(val gradeway: CommonGradeway) : MigrationManager {
         val strategy = MigrationStrategyRegistry.find(type)
             ?: raise(MigrationManager.MigrateError.StrategyNotRegistered)
 
-        migrate(strategy, fileName)
+        return migrate(strategy, fileName)
     }
 
     override fun migrate(
@@ -45,7 +44,6 @@ class CommonMigrationManager(val gradeway: CommonGradeway) : MigrationManager {
     }
 
     init {
-        println("hi?")
         MigrationStrategyRegistry.register(LuckPermsMigrationStrategy(gradeway))
     }
 }
