@@ -30,8 +30,8 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
-import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.extensions.isNameValid
+import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.PermissionReference
 import org.jetbrains.exposed.v1.core.*

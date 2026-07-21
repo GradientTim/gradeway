@@ -10,6 +10,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
@@ -32,6 +33,11 @@ class ConnectionListener(val gradeway: GradewayLifecycle) : Listener {
         } catch (throwable: Throwable) {
             gradeway.logger.error(throwable.message ?: throwable::class.java.simpleName)
         }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    fun onPlayerQuit(event: PlayerQuitEvent) {
+        gradeway.caches.invalidatePlayer(event.player.uniqueId)
     }
 
     private fun initializeEntityPermissionHandle() {

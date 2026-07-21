@@ -11,23 +11,12 @@ import dev.gradienttim.gradeway.database.models.player.DatabasePlayerRoleEntity
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
-import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
-import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
-import dev.gradienttim.gradeway.messaging.payloads.PlayerRoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.RoleChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.time.Duration
 import java.time.Instant
 import java.util.*
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class CommonPlayerServiceTest {
     private val gradeway: CommonGradeway = createTestGradeway()

@@ -6,8 +6,6 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.Either
 import arrow.core.raise.either
-import dev.gradienttim.gradeway.managers.CommonConfirmationManager.Companion.JOB_ID_ALPHABET
-import dev.gradienttim.gradeway.managers.CommonConfirmationManager.Companion.JOB_ID_LENGTH
 import dev.gradienttim.gradeway.managers.ConfirmationManager.*
 import net.kyori.adventure.audience.Audience
 import java.util.concurrent.Executors

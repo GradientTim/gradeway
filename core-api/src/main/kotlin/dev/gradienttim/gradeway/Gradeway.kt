@@ -4,11 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway
 
-import dev.gradienttim.gradeway.services.AttributeService
-import dev.gradienttim.gradeway.services.GroupService
-import dev.gradienttim.gradeway.services.PermissionService
-import dev.gradienttim.gradeway.services.PlayerService
-import dev.gradienttim.gradeway.services.RoleService
+import dev.gradienttim.gradeway.services.*
 
 /**
  * Core interface representing the Gradeway system, which provides services for managing roles

@@ -6,7 +6,6 @@ package dev.gradienttim.gradeway.serializers
 
 import com.akuleshov7.ktoml.decoders.TomlMainDecoder
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor

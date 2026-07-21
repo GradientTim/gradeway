@@ -15,12 +15,7 @@ import java.io.File
 import java.nio.file.Files
 import java.util.*
 import java.util.zip.GZIPOutputStream
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertContains
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class LuckPermsMigrationStrategyTest {
     private val gradeway: CommonGradeway = createTestGradeway()

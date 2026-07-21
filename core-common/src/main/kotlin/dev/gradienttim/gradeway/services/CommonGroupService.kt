@@ -15,8 +15,8 @@ import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
-import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.extensions.isNameValid
+import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.services.GroupService.*

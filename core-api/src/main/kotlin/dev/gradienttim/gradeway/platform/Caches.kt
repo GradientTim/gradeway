@@ -66,4 +66,19 @@ interface Caches {
         invalidateEntityEffectiveWeights()
         invalidateEntityEffectivePermissions()
     }
+
+    /**
+     * Invalidates all cache entries scoped to a single player, identified by their [UUID].
+     * Intended to be called when a player disconnects from a server, so their cached entity,
+     * permissions, effective weight, and effective permissions are evicted instead of lingering
+     * until they expire on their own.
+     *
+     * @param playerId the unique identifier of the player whose cache entries should be evicted.
+     */
+    fun invalidatePlayer(playerId: UUID) {
+        players.invalidate(playerId)
+        playerPermissions.invalidate(playerId)
+        playerEffectiveWeights.invalidate(playerId)
+        playerEffectivePermissions.invalidate(playerId)
+    }
 }

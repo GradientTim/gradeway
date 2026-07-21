@@ -14,12 +14,7 @@ import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributeChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributesClearedPayload
 import net.kyori.adventure.key.Key
 import java.util.*
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class CommonAttributeServiceTest {
     private val gradeway: CommonGradeway = createTestGradeway()

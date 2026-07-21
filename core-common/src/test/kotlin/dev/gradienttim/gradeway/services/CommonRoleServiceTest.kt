@@ -9,12 +9,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.role.RoleEntity
-import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
-import dev.gradienttim.gradeway.messaging.payloads.RoleChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.RoleParentChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.*
 import java.util.*
 import kotlin.test.AfterTest
 import kotlin.test.Test

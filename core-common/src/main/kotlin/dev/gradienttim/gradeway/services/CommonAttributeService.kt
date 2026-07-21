@@ -16,12 +16,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
-import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
-import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
-import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributeChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributesClearedPayload
-import dev.gradienttim.gradeway.messaging.payloads.RoleAttributeChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.RoleAttributesClearedPayload
+import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key

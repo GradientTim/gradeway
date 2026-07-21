@@ -7,7 +7,7 @@ package dev.gradienttim.gradeway.velocity.permission
 import com.velocitypowered.api.permission.PermissionFunction
 import com.velocitypowered.api.permission.Tristate
 import dev.gradienttim.gradeway.Gradeway
-import java.util.UUID
+import java.util.*
 
 class GradewayPermissionFunction(val gradeway: Gradeway, val playerId: UUID) : PermissionFunction {
     override fun getPermissionValue(permission: String): Tristate {

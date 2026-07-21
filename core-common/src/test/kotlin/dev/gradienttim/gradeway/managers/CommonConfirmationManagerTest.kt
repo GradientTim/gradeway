@@ -6,12 +6,7 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
 import net.kyori.adventure.audience.Audience
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class CommonConfirmationManagerTest {
     private val manager = CommonConfirmationManager()

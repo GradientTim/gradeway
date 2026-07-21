@@ -7,13 +7,7 @@ package dev.gradienttim.gradeway.extensions
 import java.io.IOException
 import java.nio.file.Files
 import java.time.Instant
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class JavaExtensionsTest {
     @Test

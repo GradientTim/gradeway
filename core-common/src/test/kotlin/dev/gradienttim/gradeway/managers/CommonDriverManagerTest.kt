@@ -10,11 +10,7 @@ import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import java.nio.file.Files
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 private class FakeDriver : Driver() {
     var unloaded = false
