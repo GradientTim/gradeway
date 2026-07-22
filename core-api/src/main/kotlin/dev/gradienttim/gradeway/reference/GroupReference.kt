@@ -41,6 +41,16 @@ interface GroupReference<TReference> {
     fun addGroup(id: UUID): Either<GroupService.AddTargetError, TReference>
 
     /**
+     * Adds a group to the current entity using the specified unique identifier or name.
+     *
+     * @param idOrName The unique identifier or name of the group to be added.
+     * @return An instance of [Either], containing either a [GroupService.AddTargetError] indicating
+     *         the error that occurred during the operation, or a [TReference] representing the
+     *         reference to the added group upon success.
+     */
+    fun addGroup(idOrName: String): Either<GroupService.AddTargetError, TReference>
+
+    /**
      * Adds a group entity to the current collection of groups associated with the entity.
      *
      * This method is responsible for integrating the given [GroupEntity] into the collection
@@ -65,6 +75,19 @@ interface GroupReference<TReference> {
      *         indicating the reason for failure, or [Unit] upon successful removal.
      */
     fun removeGroup(id: UUID): Either<GroupService.RemoveTargetError, Unit>
+
+    /**
+     * Removes a group associated with the specified unique identifier or name.
+     *
+     * This method attempts to remove the group identified by the given [idOrName] from the current
+     * collection of groups. The operation may fail if the group is not found, the entity
+     * is not part of the group, or due to unexpected errors.
+     *
+     * @param idOrName The unique identifier or name of the group to be removed.
+     * @return An instance of [Either], containing either a [GroupService.RemoveTargetError]
+     *         indicating the reason for failure, or [Unit] upon successful removal.
+     */
+    fun removeGroup(idOrName: String): Either<GroupService.RemoveTargetError, Unit>
 
     /**
      * Removes the specified group entity from the current collection of associated groups.

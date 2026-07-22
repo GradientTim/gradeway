@@ -210,6 +210,17 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     fun addParent(roleIdOrName: String, parent: RoleEntity): Either<AddParentError, RoleParentEntity>
 
     /**
+     * Adds an existing role as a child of another role, identified by id or name, so the new child
+     * role inherits the parent's attributes and permissions.
+     *
+     * @param parentIdOrName The unique identifier or name of the role that will act as the parent.
+     * @param childId The unique identifier of the role to add as a child.
+     * @return Either an error of type [AddParentError] if the operation fails,
+     *         or the created [RoleParentEntity] representing the relationship.
+     */
+    fun addChild(parentIdOrName: String, childId: UUID): Either<AddParentError, RoleParentEntity>
+
+    /**
      * Removes an existing parent-role relationship from a role.
      *
      * @param role The role to remove the parent from.
@@ -244,6 +255,16 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
     fun removeParent(roleIdOrName: String, parent: RoleEntity): Either<RemoveParentError, Unit>
+
+    /**
+     * Removes an existing parent-role relationship from a role, identified by id or name from the
+     * parent's perspective.
+     *
+     * @param parentIdOrName The unique identifier or name of the role to remove the child from.
+     * @param childId The unique identifier of the child role to remove.
+     * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
+     */
+    fun removeChild(parentIdOrName: String, childId: UUID): Either<RemoveParentError, Unit>
 
     sealed interface CreateRoleError {
         object EntityAlreadyExists : CreateRoleError

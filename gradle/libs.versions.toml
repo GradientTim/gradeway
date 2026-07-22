@@ -37,6 +37,7 @@ akuleshov7-ktoml-file = { module = "com.akuleshov7:ktoml-file", version.ref = "k
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud" }
 cloud-kotlin = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud" }
 cloud-minecraft-extras = { module = "org.incendo:cloud-minecraft-extras", version = "2.0.0-beta.17" }
+cloud-brigadier = { module = "org.incendo:cloud-brigadier", version = "2.0.0-beta.17" }
 
 exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposed" }
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
@@ -48,7 +49,7 @@ exposed-migration-jdbc = { module = "org.jetbrains.exposed:exposed-migration-jdb
 [bundles]
 exposed = ["exposed-dao", "exposed-core", "exposed-jdbc", "exposed-java-time"]
 exposed-migration = ["exposed-migration-core", "exposed-migration-jdbc"]
-cloud = ["cloud-core", "cloud-kotlin", "cloud-minecraft-extras"]
+cloud = ["cloud-core", "cloud-kotlin", "cloud-minecraft-extras", "cloud-brigadier"]
 ktoml = ["akuleshov7-ktoml-core", "akuleshov7-ktoml-file"]
 kyori = ["kyori-adventure", "kyori-adventure-minimessage"]
 arrow = ["arrow-core", "arrow-fx-coroutines"]

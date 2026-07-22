@@ -104,7 +104,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
             permission("gradeway.player.delete")
 
             required("id", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPlayers(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPlayers(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -159,7 +159,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
 
         registerCopy("modify") {
             required("idOrName", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPlayers(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPlayers(gradeway, remaining.lowercase()) }
             }
 
             registerPlayerRolesCommand(gradeway, audienceProvider)
@@ -510,7 +510,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerRolesCommand(
             permission("gradeway.player.roles.add")
 
             required("roleId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
             optional("until", stringParser())
 
@@ -546,7 +546,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerRolesCommand(
             permission("gradeway.player.roles.remove")
 
             required("roleId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -628,7 +628,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerRolesCommand(
             permission("gradeway.player.roles.setPrimary")
 
             required("roleId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->

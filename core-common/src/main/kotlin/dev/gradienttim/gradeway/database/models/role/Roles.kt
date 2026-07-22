@@ -7,9 +7,11 @@ package dev.gradienttim.gradeway.database.models.role
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.group.GroupEntity
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import dev.gradienttim.gradeway.services.GroupService
+import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.RoleService
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
@@ -58,6 +60,7 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     internal val roleService: RoleService by inject()
     internal val groupService: GroupService by inject()
     internal val attributeService: AttributeService by inject()
+    internal val permissionService: PermissionService by inject()
 
     override var name by RolesTable.name
     override var weight by RolesTable.weight
@@ -78,9 +81,11 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     override fun setWeight(weight: Int) = roleService.setWeight(this, weight)
 
     override fun addGroup(id: UUID) = groupService.addRoleToGroup(id, this)
+    override fun addGroup(idOrName: String) = groupService.addRoleToGroup(idOrName, this)
     override fun addGroup(entity: GroupEntity) = groupService.addRoleToGroup(entity, this)
 
     override fun removeGroup(id: UUID) = groupService.removeRoleFromGroup(id, this)
+    override fun removeGroup(idOrName: String) = groupService.removeRoleFromGroup(idOrName, this)
     override fun removeGroup(entity: GroupEntity) = groupService.removeRoleFromGroup(entity, this)
 
     override fun <TValue : Any> addAttribute(attribute: Attribute<TValue>) =
@@ -94,6 +99,41 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
 
     override fun hasAttribute(key: Key) = attributeService.hasRoleAttribute(this, key)
     override fun getAttribute(key: Key) = attributeService.getRoleAttribute(this, key)
+
+    override fun setPermission(permission: String, enabled: Boolean) =
+        permissionService.setRolePermission(this, permission, enabled)
+
+    override fun setPermissions(permissions: Map<String, Boolean>) =
+        permissionService.setRolePermissions(this, permissions)
+
+    override fun unsetPermission(permission: String) = permissionService.unsetRolePermission(this, permission)
+    override fun unsetPermissions(permissions: Collection<String>) =
+        permissionService.unsetRolePermissions(this, permissions)
+
+    override fun clearPermissions() = permissionService.clearRolePermissions(this)
+
+    override fun hasPermission(permission: String) = permissionService.hasRolePermission(this, permission)
+    override fun hasAnyPermissions(permissions: Collection<String>) =
+        permissionService.hasRoleAnyPermissions(this, permissions)
+
+    override fun hasAllPermissions(permissions: Collection<String>) =
+        permissionService.hasRoleAllPermissions(this, permissions)
+
+    override fun linkTemplate(id: UUID) = permissionService.linkTemplateToRole(id, this).map { }
+    override fun linkTemplate(entity: PermissionTemplateEntity) =
+        permissionService.linkTemplateToRole(entity, this).map { }
+
+    override fun unlinkTemplate(id: UUID) = permissionService.unlinkTemplateFromRole(id, this)
+    override fun unlinkTemplate(entity: PermissionTemplateEntity) =
+        permissionService.unlinkTemplateFromRole(entity, this)
+
+    override fun applyTemplate(id: UUID) = permissionService.applyTemplateToRole(id, this)
+    override fun applyTemplate(entity: PermissionTemplateEntity) =
+        permissionService.applyTemplateToRole(entity, this)
+
+    override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromRole(id, this)
+    override fun revokeTemplate(entity: PermissionTemplateEntity) =
+        permissionService.revokeTemplateFromRole(entity, this)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()

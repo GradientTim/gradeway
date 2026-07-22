@@ -8,8 +8,10 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
+import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.AttributeService
+import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
@@ -79,6 +81,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
 
     internal val playerService: PlayerService by inject()
     internal val attributeService: AttributeService by inject()
+    internal val permissionService: PermissionService by inject()
 
     override var name by PlayersTable.name
     override var weight by PlayersTable.weight
@@ -110,6 +113,41 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
 
     override fun hasAttribute(key: Key) = attributeService.hasPlayerAttribute(this, key)
     override fun getAttribute(key: Key) = attributeService.getPlayerAttribute(this, key)
+
+    override fun setPermission(permission: String, enabled: Boolean) =
+        permissionService.setPlayerPermission(this, permission, enabled)
+
+    override fun setPermissions(permissions: Map<String, Boolean>) =
+        permissionService.setPlayerPermissions(this, permissions)
+
+    override fun unsetPermission(permission: String) = permissionService.unsetPlayerPermission(this, permission)
+    override fun unsetPermissions(permissions: Collection<String>) =
+        permissionService.unsetPlayerPermissions(this, permissions)
+
+    override fun clearPermissions() = permissionService.clearPlayerPermissions(this)
+
+    override fun hasPermission(permission: String) = permissionService.hasPlayerPermission(this, permission)
+    override fun hasAnyPermissions(permissions: Collection<String>) =
+        permissionService.hasPlayerAnyPermissions(this, permissions)
+
+    override fun hasAllPermissions(permissions: Collection<String>) =
+        permissionService.hasPlayerAllPermissions(this, permissions)
+
+    override fun linkTemplate(id: UUID) = permissionService.linkTemplateToPlayer(id, this)
+    override fun linkTemplate(entity: PermissionTemplateEntity) =
+        permissionService.linkTemplateToPlayer(entity, this)
+
+    override fun unlinkTemplate(id: UUID) = permissionService.unlinkTemplateFromPlayer(id, this)
+    override fun unlinkTemplate(entity: PermissionTemplateEntity) =
+        permissionService.unlinkTemplateFromPlayer(entity, this)
+
+    override fun applyTemplate(id: UUID) = permissionService.applyTemplateToPlayer(id, this)
+    override fun applyTemplate(entity: PermissionTemplateEntity) =
+        permissionService.applyTemplateToPlayer(entity, this)
+
+    override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromPlayer(id, this)
+    override fun revokeTemplate(entity: PermissionTemplateEntity) =
+        permissionService.revokeTemplateFromPlayer(entity, this)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()

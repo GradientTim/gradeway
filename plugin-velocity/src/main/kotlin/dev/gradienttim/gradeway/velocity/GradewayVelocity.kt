@@ -71,7 +71,12 @@ class GradewayVelocity @Inject constructor(
     @Subscribe
     @Suppress("UnusedParameter")
     fun onProxyShutdown(event: ProxyShutdownEvent) {
-        gradeway.unload()
+        gradeway.disable()
+            .onLeft { logger.error("Failed to disable Gradeway: ${it.message}") }
+            .onRight {
+                gradeway.unload()
+                    .onLeft { logger.error("Failed to unload Gradeway: ${it.message}") }
+            }
     }
 
     private fun registerEvents() {

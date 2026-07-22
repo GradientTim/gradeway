@@ -24,6 +24,8 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 class CommonCaches(val gradeway: CommonGradeway) : Caches {
+    override val suggestions = CommonSuggestionIndex(gradeway)
+
     override val roles = Caffeine.newBuilder()
         .maximumSize(CacheConstants.ENTITY_MAX_SIZE)
         .expireAfterWrite(CacheConstants.ENTITY_WRITE_DURATION, TimeUnit.MINUTES)

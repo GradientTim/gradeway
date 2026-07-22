@@ -9,9 +9,11 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.attribute.AttributeType
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
+import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
+import dev.gradienttim.gradeway.services.RoleService.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
@@ -21,6 +23,7 @@ import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
 import org.incendo.cloud.parser.standard.IntegerParser.integerParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.util.*
 
 internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerGlobalListCommand(
     gradeway: CommonGradeway,
@@ -69,6 +72,212 @@ internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerScopedListComma
             val result = transaction(gradeway.database) { query(scope, page, limit) }
             render(audience, page, limit, result)
         }
+    }
+}
+
+internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerRoleRelationCommands(
+    gradeway: CommonGradeway,
+    literal: String,
+    relationKey: String,
+    targetKey: String,
+    audienceProvider: AudienceProvider<C>,
+    handleAdd: (idOrName: String, targetId: UUID) -> Either<AddParentError, RoleParentEntity>,
+    handleRemove: (idOrName: String, targetId: UUID) -> Either<RemoveParentError, Unit>,
+    handleListQuery: (scope: String, page: Int, limit: Int) -> TListResult,
+    handleListRender: (audience: Audience, page: Int, limit: Int, result: TListResult) -> Unit
+) {
+    registerCopy(literal) {
+        registerCopy("add") {
+            permission("gradeway.role.$literal.add")
+
+            required(targetKey, stringParser()) {
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+            }
+
+            handler { context ->
+                val audience = audienceProvider.apply(context.sender())
+
+                val idOrName = context.get<String>("idOrName")
+                val targetId = context.get<String>(targetKey)
+
+                val targetUniqueId = runCatching { UUID.fromString(targetId) }.getOrNull()
+
+                if (targetUniqueId == null) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.role.add$relationKey.invalidUuid",
+                            Component.text(idOrName),
+                            Component.text(targetId)
+                        )
+                    )
+                    return@handler
+                }
+
+                handleAdd(idOrName, targetUniqueId)
+                    .onLeft { error ->
+                        if (error is AddParentError.EntityNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.entityNotFound",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is AddParentError.TargetNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.targetNotFound",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is AddParentError.SelfReference) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.selfReference",
+                                    Component.text(idOrName)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is AddParentError.AlreadyParent) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.alreadyParent",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is AddParentError.CyclicRelation) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.cyclicRelation",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is AddParentError.Unexpected) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.add$relationKey.unexpectedError",
+                                    Component.text(idOrName),
+                                    Component.text(targetId),
+                                    Component.text(error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@handler
+                        }
+                    }
+                    .onRight {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.role.add$relationKey.success",
+                                Component.text(idOrName),
+                                Component.text(targetId)
+                            )
+                        )
+                    }
+            }
+        }
+
+        registerCopy("remove") {
+            permission("gradeway.role.$literal.remove")
+
+            required(targetKey, stringParser()) {
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+            }
+
+            handler { context ->
+                val audience = audienceProvider.apply(context.sender())
+
+                val idOrName = context.get<String>("idOrName")
+                val targetId = context.get<String>(targetKey)
+
+                val targetUniqueId = runCatching { UUID.fromString(targetId) }.getOrNull()
+
+                if (targetUniqueId == null) {
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.command.role.remove$relationKey.invalidUuid",
+                            Component.text(idOrName),
+                            Component.text(targetId)
+                        )
+                    )
+                    return@handler
+                }
+
+                handleRemove(idOrName, targetUniqueId)
+                    .onLeft { error ->
+                        if (error is RemoveParentError.EntityNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.remove$relationKey.entityNotFound",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is RemoveParentError.TargetNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.remove$relationKey.targetNotFound",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is RemoveParentError.NotParent) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.remove$relationKey.notParent",
+                                    Component.text(idOrName),
+                                    Component.text(targetId)
+                                )
+                            )
+                            return@handler
+                        }
+                        if (error is RemoveParentError.Unexpected) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.role.remove$relationKey.unexpectedError",
+                                    Component.text(idOrName),
+                                    Component.text(targetId),
+                                    Component.text(error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@handler
+                        }
+                    }
+                    .onRight {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.role.remove$relationKey.success",
+                                Component.text(idOrName),
+                                Component.text(targetId)
+                            )
+                        )
+                    }
+            }
+        }
+
+        registerScopedListCommand(
+            gradeway = gradeway,
+            permission = "gradeway.role.$literal.list",
+            scopeKey = "idOrName",
+            audienceProvider = audienceProvider,
+            query = { scope, page, limit -> handleListQuery(scope, page, limit) },
+            render = { audience, page, limit, result -> handleListRender(audience, page, limit, result) }
+        )
     }
 }
 
@@ -268,7 +477,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
                 permission("gradeway.$entityType.permissionTemplate.link")
 
                 required("templateIdOrName", stringParser()) {
-                    suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining) }
+                    suggests { remaining -> suggestPermissionTemplates(gradeway, remaining) }
                 }
 
                 handler { context ->
@@ -347,7 +556,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
                 permission("gradeway.$entityType.permissionTemplate.unlink")
 
                 required("templateIdOrName", stringParser()) {
-                    suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining) }
+                    suggests { remaining -> suggestPermissionTemplates(gradeway, remaining) }
                 }
 
                 handler { context ->
@@ -416,7 +625,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
                 permission("gradeway.$entityType.permissionTemplate.apply")
 
                 required("templateIdOrName", stringParser()) {
-                    suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining) }
+                    suggests { remaining -> suggestPermissionTemplates(gradeway, remaining) }
                 }
 
                 handler { context ->
@@ -485,7 +694,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
                 permission("gradeway.$entityType.permissionTemplate.revoke")
 
                 required("templateIdOrName", stringParser()) {
-                    suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining) }
+                    suggests { remaining -> suggestPermissionTemplates(gradeway, remaining) }
                 }
 
                 handler { context ->
@@ -560,7 +769,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
 
             required("key", stringParser())
             required("type", stringParser()) {
-                suggestsDebounced(gradeway) { remaining ->
+                suggests { remaining ->
                     suggestAttributeTypes(remaining.lowercase())
                 }
             }

@@ -36,6 +36,8 @@ interface Caches {
     val groupEffectivePermissions: LoadingCache<UUID, Set<PermissionEntity>>
     val playerEffectivePermissions: LoadingCache<UUID, Set<PermissionEntity>>
 
+    val suggestions: SuggestionIndex
+
     fun invalidateEntities() {
         roles.invalidateAll()
         groups.invalidateAll()
@@ -65,6 +67,7 @@ interface Caches {
         invalidateEntityPermissions()
         invalidateEntityEffectiveWeights()
         invalidateEntityEffectivePermissions()
+        suggestions.clear()
     }
 
     /**
@@ -81,4 +84,36 @@ interface Caches {
         playerEffectiveWeights.invalidate(playerId)
         playerEffectivePermissions.invalidate(playerId)
     }
+}
+
+/**
+ * An eagerly populated id-to-name index per suggestible entity type, used to answer command
+ * tab-completion instantly from memory instead of querying the database on every keystroke.
+ *
+ * Unlike [Caches]'s other members, this index is not a lazy, pull-on-miss cache: nothing here is
+ * loaded on demand. It is fully populated by [initialize] and kept correct afterward purely by
+ * push updates reacting to messaging payloads (both locally-originated and synced from other
+ * servers), so every entity that exists is always present - the property suggestions actually
+ * need, unlike a lazily populated cache that only contains whatever has incidentally been looked
+ * up by id.
+ */
+interface SuggestionIndex {
+    val players: Map<UUID, String>
+    val roles: Map<UUID, String>
+    val groups: Map<UUID, String>
+    val permissions: Map<UUID, String>
+    val permissionTemplates: Map<UUID, String>
+
+    /**
+     * Fully (re)populates every map from the database. Must only be called once the database
+     * connection is established, and is also used to rebuild the index in response to a
+     * [dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload], since bulk operations like
+     * a LuckPerms migration or backup import don't describe which specific entities changed.
+     */
+    fun initialize()
+
+    /**
+     * Empties every map, e.g., as part of [Caches.invalidateAll] on plugin unload.
+     */
+    fun clear()
 }

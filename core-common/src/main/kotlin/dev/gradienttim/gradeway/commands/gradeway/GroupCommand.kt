@@ -83,7 +83,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
             permission("gradeway.group.delete")
 
             required("idOrName", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -126,7 +126,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
 
         registerCopy("modify") {
             required("idOrName", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
             }
 
             registerCopy("setName") {
@@ -379,7 +379,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupRolesCommand(
             permission("gradeway.group.roles.add")
 
             required("roleId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -461,7 +461,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupRolesCommand(
             permission("gradeway.group.roles.remove")
 
             required("roleId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->

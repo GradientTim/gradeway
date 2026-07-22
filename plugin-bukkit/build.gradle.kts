@@ -11,6 +11,7 @@ repositories {
             includeGroup("org.spigotmc")
         }
     }
+    maven("https://libraries.minecraft.net/")
 }
 
 dependencies {
@@ -21,4 +22,12 @@ dependencies {
     implementation("net.kyori:adventure-platform-bukkit:4.4.1")
 
     compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
+}
+
+tasks {
+    shadowJar {
+        filesMatching("META-INF/*.kotlin_module") {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
+    }
 }

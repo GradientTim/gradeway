@@ -261,6 +261,15 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
         return addParent(role, parent)
     }
 
+    override fun addChild(
+        parentIdOrName: String,
+        childId: UUID
+    ): Either<RoleService.AddParentError, RoleParentEntity> = either {
+        val parent = findByIdOrName(parentIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
+        val child = findById(childId) ?: raise(RoleService.AddParentError.TargetNotFound)
+        return addParent(child, parent)
+    }
+
     override fun removeParent(
         role: RoleEntity,
         parentId: UUID
@@ -309,6 +318,15 @@ class CommonRoleService(val gradeway: CommonGradeway) : RoleService, KoinCompone
     ): Either<RoleService.RemoveParentError, Unit> = either {
         val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
         return removeParent(role, parent)
+    }
+
+    override fun removeChild(
+        parentIdOrName: String,
+        childId: UUID
+    ): Either<RoleService.RemoveParentError, Unit> = either {
+        val parent = findByIdOrName(parentIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
+        val child = findById(childId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
+        return removeParent(child, parent)
     }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =

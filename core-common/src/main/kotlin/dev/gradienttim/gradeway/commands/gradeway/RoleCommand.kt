@@ -8,6 +8,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.extensions.*
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.database.models.role.RoleAttributesTable
+import dev.gradienttim.gradeway.database.models.role.RoleParentsTable
 import dev.gradienttim.gradeway.database.models.role.RolePermissionsTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.likeAsStr
@@ -17,12 +18,14 @@ import org.incendo.cloud.kotlin.MutableCommandBuilder
 import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.parser.standard.IntegerParser.integerParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
+import org.jetbrains.exposed.v1.core.alias
 import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
+import javax.management.relation.RoleStatus
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
     gradeway: CommonGradeway,
@@ -85,7 +88,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
             permission("gradeway.role.delete")
 
             required("id", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -139,7 +142,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
 
         registerCopy("modify") {
             required("idOrName", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
             }
 
             registerEntityAttributeCommands(
@@ -281,7 +284,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
                 }
             )
 
-            registerRoleParentsCommand(gradeway, audienceProvider)
+            registerRoleRelationsCommand(gradeway, audienceProvider)
 
             registerCopy("setWeight") {
                 permission("gradeway.role.setWeight")
@@ -373,222 +376,113 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
     }
 }
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerRoleParentsCommand(
+internal fun <C : Any> MutableCommandBuilder<C>.registerRoleRelationsCommand(
     gradeway: CommonGradeway,
     audienceProvider: AudienceProvider<C>,
 ) {
-    registerCopy("parents") {
-        registerCopy("add") {
-            permission("gradeway.role.parents.add")
+    registerRoleRelationCommands(
+        gradeway = gradeway,
+        literal = "parents",
+        relationKey = "Parent",
+        targetKey = "parentId",
+        audienceProvider = audienceProvider,
+        handleAdd = { idOrName, parentId -> gradeway.roles.addParent(idOrName, parentId) },
+        handleRemove = { idOrName, parentId -> gradeway.roles.removeParent(idOrName, parentId) },
+        handleListQuery = { scope, page, limit ->
+            val childRole = RolesTable.alias("child_role")
+            val parentRole = RolesTable.alias("parent_role")
 
-            required("parentId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+            RoleParentsTable
+                .innerJoin(childRole, { childId }, { childRole[RolesTable.id] })
+                .innerJoin(parentRole, { RoleParentsTable.parentId }, { parentRole[RolesTable.id] })
+                .select(parentRole[RolesTable.name])
+                .where {
+                    (childRole[RolesTable.id] likeAsStr "$scope%") or
+                            (childRole[RolesTable.name].lowerCase() like "${scope.lowercase()}%")
+                }
+                .limit(limit)
+                .offset((page - 1).toLong())
+                .map { row ->
+                    object {
+                        val name = row[parentRole[RolesTable.name]]
+                    }
+                }
+        },
+        handleListRender = { audience, page, limit, result ->
+            if (result.isEmpty()) {
+                audience.sendMessage(Component.translatable("gradeway.command.role.listParents.empty"))
+                return@registerRoleRelationCommands
             }
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.role.listParents.header",
+                    Component.text(page),
+                    Component.text(limit)
+                )
+            )
 
-                val idOrName = context.get<String>("idOrName")
-                val parentId = context.get<String>("parentId")
-
-                val parentUniqueId = runCatching { UUID.fromString(parentId) }.getOrNull()
-
-                if (parentUniqueId == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.role.addParent.invalidUuid",
-                            Component.text(idOrName),
-                            Component.text(parentId)
-                        )
+            result.forEach { parent ->
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.role.listParents.entry",
+                        Component.text(parent.name)
                     )
-                    return@handler
-                }
-
-                gradeway.roles.addParent(idOrName, parentUniqueId)
-                    .onLeft { error ->
-                        if (error is AddParentError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.entityNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is AddParentError.TargetNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.targetNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is AddParentError.SelfReference) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.selfReference",
-                                    Component.text(idOrName)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is AddParentError.AlreadyParent) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.alreadyParent",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is AddParentError.CyclicRelation) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.cyclicRelation",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is AddParentError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.addParent.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(parentId),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.role.addParent.success",
-                                Component.text(idOrName),
-                                Component.text(parentId)
-                            )
-                        )
-                    }
+                )
             }
         }
+    )
 
-        registerCopy("remove") {
-            permission("gradeway.role.parents.remove")
+    registerRoleRelationCommands(
+        gradeway = gradeway,
+        literal = "children",
+        relationKey = "Child",
+        targetKey = "childId",
+        audienceProvider = audienceProvider,
+        handleAdd = { idOrName, childId -> gradeway.roles.addChild(idOrName, childId) },
+        handleRemove = { idOrName, childId -> gradeway.roles.removeChild(idOrName, childId) },
+        handleListQuery = { scope, page, limit ->
+            val parentRole = RolesTable.alias("parent_role")
+            val childRole = RolesTable.alias("child_role")
 
-            required("parentId", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
+            RoleParentsTable
+                .innerJoin(parentRole, { parentId }, { parentRole[RolesTable.id] })
+                .innerJoin(childRole, { RoleParentsTable.childId }, { childRole[RolesTable.id] })
+                .select(childRole[RolesTable.name])
+                .where {
+                    (parentRole[RolesTable.id] likeAsStr "$scope%") or
+                            (parentRole[RolesTable.name].lowerCase() like "${scope.lowercase()}%")
+                }
+                .limit(limit)
+                .offset((page - 1).toLong())
+                .map { row ->
+                    object {
+                        val name = row[childRole[RolesTable.name]]
+                    }
+                }
+        },
+        handleListRender = { audience, page, limit, result ->
+            if (result.isEmpty()) {
+                audience.sendMessage(Component.translatable("gradeway.command.role.listChildren.empty"))
+                return@registerRoleRelationCommands
             }
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.command.role.listChildren.header",
+                    Component.text(page),
+                    Component.text(limit)
+                )
+            )
 
-                val idOrName = context.get<String>("idOrName")
-                val parentId = context.get<String>("parentId")
-
-                val parentUniqueId = runCatching { UUID.fromString(parentId) }.getOrNull()
-
-                if (parentUniqueId == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.role.removeParent.invalidUuid",
-                            Component.text(idOrName),
-                            Component.text(parentId)
-                        )
+            result.forEach { child ->
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.command.role.listChildren.entry",
+                        Component.text(child.name)
                     )
-                    return@handler
-                }
-
-                gradeway.roles.removeParent(idOrName, parentUniqueId)
-                    .onLeft { error ->
-                        if (error is RemoveParentError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.removeParent.entityNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is RemoveParentError.TargetNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.removeParent.targetNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is RemoveParentError.NotParent) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.removeParent.notParent",
-                                    Component.text(idOrName),
-                                    Component.text(parentId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is RemoveParentError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.removeParent.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(parentId),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.role.removeParent.success",
-                                Component.text(idOrName),
-                                Component.text(parentId)
-                            )
-                        )
-                    }
+                )
             }
         }
-
-        registerCopy("list") {
-            permission("gradeway.role.parents.list")
-
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
-
-                val idOrName = context.get<String>("idOrName")
-
-                val entity = gradeway.roles.findByIdOrName(idOrName)
-                if (entity == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.role.listParents.entityNotFound",
-                            Component.text(idOrName)
-                        )
-                    )
-                    return@handler
-                }
-
-                entity.parents.forEach { roleParentEntity ->
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.role.listParents.entry",
-                            Component.text(roleParentEntity.parent.name)
-                        )
-                    )
-                }
-            }
-        }
-    }
+    )
 }

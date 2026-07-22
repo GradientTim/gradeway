@@ -11,9 +11,18 @@ repositories {
             includeGroup("org.spigotmc")
         }
     }
+    maven("https://libraries.minecraft.net/")
 }
 
 dependencies {
     compileOnly(project(":core-common"))
     compileOnly("org.spigotmc:spigot-api:1.20.2-R0.1-SNAPSHOT")
+}
+
+tasks {
+    shadowJar {
+        filesMatching("META-INF/*.kotlin_module") {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
+    }
 }

@@ -143,6 +143,8 @@ class CommonGradeway(
 
         databases.enable().onLeft { raise(it) }
         messaging.enable().onLeft { raise(it) }
+
+        caches.suggestions.initialize()
     }
 
     override fun disable(): Either<Throwable, Unit> = either {

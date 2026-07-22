@@ -147,7 +147,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
 
         registerCopy("modify") {
             required("idOrValue", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 
             registerCopy("setValue") {
@@ -379,7 +379,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
             permission("gradeway.permissionTemplate.delete")
 
             required("id", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPermissionTemplates(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -434,7 +434,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
 
         registerCopy("modify") {
             required("idOrName", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPermissionTemplates(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPermissionTemplates(gradeway, remaining.lowercase()) }
             }
 
             registerCopy("setName") {
@@ -633,7 +633,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
             permission("gradeway.permissionTemplate.permissions.add")
 
             required("permissionIdOrValue", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->
@@ -702,7 +702,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
             permission("gradeway.permissionTemplate.permissions.remove")
 
             required("permissionIdOrValue", stringParser()) {
-                suggestsDebounced(gradeway) { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
+                suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 
             handler { context ->

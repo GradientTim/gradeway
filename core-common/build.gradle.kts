@@ -8,6 +8,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://libraries.minecraft.net/")
 }
 
 dependencies {
@@ -25,6 +26,7 @@ dependencies {
     api(libs.bundles.exposed)
     implementation(libs.bundles.exposed.migration)
     api(libs.bundles.cloud)
+    api("com.mojang:brigadier:1.3.10")
     api(libs.bundles.ktoml)
     api(libs.bundles.kyori)
     api(libs.bundles.arrow)

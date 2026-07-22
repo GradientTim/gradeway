@@ -12,6 +12,7 @@ import net.kyori.adventure.text.Component
 import org.incendo.cloud.CommandManager
 import org.incendo.cloud.kotlin.extension.buildAndRegister
 import org.incendo.cloud.minecraft.extras.AudienceProvider
+import org.incendo.cloud.suggestion.SuggestionProcessor
 import java.time.Instant
 
 fun <C : Any> createGradewayCommand(
@@ -21,6 +22,12 @@ fun <C : Any> createGradewayCommand(
     commandManager: CommandManager<C>,
     audienceProvider: AudienceProvider<C>
 ) {
+    // Every dynamic argument in this plugin filters its own suggestions against the typed input
+    // (see CloudCommandSuggestions.kt). Cloud's default FilteringSuggestionProcessor would
+    // additionally require the suggestion *text* itself to contain that input, which breaks id
+    // suggestions whose text is a UUID rather than the name the user is typing.
+    commandManager.suggestionProcessor(SuggestionProcessor.passThrough())
+
 //     MinecraftHelp is currently binary-incompatible with Paper builds on Adventure 5.x
 //     (cloud-minecraft-extras 2.0.0-beta.17 was compiled against adventure-api 4.15.0) and
 //     throws a NoSuchMethodError from its pagination/header rendering. Re-enable once cloud
