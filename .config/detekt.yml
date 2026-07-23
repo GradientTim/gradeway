@@ -682,7 +682,7 @@ style:
     excludeImportStatements: true
     excludeCommentStatements: true
     excludeRawStrings: true
-    excludes: ['**/dev/gradienttim/gradeway/commands/**']
+    excludes: ['**/dev/gradienttim/gradeway/commands/**', '**/dev/gradienttim/gradeway/config/**']
   MayBeConstant:
     active: true
   ModifierOrder:

@@ -30,10 +30,11 @@ import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
 
-class CommonGradeway(
+class CommonGradeway<TPlatformConfig>(
     override val logger: Logger,
     override val directory: File,
-) : GradewayLifecycle, KoinComponent {
+    override val defaultPlatformConfig: TPlatformConfig,
+) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override val caches: Caches by inject()
     override var backgroundScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -50,7 +51,7 @@ class CommonGradeway(
     override val databases: DatabaseManager by inject()
     override val languages: LanguageManager by inject()
     override val drivers: DriverManager by inject()
-    override val configs: ConfigManager by inject()
+    override val configs: ConfigManager<TPlatformConfig> by inject()
     override val backups: BackupManager by inject()
 
     override val environment by lazy { CommonEnvironment(this) }
@@ -80,13 +81,13 @@ class CommonGradeway(
             single<DatabaseManager> { CommonDatabaseManager(this@CommonGradeway) }
             single<LanguageManager> { CommonLanguageManager(this@CommonGradeway) }
             single<DriverManager> { CommonDriverManager(this@CommonGradeway) }
-            single<ConfigManager> { CommonConfigManager(this@CommonGradeway) }
+            single<ConfigManager<TPlatformConfig>> { CommonConfigManager(this@CommonGradeway) }
             single<BackupManager> { CommonBackupManager(this@CommonGradeway) }
         }
 
         val commonModule = module {
             single<Caches> { CommonCaches(this@CommonGradeway) }
-            single<Gradeway> { this@CommonGradeway }
+            single<Gradeway<TPlatformConfig>> { this@CommonGradeway }
         }
 
         if (!directory.exists()) {

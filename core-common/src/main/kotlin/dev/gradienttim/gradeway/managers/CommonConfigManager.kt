@@ -18,15 +18,16 @@ import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.Tag
 import java.io.File
 
-class CommonConfigManager(val gradeway: CommonGradeway) : ConfigManager {
-    override var config: GradewayConfig = GradewayConfig()
+class CommonConfigManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) :
+    ConfigManager<TPlatformConfig> {
+    override var config: GradewayConfig<TPlatformConfig> = GradewayConfig(platform = gradeway.defaultPlatformConfig)
 
     override fun load(): Either<Throwable, Unit> = either {
         try {
             val configFile = File(gradeway.directory, "config.toml")
             if (configFile.exists()) {
                 configFile.inputStream().use {
-                    config = Toml.decodeFromStream<GradewayConfig>(it)
+                    config = Toml.decodeFromStream<GradewayConfig<TPlatformConfig>>(it)
                 }
             } else {
                 configFile.createNewFile()

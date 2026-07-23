@@ -18,7 +18,7 @@ import dev.gradienttim.gradeway.utilities.lifecycle.Loadable
  * Implementers of this interface may include functionalities such as parsing configuration
  * files, validating configuration data, or dynamically updating configuration at runtime.
  */
-interface ConfigManager : Loadable {
+interface ConfigManager<TPlatformConfig> : Loadable {
     /**
      * Represents the primary configuration object for the application.
      *
@@ -31,5 +31,5 @@ interface ConfigManager : Loadable {
      * Usage of this property assumes that the loading mechanism has been invoked to initialize
      * the configuration before accessing its properties.
      */
-    val config: GradewayConfig
+    val config: GradewayConfig<TPlatformConfig>
 }

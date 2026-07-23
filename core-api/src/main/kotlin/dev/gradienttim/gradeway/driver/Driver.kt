@@ -10,7 +10,7 @@ import org.koin.core.component.inject
 import java.net.URLClassLoader
 
 abstract class Driver : KoinComponent {
-    val gradeway: Gradeway by inject()
+    val gradeway: Gradeway<*> by inject()
 
     lateinit var config: DriverConfig
     var classLoader: URLClassLoader? = null

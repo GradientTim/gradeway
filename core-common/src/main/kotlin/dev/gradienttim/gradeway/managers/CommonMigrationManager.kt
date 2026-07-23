@@ -13,7 +13,7 @@ import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import dev.gradienttim.gradeway.strategies.LuckPermsMigrationStrategy
 import dev.gradienttim.gradeway.strategy.MigrationStrategy
 
-class CommonMigrationManager(val gradeway: CommonGradeway) : MigrationManager {
+class CommonMigrationManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : MigrationManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "migrations",
         requiresRead = true,

@@ -19,7 +19,7 @@ import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
 
-class CommonLanguageManager(val gradeway: CommonGradeway) : LanguageManager {
+class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : LanguageManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "languages",
         requiresRead = true,

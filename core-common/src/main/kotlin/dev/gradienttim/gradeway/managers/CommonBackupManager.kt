@@ -38,7 +38,7 @@ import java.io.IOException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class CommonBackupManager(val gradeway: CommonGradeway) : BackupManager {
+class CommonBackupManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : BackupManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "backups",
         requiresRead = true,

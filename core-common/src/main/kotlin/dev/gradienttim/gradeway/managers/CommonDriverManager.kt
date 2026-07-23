@@ -19,7 +19,7 @@ import java.io.File
 import java.net.URLClassLoader
 import java.util.zip.ZipFile
 
-class CommonDriverManager(val gradeway: CommonGradeway) : DriverManager {
+class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : DriverManager {
     private val drivers = mutableSetOf<Driver>()
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "drivers",

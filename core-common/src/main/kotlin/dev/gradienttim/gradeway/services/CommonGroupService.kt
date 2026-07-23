@@ -28,7 +28,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.util.*
 
-class CommonGroupService(val gradeway: CommonGradeway) : GroupService, KoinComponent {
+class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : GroupService, KoinComponent {
     private val roleService: RoleService by inject()
     private val permissionService: PermissionService by inject()
 

@@ -26,7 +26,7 @@ import org.jetbrains.exposed.v1.jdbc.exists
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 
-class CommonDatabaseManager(val gradeway: CommonGradeway) : DatabaseManager {
+class CommonDatabaseManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : DatabaseManager {
     @Suppress("LongMethod")
     override fun enable(): Either<Throwable, Unit> = either {
         val driverId = gradeway.configs.config.database.driver

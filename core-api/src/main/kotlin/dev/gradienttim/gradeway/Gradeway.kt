@@ -10,7 +10,20 @@ import dev.gradienttim.gradeway.services.*
  * Core interface representing the Gradeway system, which provides services for managing roles
  * and players. This serves as the main access point for interacting with the Gradeway infrastructure.
  */
-interface Gradeway {
+interface Gradeway<TPlatformConfig> {
+    /**
+     * Represents the default configuration for the platform within the Gradeway system.
+     *
+     * This variable provides a predefined platform configuration that can be used as the base
+     * or fallback setup. It serves as the initial configuration for the platform before any
+     * customizations or modifications are applied.
+     *
+     * Typically, this configuration is designed to meet the general requirements of the system
+     * and acts as a foundational setup. It may include default parameters, rules, or states
+     * needed for the platform's operation.
+     */
+    val defaultPlatformConfig: TPlatformConfig
+
     /**
      * Provides functionality for managing permissions within the Gradeway system.
      *

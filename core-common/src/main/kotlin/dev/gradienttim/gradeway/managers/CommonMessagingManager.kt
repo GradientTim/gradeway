@@ -31,7 +31,7 @@ import org.jetbrains.exposed.v1.dao.EntityHook
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class CommonMessagingManager(val gradeway: CommonGradeway) : MessagingManager {
+class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : MessagingManager {
     private val serverId: String = UUID.randomUUID().toString()
     private val listeners = CopyOnWriteArrayList<(MessagingPayload) -> Unit>()
 

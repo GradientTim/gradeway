@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.paper
 
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.commands.createGradewayCommand
@@ -19,6 +20,7 @@ class GradewayPlugin : JavaPlugin() {
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
         directory = dataFolder,
+        defaultPlatformConfig = BukkitPlatformConfig(),
     )
 
     override fun onEnable() {

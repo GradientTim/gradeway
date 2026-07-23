@@ -44,7 +44,8 @@ import org.koin.core.component.inject
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPermissionService(val gradeway: CommonGradeway) : PermissionService, KoinComponent {
+class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : PermissionService,
+    KoinComponent {
     private val rolesService: RoleService by inject()
     private val groupsService: GroupService by inject()
     private val playersService: PlayerService by inject()

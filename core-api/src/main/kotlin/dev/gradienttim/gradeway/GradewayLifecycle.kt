@@ -27,7 +27,8 @@ import java.time.Instant
  * instances. By coupling lifecycle operations with the standard Gradeway capabilities,
  * this interface facilitates clean and predictable resource management practices.
  */
-interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enableable, Disableable {
+interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadable, Unloadable, Reloadable, Enableable,
+    Disableable {
     /**
      * Retrieves the current point in time as an [Instant].
      *
@@ -214,7 +215,7 @@ interface GradewayLifecycle : Gradeway, Loadable, Unloadable, Reloadable, Enable
      * within the `GradewayLifecycle` system, particularly when configuration data requires frequent updates
      * or validation.
      */
-    val configs: ConfigManager
+    val configs: ConfigManager<TPlatformConfig>
 
     /**
      * Manages backup operations within the Gradeway system, providing functionality

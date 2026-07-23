@@ -17,6 +17,7 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import dev.gradienttim.gradeway.velocity.command.VelocityAudienceProvider
+import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
@@ -41,6 +42,7 @@ class GradewayVelocity @Inject constructor(
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(logger),
         directory = dataDirectory.toFile(),
+        defaultPlatformConfig = VelocityPlatformConfig(),
     )
 
     @Subscribe

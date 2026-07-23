@@ -30,7 +30,8 @@ import java.time.Instant
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinComponent {
+class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : PlayerService,
+    KoinComponent {
     private val roleService: RoleService by inject()
     private val attributeService: AttributeService by inject()
     private val permissionService: PermissionService by inject()
@@ -144,6 +145,7 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
             is PlayerRoleChangedPayload -> invalidatePlayerWeight(payload.playerId)
             is RoleChangedPayload, is GroupRoleChangedPayload, is GroupChangedPayload, is CacheFlushPayload ->
                 gradeway.caches.playerEffectiveWeights.invalidateAll()
+
             else -> {}
         }
     }
@@ -787,8 +789,8 @@ class CommonPlayerService(val gradeway: CommonGradeway) : PlayerService, KoinCom
         transaction(gradeway.database) {
             val expiredPlayerRoleEntities = DatabasePlayerRoleEntity.find {
                 (PlayerRolesTable.playerId inList playerIds) and
-                    PlayerRolesTable.pausedAt.isNull() and
-                    (PlayerRolesTable.untilAt less gradeway.now())
+                        PlayerRolesTable.pausedAt.isNull() and
+                        (PlayerRolesTable.untilAt less gradeway.now())
             }.toList()
 
             try {
