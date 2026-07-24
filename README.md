@@ -35,7 +35,7 @@ See [COMPATIBILITY.md](./COMPATIBILITY.md) for the full overview.
 
 ## Database Schema
 
-![Database schema](./.assets/images/database-schema.png)
+See [DATABASE.md](./DATABASE.md) for an interactive diagram of the schema.
 
 ## Building from Source
 
