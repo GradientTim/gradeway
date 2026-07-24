@@ -37,6 +37,7 @@ fun <C : Any> createGradewayCommand(
     commandManager.buildAndRegister(literal, aliases = aliases) {
         registerRoleCommand(gradeway, audienceProvider)
         registerGroupCommand(gradeway, audienceProvider)
+        registerCacheCommand(gradeway, audienceProvider)
         registerPlayerCommand(gradeway, audienceProvider)
         registerBackupCommand(gradeway, audienceProvider)
         registerMigrationCommand(literal, gradeway, audienceProvider)

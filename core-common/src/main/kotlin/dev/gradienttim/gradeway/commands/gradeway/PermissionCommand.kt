@@ -18,6 +18,7 @@ import net.kyori.adventure.text.Component
 import org.incendo.cloud.kotlin.MutableCommandBuilder
 import org.incendo.cloud.kotlin.extension.suggestionProvider
 import org.incendo.cloud.minecraft.extras.AudienceProvider
+import org.incendo.cloud.parser.standard.StringParser.quotedStringParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 import org.incendo.cloud.suggestion.SuggestionProvider
 import org.jetbrains.exposed.v1.core.innerJoin
@@ -71,7 +72,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
         registerCopy("add") {
             permission("gradeway.permission.add")
 
-            required("value", stringParser())
+            required("value", quotedStringParser())
             optional("type", stringParser()) {
                 suggestionProvider = SuggestionProvider.blockingStrings { _, _ ->
                     PermissionEntity.Type.entries.map { it.name }
@@ -107,7 +108,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
         registerCopy("remove") {
             permission("gradeway.permission.remove")
 
-            required("idOrValue", stringParser())
+            required("idOrValue", quotedStringParser())
 
             handler { context ->
                 val audience = audienceProvider.apply(context.sender())
@@ -148,14 +149,14 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
         }
 
         registerCopy("modify") {
-            required("idOrValue", stringParser()) {
+            required("idOrValue", quotedStringParser()) {
                 suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 
             registerCopy("setValue") {
                 permission("gradeway.permission.setValue")
 
-                required("value", stringParser())
+                required("value", quotedStringParser())
 
                 handler { context ->
                     val audience = audienceProvider.apply(context.sender())
@@ -334,6 +335,8 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("template") {
+        permission("gradeway.permissionTemplate")
+
         registerCopy("create") {
             permission("gradeway.permissionTemplate.create")
 
@@ -634,7 +637,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
         registerCopy("add") {
             permission("gradeway.permissionTemplate.permissions.add")
 
-            required("permissionIdOrValue", stringParser()) {
+            required("permissionIdOrValue", quotedStringParser()) {
                 suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 
@@ -703,7 +706,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
         registerCopy("remove") {
             permission("gradeway.permissionTemplate.permissions.remove")
 
-            required("permissionIdOrValue", stringParser()) {
+            required("permissionIdOrValue", quotedStringParser()) {
                 suggests { remaining -> suggestPermissions(gradeway, remaining.lowercase()) }
             }
 

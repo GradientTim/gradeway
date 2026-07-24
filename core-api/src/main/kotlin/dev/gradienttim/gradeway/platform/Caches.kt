@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.platform
 
+import arrow.core.Either
+import arrow.core.raise.either
 import com.github.benmanes.caffeine.cache.LoadingCache
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
@@ -83,6 +85,69 @@ interface Caches {
         playerPermissions.invalidate(playerId)
         playerEffectiveWeights.invalidate(playerId)
         playerEffectivePermissions.invalidate(playerId)
+    }
+
+    enum class Type {
+        ALL {
+            override fun run(caches: Caches): Either<Throwable, Unit> = either {
+                try {
+                    caches.invalidateAll()
+                } catch (throwable: Throwable) {
+                    raise(throwable)
+                }
+            }
+        },
+
+        ENTITIES {
+            override fun run(caches: Caches): Either<Throwable, Unit> = either {
+                try {
+                    caches.invalidateEntities()
+                } catch (throwable: Throwable) {
+                    raise(throwable)
+                }
+            }
+        },
+
+        ENTITY_PERMISSIONS {
+            override fun run(caches: Caches): Either<Throwable, Unit> = either {
+                try {
+                    caches.invalidateEntityPermissions()
+                } catch (throwable: Throwable) {
+                    raise(throwable)
+                }
+            }
+        },
+
+        ENTITY_EFFECTIVE_WEIGHTS {
+            override fun run(caches: Caches): Either<Throwable, Unit> = either {
+                try {
+                    caches.invalidateEntityEffectiveWeights()
+                } catch (throwable: Throwable) {
+                    raise(throwable)
+                }
+            }
+        },
+
+        ENTITY_EFFECTIVE_PERMISSIONS {
+            override fun run(caches: Caches): Either<Throwable, Unit> = either {
+                try {
+                    caches.invalidateEntityEffectivePermissions()
+                } catch (throwable: Throwable) {
+                    raise(throwable)
+                }
+            }
+        },
+
+        ;
+
+        /**
+         * Executes a cache invalidation process based on the specific cache scope associated with the subclass.
+         *
+         * @param caches The caches' registry.
+         * @return An `Either` containing a `Throwable` if an error occurs during the invalidation process,
+         *         or `Unit` if the operation completes successfully.
+         */
+        abstract fun run(caches: Caches): Either<Throwable, Unit>
     }
 }
 

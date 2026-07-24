@@ -21,6 +21,7 @@ import org.incendo.cloud.kotlin.MutableCommandBuilder
 import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
 import org.incendo.cloud.parser.standard.IntegerParser.integerParser
+import org.incendo.cloud.parser.standard.StringParser.quotedStringParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
@@ -299,7 +300,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
         registerCopy("set") {
             permission("gradeway.$entityType.permissions.set")
 
-            required("permission", stringParser())
+            required("permission", quotedStringParser())
             optional("status", booleanParser())
 
             handler { context ->
@@ -368,7 +369,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
         registerCopy("unset") {
             permission("gradeway.$entityType.permissions.unset")
 
-            required("permission", stringParser())
+            required("permission", quotedStringParser())
 
             handler { context ->
                 val audience = audienceProvider.apply(context.sender())
