@@ -10,8 +10,8 @@ import dev.gradienttim.gradeway.extensions.get
 import io.github.cdimascio.dotenv.Dotenv
 import java.io.File
 
-class CommonEnvironment(val gradeway: CommonGradeway) : Environment {
-    private val config: GradewayConfig = gradeway.configs.config
+class CommonEnvironment(val gradeway: CommonGradeway<*>) : Environment {
+    private val config: GradewayConfig<*> = gradeway.configs.config
     private val variables = mutableMapOf<String, Any>()
 
     init {

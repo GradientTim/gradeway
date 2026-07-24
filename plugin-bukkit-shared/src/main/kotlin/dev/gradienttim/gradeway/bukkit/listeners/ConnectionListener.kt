@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.bukkit.listeners
 
 import dev.gradienttim.gradeway.GradewayLifecycle
+import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -14,7 +15,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
-class ConnectionListener(val gradeway: GradewayLifecycle) : Listener {
+class ConnectionListener(val gradeway: GradewayLifecycle<BukkitPlatformConfig>) : Listener {
     private var entityPermissionHandle: MethodHandle? = null
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -29,10 +30,14 @@ class ConnectionListener(val gradeway: GradewayLifecycle) : Listener {
 
         try {
             entityPermissionHandle?.invoke(player, GradewayPermissibleBase(gradeway, player))
-            player.updateCommands()
         } catch (throwable: Throwable) {
             gradeway.logger.error(throwable.message ?: throwable::class.java.simpleName)
         }
+
+        // Force a recalculation now that gradeway is attached, so a player who already has real
+        // op status (e.g., from ops.json) gets de-opped immediately if disableOp is enabled, rather
+        // than waiting for the next incidental permission recalculation.
+        player.recalculatePermissions()
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

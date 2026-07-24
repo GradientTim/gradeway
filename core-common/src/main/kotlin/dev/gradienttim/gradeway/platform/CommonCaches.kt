@@ -23,7 +23,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 import java.util.concurrent.TimeUnit
 
-class CommonCaches(val gradeway: CommonGradeway) : Caches {
+class CommonCaches(val gradeway: CommonGradeway<*>) : Caches {
     override val suggestions = CommonSuggestionIndex(gradeway)
 
     override val roles = Caffeine.newBuilder()

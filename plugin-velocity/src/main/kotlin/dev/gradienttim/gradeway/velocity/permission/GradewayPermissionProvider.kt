@@ -10,7 +10,7 @@ import com.velocitypowered.api.permission.PermissionSubject
 import com.velocitypowered.api.proxy.Player
 import dev.gradienttim.gradeway.Gradeway
 
-class GradewayPermissionProvider(val gradeway: Gradeway) : PermissionProvider {
+class GradewayPermissionProvider(val gradeway: Gradeway<*>) : PermissionProvider {
     override fun createFunction(subject: PermissionSubject): PermissionFunction {
         if (subject is Player) {
             return GradewayPermissionFunction(gradeway, subject.uniqueId)

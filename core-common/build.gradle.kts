@@ -46,7 +46,7 @@ kotlin {
 }
 
 tasks {
-    val generateBuildInfo by registering {
+    val generateBuildInfo = register("generateBuildInfo") {
         description = "Generate a Kotlin file with project information in it."
 
         outputs.dir(generatedSourceDir)

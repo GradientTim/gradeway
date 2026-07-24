@@ -17,7 +17,7 @@ import org.incendo.cloud.suggestion.SuggestionProvider
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerMigrationCommand(
     rootLiteral: String,
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("migrate") {

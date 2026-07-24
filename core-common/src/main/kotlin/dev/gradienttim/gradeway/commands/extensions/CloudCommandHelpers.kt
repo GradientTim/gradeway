@@ -26,7 +26,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
 internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerGlobalListCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     permission: String,
     audienceProvider: AudienceProvider<C>,
     query: (page: Int, limit: Int) -> TResult,
@@ -50,7 +50,7 @@ internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerGlobalListComma
 }
 
 internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerScopedListCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     permission: String,
     scopeKey: String,
     audienceProvider: AudienceProvider<C>,
@@ -76,7 +76,7 @@ internal fun <C : Any, TResult> MutableCommandBuilder<C>.registerScopedListComma
 }
 
 internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerRoleRelationCommands(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     literal: String,
     relationKey: String,
     targetKey: String,
@@ -282,7 +282,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerRoleRelatio
 }
 
 internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermissionCommands(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     entityType: String,
     audienceProvider: AudienceProvider<C>,
     handleSetPermission: (idOrName: String, permission: String, status: Boolean) -> Either<SetPermissionError, Unit>,
@@ -753,7 +753,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
 }
 
 internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttributeCommands(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     entityType: String,
     audienceProvider: AudienceProvider<C>,
     handleAddAttribute: (idOrName: String, attribute: Attribute<Any>) -> Either<AddAttributeError, SharedAttributeEntity>,

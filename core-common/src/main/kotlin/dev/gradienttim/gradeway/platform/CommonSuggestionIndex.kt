@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap
  * an eviction policy wouldn't protect against anything real here, and if one ever triggered it
  * would silently drop entities from suggestions.
  */
-class CommonSuggestionIndex(private val gradeway: CommonGradeway) : SuggestionIndex {
+class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : SuggestionIndex {
     override val players = ConcurrentHashMap<UUID, String>()
     override val roles = ConcurrentHashMap<UUID, String>()
     override val groups = ConcurrentHashMap<UUID, String>()

@@ -25,7 +25,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     fun handleCreateGroup(audience: Audience, name: String, defaultWeight: Int = -1) {
@@ -63,6 +63,8 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
     }
 
     registerCopy("group") {
+        permission("gradeway.group")
+
         registerCopy("create") {
             permission("gradeway.group.create")
 
@@ -371,7 +373,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerGroupRolesCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("roles") {

@@ -9,6 +9,7 @@ kotlinx-serialization = "1.11.0"
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version = "2.3.5" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 detekt = { id = "dev.detekt", version = "2.0.0-alpha.5" }
 shadow = { id = "com.gradleup.shadow", version = "9.6.0" }
 spotless = { id = "com.diffplug.spotless", version = "8.8.0" }

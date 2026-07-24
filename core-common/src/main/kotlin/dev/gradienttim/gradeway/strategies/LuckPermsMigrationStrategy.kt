@@ -34,7 +34,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.io.File
 import java.util.*
 
-class LuckPermsMigrationStrategy(val gradeway: CommonGradeway) : MigrationStrategy {
+class LuckPermsMigrationStrategy(val gradeway: CommonGradeway<*>) : MigrationStrategy {
     override val type: String = "luckperms"
 
     @OptIn(ExperimentalSerializationApi::class)

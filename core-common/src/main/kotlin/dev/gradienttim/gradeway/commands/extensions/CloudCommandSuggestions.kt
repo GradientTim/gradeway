@@ -48,17 +48,17 @@ internal fun suggestAttributeTypes(remaining: String): List<Suggestion> {
     return itemKeys.map { Suggestion.suggestion(it) }
 }
 
-internal fun suggestPlayers(gradeway: CommonGradeway, remaining: String): List<Suggestion> =
+internal fun suggestPlayers(gradeway: CommonGradeway<*>, remaining: String): List<Suggestion> =
     suggestFromIndex(gradeway.caches.suggestions.players, remaining)
 
-internal fun suggestRoles(gradeway: CommonGradeway, remaining: String): List<Suggestion> =
+internal fun suggestRoles(gradeway: CommonGradeway<*>, remaining: String): List<Suggestion> =
     suggestFromIndex(gradeway.caches.suggestions.roles, remaining)
 
-internal fun suggestGroups(gradeway: CommonGradeway, remaining: String): List<Suggestion> =
+internal fun suggestGroups(gradeway: CommonGradeway<*>, remaining: String): List<Suggestion> =
     suggestFromIndex(gradeway.caches.suggestions.groups, remaining)
 
-internal fun suggestPermissions(gradeway: CommonGradeway, remaining: String): List<Suggestion> =
+internal fun suggestPermissions(gradeway: CommonGradeway<*>, remaining: String): List<Suggestion> =
     suggestFromIndex(gradeway.caches.suggestions.permissions, remaining)
 
-internal fun suggestPermissionTemplates(gradeway: CommonGradeway, remaining: String): List<Suggestion> =
+internal fun suggestPermissionTemplates(gradeway: CommonGradeway<*>, remaining: String): List<Suggestion> =
     suggestFromIndex(gradeway.caches.suggestions.permissionTemplates, remaining)

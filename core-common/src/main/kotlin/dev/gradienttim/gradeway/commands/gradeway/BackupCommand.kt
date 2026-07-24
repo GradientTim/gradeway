@@ -14,7 +14,7 @@ import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     fun handleImport(audience: Audience, fileName: String, wipe: Boolean = true) {
@@ -61,6 +61,8 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
     }
 
     registerCopy("backup") {
+        permission("gradeway.backup")
+
         registerCopy("export") {
             permission("gradeway.backup.export")
 

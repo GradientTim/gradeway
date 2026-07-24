@@ -9,7 +9,7 @@ import com.velocitypowered.api.permission.Tristate
 import dev.gradienttim.gradeway.Gradeway
 import java.util.*
 
-class GradewayPermissionFunction(val gradeway: Gradeway, val playerId: UUID) : PermissionFunction {
+class GradewayPermissionFunction(val gradeway: Gradeway<*>, val playerId: UUID) : PermissionFunction {
     override fun getPermissionValue(permission: String): Tristate {
         return Tristate.fromBoolean(gradeway.permissions.hasEffectivePlayerPermission(playerId, permission))
     }

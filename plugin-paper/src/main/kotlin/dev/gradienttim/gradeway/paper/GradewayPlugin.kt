@@ -12,6 +12,7 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
 import dev.gradienttim.gradeway.platform.CommonLogger
+import kotlinx.serialization.serializer
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
@@ -21,13 +22,13 @@ class GradewayPlugin : JavaPlugin() {
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
         directory = dataFolder,
         defaultPlatformConfig = BukkitPlatformConfig(),
+        platformConfigSerializer = BukkitPlatformConfig.serializer(),
     )
 
     override fun onEnable() {
         gradeway.load()
             .onLeft { throwable ->
                 slF4JLogger.error("Failed to load Gradeway: ${throwable.message}")
-                server.pluginManager.disablePlugin(this)
             }
             .onRight {
                 gradeway.drivers.registerDriver(

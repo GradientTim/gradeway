@@ -22,23 +22,25 @@ class CommonConfigManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
     ConfigManager<TPlatformConfig> {
     override var config: GradewayConfig<TPlatformConfig> = GradewayConfig(platform = gradeway.defaultPlatformConfig)
 
+    private val configSerializer = GradewayConfig.serializer(gradeway.platformConfigSerializer)
+
     override fun load(): Either<Throwable, Unit> = either {
         try {
             val configFile = File(gradeway.directory, "config.toml")
             if (configFile.exists()) {
                 configFile.inputStream().use {
-                    config = Toml.decodeFromStream<GradewayConfig<TPlatformConfig>>(it)
+                    config = Toml.decodeFromStream(configSerializer, it)
                 }
             } else {
                 configFile.createNewFile()
-                configFile.writeText(Toml.encodeToString(config))
+                configFile.writeText(Toml.encodeToString(configSerializer, config))
             }
 
             TableConstants.TABLE_PREFIX = config.database.prefix
 
             if (config.version < GradewayConfig.LATEST_VERSION) {
                 config.version = GradewayConfig.LATEST_VERSION
-                configFile.writeText(Toml.encodeToString(config))
+                configFile.writeText(Toml.encodeToString(configSerializer, config))
             }
 
             initializeMiniMessage()

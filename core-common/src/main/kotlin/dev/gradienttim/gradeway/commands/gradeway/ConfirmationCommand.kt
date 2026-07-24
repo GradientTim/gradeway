@@ -12,7 +12,7 @@ import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerConfirmationCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("confirm") {

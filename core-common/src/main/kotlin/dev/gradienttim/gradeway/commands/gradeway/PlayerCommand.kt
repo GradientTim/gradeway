@@ -29,10 +29,12 @@ import java.time.Instant
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("player") {
+        permission("gradeway.player")
+
         registerCopy("create") {
             permission("gradeway.player.create")
 
@@ -423,7 +425,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerRolesCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     @Suppress("ReturnCount")

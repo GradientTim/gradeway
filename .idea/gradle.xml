@@ -25,7 +25,6 @@
             <option value="$PROJECT_DIR$/plugin-velocity" />
           </set>
         </option>
-        <option name="myGradleHome" value="" />
       </GradleProjectSettings>
     </option>
   </component>

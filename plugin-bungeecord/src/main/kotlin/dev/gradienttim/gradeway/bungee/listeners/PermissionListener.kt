@@ -10,7 +10,7 @@ import net.md_5.bungee.api.event.PermissionCheckEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.event.EventHandler
 
-class PermissionListener(val gradeway: Gradeway) : Listener {
+class PermissionListener(val gradeway: Gradeway<*>) : Listener {
     @EventHandler(priority = Byte.MAX_VALUE)
     fun onPermissionCheck(event: PermissionCheckEvent) {
         val sender = event.sender

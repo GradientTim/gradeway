@@ -10,7 +10,7 @@ import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.connection.LoginEvent
 import dev.gradienttim.gradeway.GradewayLifecycle
 
-class ConnectionListener(val gradeway: GradewayLifecycle) {
+class ConnectionListener(val gradeway: GradewayLifecycle<*>) {
     @Subscribe(order = PostOrder.EARLY, priority = Short.MAX_VALUE)
     fun onLogin(event: LoginEvent) {
         val player = event.player

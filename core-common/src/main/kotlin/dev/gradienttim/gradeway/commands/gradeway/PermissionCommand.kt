@@ -28,7 +28,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     fun handleAddPermission(audience: Audience, value: String, type: PermissionEntity.Type) {
@@ -66,6 +66,8 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
     }
 
     registerCopy("permission") {
+        permission("gradeway.permission")
+
         registerCopy("add") {
             permission("gradeway.permission.add")
 
@@ -328,7 +330,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("template") {
@@ -625,7 +627,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermissionsCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("permissions") {

@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.koin.core.component.KoinComponent
@@ -34,6 +35,7 @@ class CommonGradeway<TPlatformConfig>(
     override val logger: Logger,
     override val directory: File,
     override val defaultPlatformConfig: TPlatformConfig,
+    val platformConfigSerializer: KSerializer<TPlatformConfig>,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override val caches: Caches by inject()

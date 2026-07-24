@@ -28,10 +28,12 @@ import java.util.*
 import javax.management.relation.RoleStatus
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerCopy("role") {
+        permission("gradeway.role")
+
         registerCopy("create") {
             permission("gradeway.role.create")
 
@@ -377,7 +379,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerRoleRelationsCommand(
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     registerRoleRelationCommands(

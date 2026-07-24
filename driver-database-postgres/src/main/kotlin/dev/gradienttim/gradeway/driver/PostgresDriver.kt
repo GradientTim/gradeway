@@ -42,7 +42,7 @@ class PostgresDriver : Driver(), DatabaseAdapter {
 
         return PGSimpleDataSource().apply {
             this.serverNames = arrayOf(databaseHostName)
-            this.portNumbers = IntArray(databaseHostPort)
+            this.portNumbers = intArrayOf(databaseHostPort)
             this.databaseName = databaseName
 
             databaseUserName?.let { user = it }

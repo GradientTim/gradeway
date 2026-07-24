@@ -18,7 +18,7 @@ import java.time.Instant
 fun <C : Any> createGradewayCommand(
     literal: String,
     aliases: Array<String>,
-    gradeway: CommonGradeway,
+    gradeway: CommonGradeway<*>,
     commandManager: CommandManager<C>,
     audienceProvider: AudienceProvider<C>
 ) {
