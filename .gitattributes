@@ -4,3 +4,4 @@
 # Generated build/config artifacts — exclude from linguist stats and diffs.
 gradle/wrapper/gradle-wrapper.jar -diff -text linguist-generated
 **/build/** linguist-generated
+.claude/** linguist-vendored
