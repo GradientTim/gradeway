@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.strategies
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
@@ -18,7 +19,7 @@ import java.util.zip.GZIPOutputStream
 import kotlin.test.*
 
 class LuckPermsMigrationStrategyTest {
-    private val gradeway: CommonGradeway = createTestGradeway()
+    private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
     private val strategy = LuckPermsMigrationStrategy(gradeway)
 
     @AfterTest

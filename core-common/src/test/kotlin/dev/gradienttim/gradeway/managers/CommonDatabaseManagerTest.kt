@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestDatabaseDriver
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
@@ -25,12 +26,14 @@ import kotlin.test.assertTrue
 private class NotADatabaseDriver : Driver()
 
 class CommonDatabaseManagerTest {
-    private var gradeway: CommonGradeway? = null
+    private var gradeway: CommonGradeway<TestPlatformConfig>? = null
 
-    private fun createLoadedGradeway(): CommonGradeway {
+    private fun createLoadedGradeway(): CommonGradeway<TestPlatformConfig> {
         val instance = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
             directory = Files.createTempDirectory("database-manager-test").toFile(),
+            defaultPlatformConfig = TestPlatformConfig(),
+            platformConfigSerializer = TestPlatformConfig.serializer(),
         )
         instance.load().getOrElse { error(it.toString()) }
         gradeway = instance

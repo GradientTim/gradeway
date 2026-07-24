@@ -27,6 +27,7 @@ dependencies {
 
 tasks {
     shadowJar {
+        archiveFileName.set("gradeway-plugin-bukkit-${rootProject.version}.jar")
         filesMatching("META-INF/*.kotlin_module") {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }

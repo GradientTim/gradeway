@@ -6,13 +6,17 @@ package dev.gradienttim.gradeway.platform
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.config.GradewayConfig
+import dev.gradienttim.gradeway.config.gradeway.DatabaseConfig
+import dev.gradienttim.gradeway.config.gradeway.EnvConfig
+import dev.gradienttim.gradeway.config.gradeway.MessagingConfig
 import dev.gradienttim.gradeway.managers.CommonConfigManager
 import java.nio.file.Files
 import kotlin.test.*
 
 class CommonEnvironmentTest {
-    private var gradeway: CommonGradeway? = null
+    private var gradeway: CommonGradeway<TestPlatformConfig>? = null
 
     /**
      * [CommonGradeway.environment] is created lazily on first access and, once created, keeps
@@ -21,10 +25,12 @@ class CommonEnvironmentTest {
      * time a database driver is enabled). Loading (without enabling) leaves it untouched, so we
      * can safely overwrite [dev.gradienttim.gradeway.managers.ConfigManager.config] here first.
      */
-    private fun createEnvironment(config: GradewayConfig): Environment {
+    private fun createEnvironment(config: GradewayConfig<TestPlatformConfig>): Environment {
         val instance = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
             directory = Files.createTempDirectory("environment-test").toFile(),
+            defaultPlatformConfig = TestPlatformConfig(),
+            platformConfigSerializer = TestPlatformConfig.serializer(),
         )
         instance.load().getOrElse { error(it.toString()) }
         (instance.configs as CommonConfigManager).config = config
@@ -42,7 +48,8 @@ class CommonEnvironmentTest {
     fun `string int long double and boolean read config-declared variables`() {
         val environment = createEnvironment(
             GradewayConfig(
-                database = GradewayConfig.DatabaseConfig(
+                platform = TestPlatformConfig(),
+                database = DatabaseConfig(
                     variables = mapOf(
                         "TEST_STRING" to "hello",
                         "TEST_INT" to "42",
@@ -51,7 +58,7 @@ class CommonEnvironmentTest {
                         "TEST_BOOL" to "true",
                     )
                 ),
-                env = GradewayConfig.EnvConfig(readFromFile = false),
+                env = EnvConfig(readFromFile = false),
             )
         )
 
@@ -66,9 +73,10 @@ class CommonEnvironmentTest {
     fun `database and messaging variables are both consulted`() {
         val environment = createEnvironment(
             GradewayConfig(
-                database = GradewayConfig.DatabaseConfig(variables = mapOf("FROM_DATABASE" to "db-value")),
-                messaging = GradewayConfig.MessagingConfig(variables = mapOf("FROM_MESSAGING" to "msg-value")),
-                env = GradewayConfig.EnvConfig(readFromFile = false),
+                platform = TestPlatformConfig(),
+                database = DatabaseConfig(variables = mapOf("FROM_DATABASE" to "db-value")),
+                messaging = MessagingConfig(variables = mapOf("FROM_MESSAGING" to "msg-value")),
+                env = EnvConfig(readFromFile = false),
             )
         )
 
@@ -78,7 +86,9 @@ class CommonEnvironmentTest {
 
     @Test
     fun `an unset variable resolves to null and required variants throw`() {
-        val environment = createEnvironment(GradewayConfig(env = GradewayConfig.EnvConfig(readFromFile = false)))
+        val environment = createEnvironment(
+            GradewayConfig(platform = TestPlatformConfig(), env = EnvConfig(readFromFile = false))
+        )
 
         assertNull(environment.string("MISSING"))
         assertNull(environment.int("MISSING"))
@@ -90,8 +100,9 @@ class CommonEnvironmentTest {
     fun `an unparsable value returns null instead of throwing`() {
         val environment = createEnvironment(
             GradewayConfig(
-                database = GradewayConfig.DatabaseConfig(variables = mapOf("NOT_A_NUMBER" to "abc")),
-                env = GradewayConfig.EnvConfig(readFromFile = false),
+                platform = TestPlatformConfig(),
+                database = DatabaseConfig(variables = mapOf("NOT_A_NUMBER" to "abc")),
+                env = EnvConfig(readFromFile = false),
             )
         )
 
@@ -103,8 +114,9 @@ class CommonEnvironmentTest {
     fun `defaults are used only when the variable is missing`() {
         val environment = createEnvironment(
             GradewayConfig(
-                database = GradewayConfig.DatabaseConfig(variables = mapOf("SET_VAR" to "10")),
-                env = GradewayConfig.EnvConfig(readFromFile = false),
+                platform = TestPlatformConfig(),
+                database = DatabaseConfig(variables = mapOf("SET_VAR" to "10")),
+                env = EnvConfig(readFromFile = false),
             )
         )
 
@@ -116,8 +128,9 @@ class CommonEnvironmentTest {
     fun `names are searched in order and the first match wins`() {
         val environment = createEnvironment(
             GradewayConfig(
-                database = GradewayConfig.DatabaseConfig(variables = mapOf("SECOND" to "second-value")),
-                env = GradewayConfig.EnvConfig(readFromFile = false),
+                platform = TestPlatformConfig(),
+                database = DatabaseConfig(variables = mapOf("SECOND" to "second-value")),
+                env = EnvConfig(readFromFile = false),
             )
         )
 
@@ -130,7 +143,10 @@ class CommonEnvironmentTest {
         System.setProperty(propertyName, "from-system-property")
         try {
             val environment = createEnvironment(
-                GradewayConfig(env = GradewayConfig.EnvConfig(readFromFile = false, readFromProperties = true))
+                GradewayConfig(
+                    platform = TestPlatformConfig(),
+                    env = EnvConfig(readFromFile = false, readFromProperties = true),
+                )
             )
 
             assertEquals("from-system-property", environment.string(propertyName))
@@ -146,8 +162,9 @@ class CommonEnvironmentTest {
         try {
             val environment = createEnvironment(
                 GradewayConfig(
-                    database = GradewayConfig.DatabaseConfig(variables = mapOf(propertyName to "from-config")),
-                    env = GradewayConfig.EnvConfig(readFromFile = false, readFromProperties = true),
+                    platform = TestPlatformConfig(),
+                    database = DatabaseConfig(variables = mapOf(propertyName to "from-config")),
+                    env = EnvConfig(readFromFile = false, readFromProperties = true),
                 )
             )
 

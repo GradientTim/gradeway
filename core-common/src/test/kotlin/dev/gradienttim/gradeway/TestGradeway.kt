@@ -9,10 +9,12 @@ import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import java.nio.file.Files
 
-fun createTestGradeway(): CommonGradeway {
+fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
     val gradeway = CommonGradeway(
         logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
         directory = Files.createTempDirectory("gradeway-test").toFile(),
+        defaultPlatformConfig = TestPlatformConfig(),
+        platformConfigSerializer = TestPlatformConfig.serializer(),
     )
 
     gradeway.load()
@@ -31,7 +33,7 @@ fun createTestGradeway(): CommonGradeway {
     return gradeway
 }
 
-fun CommonGradeway.disposeTestGradeway() {
+fun CommonGradeway<TestPlatformConfig>.disposeTestGradeway() {
     disable()
         .onLeft {
             error("Failed to disable test Gradeway: $it")

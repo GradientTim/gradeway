@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.platform
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.disposeTestGradeway
@@ -15,7 +16,7 @@ import java.util.*
 import kotlin.test.*
 
 class CommonSuggestionIndexTest {
-    private val gradeway: CommonGradeway = createTestGradeway()
+    private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
 
     @AfterTest
     fun tearDown() {

@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -16,9 +17,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class CommonConfigManagerTest {
-    private fun createGradeway(): CommonGradeway = CommonGradeway(
+    private fun createGradeway(): CommonGradeway<TestPlatformConfig> = CommonGradeway(
         logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
         directory = Files.createTempDirectory("config-manager-test").toFile(),
+        defaultPlatformConfig = TestPlatformConfig(),
+        platformConfigSerializer = TestPlatformConfig.serializer(),
     )
 
     @Test
@@ -38,7 +41,7 @@ class CommonConfigManagerTest {
     fun `load bumps an older config version and rewrites the file`() {
         val gradeway = createGradeway()
         val configFile = File(gradeway.directory, "config.toml")
-        configFile.writeText("version = 0\n")
+        configFile.writeText("version = 0\n\n[platform]\n")
 
         val manager = CommonConfigManager(gradeway)
         manager.load().getOrElse { error(it.toString()) }
@@ -53,7 +56,7 @@ class CommonConfigManagerTest {
         try {
             val gradeway = createGradeway()
             val configFile = File(gradeway.directory, "config.toml")
-            configFile.writeText("[database]\nprefix = \"custom_\"\n")
+            configFile.writeText("[database]\nprefix = \"custom_\"\n\n[platform]\n")
 
             val manager = CommonConfigManager(gradeway)
             manager.load().getOrElse { error(it.toString()) }

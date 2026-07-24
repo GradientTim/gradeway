@@ -23,6 +23,6 @@ tasks {
 
     shadowJar {
         configurations = listOf(project.configurations.shadow.get())
-        archiveClassifier.set("")
+        archiveFileName.set("gradeway-driver-sqlite-${rootProject.version}.jar")
     }
 }

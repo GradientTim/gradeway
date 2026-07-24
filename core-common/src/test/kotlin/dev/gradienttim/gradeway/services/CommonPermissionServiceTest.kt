@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerRoleEntity
 import dev.gradienttim.gradeway.disposeTestGradeway
@@ -17,7 +18,7 @@ import java.util.*
 import kotlin.test.*
 
 class CommonPermissionServiceTest {
-    private val gradeway: CommonGradeway = createTestGradeway()
+    private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
 
     @AfterTest
     fun tearDown() {

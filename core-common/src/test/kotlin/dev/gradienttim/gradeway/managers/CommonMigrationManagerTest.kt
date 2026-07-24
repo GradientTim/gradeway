@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.platform.CommonLogger
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import dev.gradienttim.gradeway.strategy.MigrationStrategy
@@ -26,12 +27,14 @@ private class FakeMigrationStrategy(override val type: String) : MigrationStrate
 }
 
 class CommonMigrationManagerTest {
-    private fun createManager(): Pair<CommonGradeway, CommonMigrationManager> {
+    private fun createManager(): Pair<CommonGradeway<TestPlatformConfig>, CommonMigrationManager<TestPlatformConfig>> {
         val gradeway = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
             directory = Files.createTempDirectory("migration-manager-test").toFile(),
+            defaultPlatformConfig = TestPlatformConfig(),
+            platformConfigSerializer = TestPlatformConfig.serializer(),
         )
-        return gradeway to CommonMigrationManager(gradeway)
+        return gradeway to CommonMigrationManager<TestPlatformConfig>(gradeway)
     }
 
     @Test

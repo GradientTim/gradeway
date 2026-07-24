@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
@@ -18,7 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class CommonGroupServiceTest {
-    private val gradeway: CommonGradeway = createTestGradeway()
+    private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
 
     @AfterTest
     fun tearDown() {

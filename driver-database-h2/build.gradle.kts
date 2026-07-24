@@ -23,6 +23,6 @@ tasks {
 
     shadowJar {
         configurations = listOf(project.configurations.shadow.get())
-        archiveClassifier.set("")
+        archiveFileName.set("gradeway-driver-h2-${rootProject.version}.jar")
     }
 }

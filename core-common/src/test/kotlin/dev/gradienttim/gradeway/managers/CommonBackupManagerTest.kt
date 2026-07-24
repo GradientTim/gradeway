@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
@@ -14,7 +15,7 @@ import java.util.*
 import kotlin.test.*
 
 class CommonBackupManagerTest {
-    private val gradeway: CommonGradeway = createTestGradeway()
+    private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
 
     @AfterTest
     fun tearDown() {

@@ -23,6 +23,7 @@ dependencies {
 
 tasks {
     shadowJar {
+        archiveFileName.set("gradeway-plugin-velocity-${rootProject.version}.jar")
         filesMatching("META-INF/*.kotlin_module") {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }

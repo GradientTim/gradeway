@@ -11,3 +11,9 @@ dependencies {
 
     implementation("redis.clients:jedis:7.5.2")
 }
+
+tasks {
+    jar {
+        archiveFileName.set("gradeway-driver-redis-${rootProject.version}.jar")
+    }
+}

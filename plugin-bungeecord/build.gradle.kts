@@ -20,6 +20,7 @@ dependencies {
 
 tasks {
     shadowJar {
+        archiveFileName.set("gradeway-plugin-bungeecord-${rootProject.version}.jar")
         filesMatching("META-INF/*.kotlin_module") {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
         }
