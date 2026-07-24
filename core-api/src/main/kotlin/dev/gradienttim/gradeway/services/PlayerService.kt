@@ -196,6 +196,17 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
         playerIds: Collection<UUID>
     ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
+    /**
+     * Removes every expired, non-paused role from every player, regardless of online status.
+     * Intended for a periodic maintenance sweep of the whole player-role table, so that a role's
+     * permissions stop applying at (close to) the moment it expires rather than waiting for that
+     * player's permission cache entry to naturally miss or be otherwise invalidated.
+     *
+     * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
+     *         `(playerId, role)` pairs describing every role that was removed.
+     */
+    fun removeExpiredRoles(): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
+
     sealed interface CreatePlayerError {
         object EntityAlreadyExists : CreatePlayerError
         object InvalidName : CreatePlayerError

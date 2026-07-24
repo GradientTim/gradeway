@@ -18,8 +18,12 @@ import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -30,6 +34,7 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
+import kotlin.time.Duration.Companion.milliseconds
 
 class CommonGradeway<TPlatformConfig>(
     override val logger: Logger,
@@ -61,6 +66,8 @@ class CommonGradeway<TPlatformConfig>(
 
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
+
+    private var expiredRoleSweepJob: Job? = null
 
     override fun load(): Either<Throwable, Unit> = either {
         if (!state.allowLoad) raise(GradewayAlreadyLoadedThrowable())
@@ -148,10 +155,25 @@ class CommonGradeway<TPlatformConfig>(
         messaging.enable().onLeft { raise(it) }
 
         caches.suggestions.initialize()
+
+        val expireRolesJobIntervalSeconds =
+            maxOf(configs.config.sweep.expiredRoleSweepIntervalSeconds, MIN_EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS)
+        expiredRoleSweepJob = backgroundScope.launch {
+            while (isActive) {
+                @Suppress("MagicNumber")
+                delay((expireRolesJobIntervalSeconds * 1000).milliseconds)
+                players.removeExpiredRoles().onLeft {
+                    logger.warn("Failed to sweep expired player roles: $it")
+                }
+            }
+        }
     }
 
     override fun disable(): Either<Throwable, Unit> = either {
         checkIsLoaded()
+
+        expiredRoleSweepJob?.cancel()
+        expiredRoleSweepJob = null
 
         databases.disable().onLeft { raise(it) }
         messaging.disable().onLeft { raise(it) }
@@ -162,5 +184,9 @@ class CommonGradeway<TPlatformConfig>(
         if (state != GradewayState.LOADED) {
             raise(GradewayNotLoadedThrowable())
         }
+    }
+
+    companion object {
+        private const val MIN_EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS: Long = 60
     }
 }

@@ -801,6 +801,21 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         }
     }
 
+    override fun removeExpiredRoles(): Either<PlayerService.RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>> =
+        either {
+            transaction(gradeway.database) {
+                val expiredPlayerRoleEntities = DatabasePlayerRoleEntity.find {
+                    PlayerRolesTable.pausedAt.isNull() and (PlayerRolesTable.untilAt less gradeway.now())
+                }.toList()
+
+                try {
+                    deleteExpiredPlayerRoleRows(expiredPlayerRoleEntities)
+                } catch (throwable: Throwable) {
+                    raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
+                }
+            }
+        }
+
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =
         attributeService.addPlayerAttribute(id, attribute)
 

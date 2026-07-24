@@ -15,6 +15,7 @@ data class GradewayConfig<TPlatformConfig>(
     val appearance: AppearanceConfig = AppearanceConfig(),
     val backup: BackupConfig = BackupConfig(),
     val env: EnvConfig = EnvConfig(),
+    val sweep: SweepConfig = SweepConfig(),
     val platform: TPlatformConfig,
 ) {
     companion object {
