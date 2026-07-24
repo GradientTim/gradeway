@@ -21,7 +21,8 @@ sharing one database-backed permission model.
 ./gradlew :core-common:test --tests "*.JavaExtensionsTest.isUuid accepts valid uuids*"
 ```
 
-CI (`.github/workflows/`) runs `detekt`, `:core-common:test`, then `:core-common:build`, in that order, against JDK 25 —
+CI (`.github/workflows/`) runs `detekt`, `spotlessCheck`, `:core-common:test`, then `:core-common:build`, in that order,
+against JDK 25 —
 mirror that sequence locally before considering work done.
 
 Tests use `kotlin.test` on JUnit Platform with backtick-quoted test names (`` fun `isUuid accepts valid uuids`() ``).

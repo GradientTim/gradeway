@@ -25,6 +25,9 @@ jobs:
       - name: Run detekt
         run: ./gradlew detekt
 
+      - name: Check formatting
+        run: ./gradlew spotlessCheck
+
       - name: Run core-common tests
         run: ./gradlew :core-common:test
 
