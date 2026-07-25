@@ -6,11 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
-repositories {
-    mavenCentral()
-    maven("https://libraries.minecraft.net/")
-}
-
 dependencies {
     api(project(":core-api"))
 

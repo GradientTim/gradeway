@@ -13,10 +13,6 @@ plugins {
 group = property("project.group") as String
 version = property("project.version") as String
 
-repositories {
-    mavenCentral()
-}
-
 detekt {
     config.setFrom(".config/detekt.yml")
     source.setFrom(files(projectDir))

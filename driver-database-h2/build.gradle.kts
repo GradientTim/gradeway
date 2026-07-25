@@ -4,10 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
-repositories {
-    mavenCentral()
-}
-
 @Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     ksp(project(":core-api"))

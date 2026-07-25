@@ -3,10 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.plugin.serialization)
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     implementation(libs.google.devtools.ksp)
     implementation(libs.kotlinx.serialization.json)

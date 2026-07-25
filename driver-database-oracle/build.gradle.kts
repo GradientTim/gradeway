@@ -4,10 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
