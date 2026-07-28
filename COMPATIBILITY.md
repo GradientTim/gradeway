@@ -22,5 +22,5 @@
 | H2         | Database  | `driver-database-h2`        |
 | Redis      | Messaging | `driver-messaging-redis`    |
 
-Every backend builds into its own driver jar. Drop the ones you need into the `drivers/` folder next to the plugin —
+Every backend builds into its own driver jar. Drop the ones you need into the `drivers/` folder next to the plugin -
 only the client libraries for the drivers you actually use get loaded.

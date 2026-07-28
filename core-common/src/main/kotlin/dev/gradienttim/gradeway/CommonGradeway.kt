@@ -16,21 +16,14 @@ import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
+import org.koin.core.KoinApplication
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
@@ -66,6 +59,7 @@ class CommonGradeway<TPlatformConfig>(
 
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
+    internal lateinit var koin: KoinApplication
 
     private var expiredRoleSweepJob: Job? = null
 
@@ -103,7 +97,7 @@ class CommonGradeway<TPlatformConfig>(
             directory.mkdirs()
         }
 
-        startKoin {
+        koin = startKoin {
             modules(serviceModule, managerModule, commonModule)
         }
 
@@ -130,10 +124,9 @@ class CommonGradeway<TPlatformConfig>(
         languages.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
 
-        // stopKoin() (not koin.close()) - it also closes the underlying KoinApplication but
-        // additionally deregisters it from Koin's global context. Without that, a later load()
-        // call in the same JVM (e.g., a plugin disable/enable cycle) fails with KoinApplicationAlreadyStartedException.
-        stopKoin()
+        if (::koin.isInitialized) {
+            koin.close()
+        }
 
         state = GradewayState.UNLOADED
     }.onLeft {

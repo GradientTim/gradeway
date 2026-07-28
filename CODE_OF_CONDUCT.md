@@ -22,12 +22,12 @@ Examples of unacceptable behavior include:
 - Trolling, insulting or derogatory comments, and personal or political attacks
 - Public or private harassment
 - Publishing others' private information, such as a physical or email address, without their explicit permission
-- Other conduct which could reasonably be considered inappropriate in a professional setting
+- Other conduct that could reasonably be considered inappropriate in a professional setting
 
 ## Scope
 
-This Code of Conduct applies within all project spaces — the GitHub repository (issues, pull requests, discussions) and
-the project's Discord server — and also applies when an individual is officially representing the project in public
+This Code of Conduct applies within all project spaces – the GitHub repository (issues, pull requests, discussions) and
+the project's Discord server – and also applies when an individual is officially representing the project in public
 spaces.
 
 ## Enforcement

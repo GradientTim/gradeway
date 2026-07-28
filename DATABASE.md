@@ -103,27 +103,27 @@ class gradeway_roles {
    uuid id
 }
 
-gradeway_group_permission_templates  -->  gradeway_groups : group_id-id
-gradeway_group_permission_templates  -->  gradeway_permission_templates : permission_template_id-id
-gradeway_group_permissions  -->  gradeway_groups : group_id-id
-gradeway_group_permissions  -->  gradeway_permissions : permission_id-id
-gradeway_permission_template_permissions  -->  gradeway_permission_templates : template_id-id
-gradeway_permission_template_permissions  -->  gradeway_permissions : permission_id-id
-gradeway_player_attributes  -->  gradeway_players : player_id-id
-gradeway_player_permission_templates  -->  gradeway_permission_templates : permission_template_id-id
-gradeway_player_permission_templates  -->  gradeway_players : player_id-id
-gradeway_player_permissions  -->  gradeway_permissions : permission_id-id
-gradeway_player_permissions  -->  gradeway_players : player_id-id
-gradeway_player_roles  -->  gradeway_players : player_id-id
-gradeway_player_roles  -->  gradeway_roles : role_id-id
-gradeway_players  -->  gradeway_roles : primary_role_id-id
-gradeway_role_attributes  -->  gradeway_roles : role_id-id
-gradeway_role_groups  -->  gradeway_groups : group_id-id
-gradeway_role_groups  -->  gradeway_roles : role_id-id
-gradeway_role_parents  -->  gradeway_roles : child_id-id
-gradeway_role_parents  -->  gradeway_roles : parent_id-id
-gradeway_role_permission_templates  -->  gradeway_permission_templates : permission_template_id-id
-gradeway_role_permission_templates  -->  gradeway_roles : role_id-id
-gradeway_role_permissions  -->  gradeway_permissions : permission_id-id
-gradeway_role_permissions  -->  gradeway_roles : role_id-id
+gradeway_group_permission_templates  -->  gradeway_groups : group_id
+gradeway_group_permission_templates  -->  gradeway_permission_templates : permission_template_id
+gradeway_group_permissions  -->  gradeway_groups : group_id
+gradeway_group_permissions  -->  gradeway_permissions : permission_id
+gradeway_permission_template_permissions  -->  gradeway_permission_templates : template_id
+gradeway_permission_template_permissions  -->  gradeway_permissions : permission_id
+gradeway_player_attributes  -->  gradeway_players : player_id
+gradeway_player_permission_templates  -->  gradeway_permission_templates : permission_template_id
+gradeway_player_permission_templates  -->  gradeway_players : player_id
+gradeway_player_permissions  -->  gradeway_permissions : permission_id
+gradeway_player_permissions  -->  gradeway_players : player_id
+gradeway_player_roles  -->  gradeway_players : player_id
+gradeway_player_roles  -->  gradeway_roles : role_id
+gradeway_players  -->  gradeway_roles : primary_role_id
+gradeway_role_attributes  -->  gradeway_roles : role_id
+gradeway_role_groups  -->  gradeway_groups : group_id
+gradeway_role_groups  -->  gradeway_roles : role_id
+gradeway_role_parents  -->  gradeway_roles : child_id
+gradeway_role_parents  -->  gradeway_roles : parent_id
+gradeway_role_permission_templates  -->  gradeway_permission_templates : permission_template_id
+gradeway_role_permission_templates  -->  gradeway_roles : role_id
+gradeway_role_permissions  -->  gradeway_permissions : permission_id
+gradeway_role_permissions  -->  gradeway_roles : role_id
 ```

@@ -6,11 +6,6 @@ A Minecraft permission gateway.
 > However, you can already use it and provide feedback to help improve the project further.  
 > Feel free to request changes/features or provide your feedback on my Discord server: https://discord.gg/f35EemU4jS
 
-Gradeway is a permission, role, and group system backed by a single shared database.  
-Roles are assigned to players, support inheritance and weighting, and can be bundled into groups for shared permissions.
-Permissions can be scoped per player, role, or group, and everything is driven from in-game commands rather than editing
-files by hand.
-
 [Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS)
 
 ## Features
@@ -37,7 +32,7 @@ See [COMPATIBILITY.md](./COMPATIBILITY.md) for the full overview.
 
 ## Architecture
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for how the Player, Role, and Group model works — especially relevant if you're
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for how the Player, Role, and Group model works – especially relevant if you're
 coming from LuckPerms, where "group" means something different.
 
 ## Database Schema

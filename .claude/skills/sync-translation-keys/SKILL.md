@@ -31,10 +31,10 @@ block body), it prints a warning to stderr rather than silently misreporting.
 
 **REMOVE**: just delete those lines, no replacement needed.
 
-**ADD**: for each missing key, don't invent wording from scratch — read the call site
+**ADD**: for each missing key, don't invent wording from scratch - read the call site
 in the `.kt` file to see exactly which `Component.text(...)` args are passed and in
 what order (that's your `<arg:N>` count), then find the closest analogous *existing*
-key in `en.properties` (same suffix — e.g. `clearPermissions.success` for a new
+key in `en.properties` (same suffix - e.g. `clearPermissions.success` for a new
 `clearAttributes.success`, `permission.add.invalidType` for a new
 `*.attributeTypeNotRegistered`) and copy its exact tag structure
 (`<prefix>`, `<red>`/`<gray>`/`<green>`, `<primary>`/`<secondary>`), only swapping the
@@ -42,17 +42,18 @@ noun/arg indices. Insert the new line at the position matching the code's declar
 order within its command group, not at the end of the file.
 
 Watch for two recurring patterns in this codebase:
-- A key's args don't always map 1:1 to its name — e.g. some `invalidUuid`/`invalidName`
+
+- A key's args don't always map 1:1 to its name - e.g. some `invalidUuid`/`invalidName`
   keys only reference `<arg:1>` and leave `<arg:0>` (the `idOrName`) unused in the
   message text. Match what the call site actually passes, not what seems intuitive.
 - The generic-helper keys (`setPermission`, `clearAttributes`, etc.) are shared across
-  `group`/`player`/`role` — when one is missing for one entity type, check whether
+  `group`/`player`/`role` - when one is missing for one entity type, check whether
   the identical suffix already exists for a sibling entity type and mirror its wording
   exactly, only swapping the entity noun (player/role/group).
 
 ## After editing
 
-Re-run the script — both `REMOVE` and `ADD` should be empty, with no warnings on
+Re-run the script - both `REMOVE` and `ADD` should be empty, with no warnings on
 stderr. Also spot-check for duplicate keys:
 `grep -oP '^gradeway\.[a-zA-Z0-9._]+(?==)' en.properties | sort | uniq -d` should print
 nothing.
