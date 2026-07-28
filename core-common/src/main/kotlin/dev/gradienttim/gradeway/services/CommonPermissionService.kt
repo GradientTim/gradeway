@@ -39,17 +39,12 @@ import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : PermissionService,
-    KoinComponent {
-    private val rolesService: RoleService by inject()
-    private val groupsService: GroupService by inject()
-    private val playersService: PlayerService by inject()
-
+class CommonPermissionService<TPlatformConfig>(
+    val gradeway: CommonGradeway<TPlatformConfig>
+) : PermissionService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateFor(payload) }
     }
@@ -659,7 +654,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleId: UUID
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
         val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToRole(templateEntity, roleEntity)
     }
 
@@ -675,7 +670,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         roleId: UUID
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToRole(template, roleEntity)
     }
 
@@ -739,7 +734,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToRole(templateId, roleEntity)
     }
 
@@ -748,7 +743,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToRole(template, roleEntity)
     }
 
@@ -759,7 +754,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToRole(templateEntity, roleEntity)
     }
 
@@ -769,7 +764,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val templateEntity =
             findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromRole(templateEntity, roleEntity)
     }
 
@@ -786,7 +781,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         roleId: UUID
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromRole(template, roleEntity)
     }
 
@@ -842,7 +837,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         templateId: UUID,
         roleIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val roleEntity = rolesService.findByIdOrName(roleIdOrName)
+        val roleEntity = gradeway.roles.findByIdOrName(roleIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromRole(templateId, roleEntity)
     }
@@ -851,7 +846,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         roleIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val roleEntity = rolesService.findByIdOrName(roleIdOrName)
+        val roleEntity = gradeway.roles.findByIdOrName(roleIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromRole(template, roleEntity)
     }
@@ -862,7 +857,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findByIdOrName(roleIdOrName)
+        val roleEntity = gradeway.roles.findByIdOrName(roleIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromRole(templateEntity, roleEntity)
     }
@@ -873,7 +868,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val templateEntity = findTemplateById(templateId)
             ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToRole(templateEntity, roleEntity)
     }
 
@@ -890,7 +885,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         roleId: UUID
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToRole(template, roleEntity)
     }
 
@@ -943,7 +938,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToRole(templateId, roleEntity)
     }
 
@@ -952,7 +947,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToRole(template, roleEntity)
     }
 
@@ -963,7 +958,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToRole(templateEntity, roleEntity)
     }
 
@@ -973,7 +968,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val templateEntity =
             findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromRole(templateEntity, roleEntity)
     }
 
@@ -990,7 +985,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         roleId: UUID
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
-        val roleEntity = rolesService.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val roleEntity = gradeway.roles.findById(roleId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromRole(template, roleEntity)
     }
 
@@ -1039,7 +1034,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromRole(templateId, roleEntity)
     }
 
@@ -1048,7 +1043,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         roleIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val roleEntity =
-            rolesService.findByIdOrName(roleIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+            gradeway.roles.findByIdOrName(roleIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromRole(template, roleEntity)
     }
 
@@ -1058,7 +1053,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
-        val roleEntity = rolesService.findByIdOrName(roleIdOrName)
+        val roleEntity = gradeway.roles.findByIdOrName(roleIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromRole(templateEntity, roleEntity)
     }
@@ -1068,7 +1063,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         playerId: UUID
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
         val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
-        val playerEntity = playersService.findById(playerId)
+        val playerEntity = gradeway.players.findById(playerId)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToPlayer(templateEntity, playerEntity)
     }
@@ -1085,7 +1080,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerId: UUID
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
-        val playerEntity = playersService.findById(playerId)
+        val playerEntity = gradeway.players.findById(playerId)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToPlayer(template, playerEntity)
     }
@@ -1149,7 +1144,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         templateId: UUID,
         playerIdOrName: String
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToPlayer(templateId, playerEntity)
     }
@@ -1158,7 +1153,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerIdOrName: String
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToPlayer(template, playerEntity)
     }
@@ -1169,7 +1164,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToPlayer(templateEntity, playerEntity)
     }
@@ -1179,7 +1174,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         playerId: UUID
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
-        val player = playersService.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromPlayer(template, player)
     }
 
@@ -1195,7 +1190,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerId: UUID
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val player = playersService.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromPlayer(template, player)
     }
 
@@ -1251,7 +1246,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         templateId: UUID,
         playerIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromPlayer(templateId, playerEntity)
     }
@@ -1260,7 +1255,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromPlayer(template, playerEntity)
     }
@@ -1271,7 +1266,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromPlayer(templateEntity, playerEntity)
     }
@@ -1281,7 +1276,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         playerId: UUID
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
-        val player = playersService.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToPlayer(template, player)
     }
 
@@ -1297,7 +1292,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerId: UUID
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
-        val player = playersService.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToPlayer(template, player)
     }
 
@@ -1349,7 +1344,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         templateId: UUID,
         playerIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToPlayer(templateId, playerEntity)
     }
@@ -1358,7 +1353,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToPlayer(template, playerEntity)
     }
@@ -1369,7 +1364,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToPlayer(templateEntity, playerEntity)
     }
@@ -1379,7 +1374,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         playerId: UUID
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
-        val player = playersService.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromPlayer(template, player)
     }
 
@@ -1395,7 +1390,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerId: UUID
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
-        val player = playersService.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val player = gradeway.players.findById(playerId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromPlayer(template, player)
     }
 
@@ -1443,7 +1438,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         templateId: UUID,
         playerIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromPlayer(templateId, playerEntity)
     }
@@ -1452,7 +1447,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         playerIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromPlayer(template, playerEntity)
     }
@@ -1463,7 +1458,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val templateEntity = findTemplateByIdOrName(templateIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
-        val playerEntity = playersService.findByIdOrName(playerIdOrName)
+        val playerEntity = gradeway.players.findByIdOrName(playerIdOrName)
             ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromPlayer(templateEntity, playerEntity)
     }
@@ -1473,7 +1468,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupId: UUID
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
         val templateEntity = findTemplateById(templateId) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
-        val groupEntity = groupsService.findById(groupId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+        val groupEntity = gradeway.groups.findById(groupId) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToGroup(templateEntity, groupEntity)
     }
 
@@ -1489,7 +1484,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         groupId: UUID
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
-        val groupEntity = groupsService.findById(groupId)
+        val groupEntity = gradeway.groups.findById(groupId)
             ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToGroup(template, groupEntity)
     }
@@ -1554,7 +1549,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToGroup(templateId, groupEntity)
     }
 
@@ -1563,7 +1558,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.LinkTemplateError, Unit> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToGroup(template, groupEntity)
     }
 
@@ -1574,7 +1569,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.LinkTemplateError.TemplateNotFound)
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.LinkTemplateError.TargetNotFound)
         return linkTemplateToGroup(templateEntity, groupEntity)
     }
 
@@ -1583,7 +1578,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupId: UUID
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromGroup(template, group)
     }
 
@@ -1599,7 +1594,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         groupId: UUID
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromGroup(template, group)
     }
 
@@ -1656,7 +1651,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromGroup(templateId, groupEntity)
     }
 
@@ -1665,7 +1660,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.UnlinkTemplateError, Unit> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromGroup(template, groupEntity)
     }
 
@@ -1676,7 +1671,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TemplateNotFound)
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.UnlinkTemplateError.TargetNotFound)
         return unlinkTemplateFromGroup(templateEntity, groupEntity)
     }
 
@@ -1685,7 +1680,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupId: UUID
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToGroup(template, group)
     }
 
@@ -1701,7 +1696,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         groupId: UUID
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToGroup(template, group)
     }
 
@@ -1754,7 +1749,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToGroup(templateId, groupEntity)
     }
 
@@ -1763,7 +1758,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToGroup(template, groupEntity)
     }
 
@@ -1774,7 +1769,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.ApplyTemplateError.TemplateNotFound)
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.ApplyTemplateError.TargetNotFound)
         return applyTemplateToGroup(templateEntity, groupEntity)
     }
 
@@ -1783,7 +1778,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupId: UUID
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val template = findTemplateById(templateId) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromGroup(template, group)
     }
 
@@ -1799,7 +1794,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         template: PermissionTemplateEntity,
         groupId: UUID
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
-        val group = groupsService.findById(groupId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+        val group = gradeway.groups.findById(groupId) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromGroup(template, group)
     }
 
@@ -1848,7 +1843,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromGroup(templateId, groupEntity)
     }
 
@@ -1857,7 +1852,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         groupIdOrName: String
     ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromGroup(template, groupEntity)
     }
 
@@ -1868,7 +1863,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         val templateEntity =
             findTemplateByIdOrName(templateIdOrName) ?: raise(PermissionService.RevokeTemplateError.TemplateNotFound)
         val groupEntity =
-            groupsService.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
+            gradeway.groups.findByIdOrName(groupIdOrName) ?: raise(PermissionService.RevokeTemplateError.TargetNotFound)
         return revokeTemplateFromGroup(templateEntity, groupEntity)
     }
 
@@ -1877,7 +1872,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
-        val entity = rolesService.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setRolePermission(entity, permission, enabled)
     }
 
@@ -1899,7 +1894,8 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
-        val entity = rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        val entity =
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setRolePermission(entity, permission, enabled)
     }
 
@@ -1907,7 +1903,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
-        val entity = rolesService.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setRolePermissions(entity, permissions)
     }
 
@@ -1928,7 +1924,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity =
-            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setRolePermissions(entity, permissions)
     }
 
@@ -1936,7 +1932,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
-        val entity = rolesService.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetRolePermission(entity, permission)
     }
 
@@ -1950,7 +1946,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity =
-            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetRolePermission(entity, permission)
     }
 
@@ -1958,7 +1954,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
-        val entity = rolesService.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetRolePermissions(entity, permissions)
     }
 
@@ -1972,12 +1968,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity =
-            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetRolePermissions(entity, permissions)
     }
 
     override fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit> = either {
-        val entity = rolesService.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearRolePermissions(entity)
     }
 
@@ -1989,12 +1985,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         idOrName: String
     ): Either<PermissionService.ClearPermissionsError, Unit> = either {
         val entity =
-            rolesService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearRolePermissions(entity)
     }
 
     override fun hasRolePermission(id: UUID, permission: String): Boolean {
-        val entity = rolesService.findById(id) ?: return false
+        val entity = gradeway.roles.findById(id) ?: return false
         return hasRolePermission(entity, permission)
     }
 
@@ -2004,12 +2000,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityPermission(entity, permission)
 
     override fun hasRolePermission(idOrName: String, permission: String): Boolean {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return false
         return hasRolePermission(entity, permission)
     }
 
     override fun hasRoleAnyPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = rolesService.findById(id) ?: return false
+        val entity = gradeway.roles.findById(id) ?: return false
         return hasRoleAnyPermissions(entity, permissions)
     }
 
@@ -2019,12 +2015,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAnyPermissions(entity, permissions)
 
     override fun hasRoleAnyPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return false
         return hasRoleAnyPermissions(entity, permissions)
     }
 
     override fun hasRoleAllPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = rolesService.findById(id) ?: return false
+        val entity = gradeway.roles.findById(id) ?: return false
         return hasRoleAllPermissions(entity, permissions)
     }
 
@@ -2034,12 +2030,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAllPermissions(entity, permissions)
 
     override fun hasRoleAllPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return false
         return hasRoleAllPermissions(entity, permissions)
     }
 
     override fun getRolePermissions(id: UUID): Set<RolePermissionEntity> {
-        val entity = rolesService.findById(id) ?: return emptySet()
+        val entity = gradeway.roles.findById(id) ?: return emptySet()
         return getRolePermissions(entity)
     }
 
@@ -2050,7 +2046,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getRolePermissions(idOrName: String): Set<RolePermissionEntity> {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return emptySet()
         return getRolePermissions(entity)
     }
 
@@ -2059,7 +2055,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
-        val entity = playersService.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setPlayerPermission(entity, permission, enabled)
     }
 
@@ -2082,7 +2078,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
         val entity =
-            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setPlayerPermission(entity, permission, enabled)
     }
 
@@ -2090,7 +2086,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
-        val entity = playersService.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setPlayerPermissions(entity, permissions)
     }
 
@@ -2111,7 +2107,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
         val entity =
-            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setPlayerPermissions(entity, permissions)
     }
 
@@ -2119,7 +2115,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
-        val entity = playersService.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetPlayerPermission(entity, permission)
     }
 
@@ -2133,7 +2129,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
         val entity =
-            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetPlayerPermission(entity, permission)
     }
 
@@ -2141,7 +2137,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
-        val entity = playersService.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetPlayerPermissions(entity, permissions)
     }
 
@@ -2155,12 +2151,13 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
         val entity =
-            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName)
+                ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetPlayerPermissions(entity, permissions)
     }
 
     override fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit> = either {
-        val entity = playersService.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearPlayerPermissions(entity)
     }
 
@@ -2172,12 +2169,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         idOrName: String
     ): Either<PermissionService.ClearPermissionsError, Unit> = either {
         val entity =
-            playersService.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearPlayerPermissions(entity)
     }
 
     override fun hasPlayerPermission(id: UUID, permission: String): Boolean {
-        val entity = playersService.findById(id) ?: return false
+        val entity = gradeway.players.findById(id) ?: return false
         return hasPlayerPermission(entity, permission)
     }
 
@@ -2187,12 +2184,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityPermission(entity, permission)
 
     override fun hasPlayerPermission(idOrName: String, permission: String): Boolean {
-        val entity = playersService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasPlayerPermission(entity, permission)
     }
 
     override fun hasPlayerAnyPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = playersService.findById(id) ?: return false
+        val entity = gradeway.players.findById(id) ?: return false
         return hasPlayerAnyPermissions(entity, permissions)
     }
 
@@ -2202,12 +2199,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAnyPermissions(entity, permissions)
 
     override fun hasPlayerAnyPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = playersService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasPlayerAnyPermissions(entity, permissions)
     }
 
     override fun hasPlayerAllPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = playersService.findById(id) ?: return false
+        val entity = gradeway.players.findById(id) ?: return false
         return hasPlayerAllPermissions(entity, permissions)
     }
 
@@ -2217,12 +2214,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAllPermissions(entity, permissions)
 
     override fun hasPlayerAllPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = playersService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasPlayerAllPermissions(entity, permissions)
     }
 
     override fun getPlayerPermissions(id: UUID): Set<PlayerPermissionEntity> {
-        val entity = playersService.findById(id) ?: return emptySet()
+        val entity = gradeway.players.findById(id) ?: return emptySet()
         return getPlayerPermissions(entity)
     }
 
@@ -2233,7 +2230,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getPlayerPermissions(idOrName: String): Set<PlayerPermissionEntity> {
-        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return emptySet()
         return getPlayerPermissions(entity)
     }
 
@@ -2242,7 +2239,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
-        val entity = groupsService.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
+        val entity = gradeway.groups.findById(id) ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setGroupPermission(entity, permission, enabled)
     }
 
@@ -2264,7 +2261,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         permission: String,
         enabled: Boolean
     ): Either<PermissionService.SetPermissionError, Unit> = either {
-        val entity = groupsService.findByIdOrName(idOrName)
+        val entity = gradeway.groups.findByIdOrName(idOrName)
             ?: raise(PermissionService.SetPermissionError.EntityNotFound)
         return setGroupPermission(entity, permission, enabled)
     }
@@ -2273,7 +2270,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
-        val entity = groupsService.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
+        val entity = gradeway.groups.findById(id) ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setGroupPermissions(entity, permissions)
     }
 
@@ -2293,7 +2290,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         idOrName: String,
         permissions: Map<String, Boolean>
     ): Either<PermissionService.BulkSetPermissionError, Unit> = either {
-        val entity = groupsService.findByIdOrName(idOrName)
+        val entity = gradeway.groups.findByIdOrName(idOrName)
             ?: raise(PermissionService.BulkSetPermissionError.EntityNotFound)
         return setGroupPermissions(entity, permissions)
     }
@@ -2302,7 +2299,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
-        val entity = groupsService.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
+        val entity = gradeway.groups.findById(id) ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetGroupPermission(entity, permission)
     }
 
@@ -2315,7 +2312,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         idOrName: String,
         permission: String
     ): Either<PermissionService.UnsetPermissionError, Unit> = either {
-        val entity = groupsService.findByIdOrName(idOrName)
+        val entity = gradeway.groups.findByIdOrName(idOrName)
             ?: raise(PermissionService.UnsetPermissionError.EntityNotFound)
         return unsetGroupPermission(entity, permission)
     }
@@ -2324,7 +2321,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         id: UUID,
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
-        val entity = groupsService.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
+        val entity = gradeway.groups.findById(id) ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetGroupPermissions(entity, permissions)
     }
 
@@ -2337,13 +2334,13 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
         idOrName: String,
         permissions: Collection<String>
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = either {
-        val entity = groupsService.findByIdOrName(idOrName)
+        val entity = gradeway.groups.findByIdOrName(idOrName)
             ?: raise(PermissionService.BulkUnsetPermissionError.EntityNotFound)
         return unsetGroupPermissions(entity, permissions)
     }
 
     override fun clearGroupPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit> = either {
-        val entity = groupsService.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
+        val entity = gradeway.groups.findById(id) ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearGroupPermissions(entity)
     }
 
@@ -2354,13 +2351,13 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     override fun clearGroupPermissions(
         idOrName: String
     ): Either<PermissionService.ClearPermissionsError, Unit> = either {
-        val entity = groupsService.findByIdOrName(idOrName)
+        val entity = gradeway.groups.findByIdOrName(idOrName)
             ?: raise(PermissionService.ClearPermissionsError.EntityNotFound)
         return clearGroupPermissions(entity)
     }
 
     override fun hasGroupPermission(id: UUID, permission: String): Boolean {
-        val entity = groupsService.findById(id) ?: return false
+        val entity = gradeway.groups.findById(id) ?: return false
         return hasGroupPermission(entity, permission)
     }
 
@@ -2370,12 +2367,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityPermission(entity, permission)
 
     override fun hasGroupPermission(idOrName: String, permission: String): Boolean {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return false
         return hasGroupPermission(entity, permission)
     }
 
     override fun hasGroupAnyPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = groupsService.findById(id) ?: return false
+        val entity = gradeway.groups.findById(id) ?: return false
         return hasGroupAnyPermissions(entity, permissions)
     }
 
@@ -2385,12 +2382,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAnyPermissions(entity, permissions)
 
     override fun hasGroupAnyPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return false
         return hasGroupAnyPermissions(entity, permissions)
     }
 
     override fun hasGroupAllPermissions(id: UUID, permissions: Collection<String>): Boolean {
-        val entity = groupsService.findById(id) ?: return false
+        val entity = gradeway.groups.findById(id) ?: return false
         return hasGroupAllPermissions(entity, permissions)
     }
 
@@ -2400,12 +2397,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     ): Boolean = hasEntityAllPermissions(entity, permissions)
 
     override fun hasGroupAllPermissions(idOrName: String, permissions: Collection<String>): Boolean {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return false
         return hasGroupAllPermissions(entity, permissions)
     }
 
     override fun getGroupPermissions(id: UUID): Set<GroupPermissionEntity> {
-        val entity = groupsService.findById(id) ?: return emptySet()
+        val entity = gradeway.groups.findById(id) ?: return emptySet()
         return getGroupPermissions(entity)
     }
 
@@ -2416,7 +2413,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getGroupPermissions(idOrName: String): Set<GroupPermissionEntity> {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return emptySet()
         return getGroupPermissions(entity)
     }
 
@@ -2512,7 +2509,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getEffectiveRolePermissions(id: UUID): Set<PermissionEntity> {
-        val entity = rolesService.findById(id) ?: return emptySet()
+        val entity = gradeway.roles.findById(id) ?: return emptySet()
         return getEffectiveRolePermissions(entity)
     }
 
@@ -2521,12 +2518,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getEffectiveRolePermissions(idOrName: String): Set<PermissionEntity> {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return emptySet()
         return getEffectiveRolePermissions(entity)
     }
 
     override fun hasEffectiveRolePermission(id: UUID, permission: String): Boolean {
-        val entity = rolesService.findById(id) ?: return false
+        val entity = gradeway.roles.findById(id) ?: return false
         return hasEffectiveRolePermission(entity, permission)
     }
 
@@ -2535,12 +2532,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun hasEffectiveRolePermission(idOrName: String, permission: String): Boolean {
-        val entity = rolesService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return false
         return hasEffectiveRolePermission(entity, permission)
     }
 
     override fun getEffectiveGroupPermissions(id: UUID): Set<PermissionEntity> {
-        val entity = groupsService.findById(id) ?: return emptySet()
+        val entity = gradeway.groups.findById(id) ?: return emptySet()
         return getEffectiveGroupPermissions(entity)
     }
 
@@ -2549,12 +2546,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getEffectiveGroupPermissions(idOrName: String): Set<PermissionEntity> {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return emptySet()
         return getEffectiveGroupPermissions(entity)
     }
 
     override fun hasEffectiveGroupPermission(id: UUID, permission: String): Boolean {
-        val entity = groupsService.findById(id) ?: return false
+        val entity = gradeway.groups.findById(id) ?: return false
         return hasEffectiveGroupPermission(entity, permission)
     }
 
@@ -2563,12 +2560,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun hasEffectiveGroupPermission(idOrName: String, permission: String): Boolean {
-        val entity = groupsService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.groups.findByIdOrName(idOrName) ?: return false
         return hasEffectiveGroupPermission(entity, permission)
     }
 
     override fun getEffectivePlayerPermissions(id: UUID): Set<PermissionEntity> {
-        val entity = playersService.findById(id) ?: return emptySet()
+        val entity = gradeway.players.findById(id) ?: return emptySet()
         return getEffectivePlayerPermissions(entity)
     }
 
@@ -2577,12 +2574,12 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun getEffectivePlayerPermissions(idOrName: String): Set<PermissionEntity> {
-        val entity = playersService.findByIdOrName(idOrName) ?: return emptySet()
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return emptySet()
         return getEffectivePlayerPermissions(entity)
     }
 
     override fun hasEffectivePlayerPermission(id: UUID, permission: String): Boolean {
-        val entity = playersService.findById(id) ?: return false
+        val entity = gradeway.players.findById(id) ?: return false
         return hasEffectivePlayerPermission(entity, permission)
     }
 
@@ -2591,7 +2588,7 @@ class CommonPermissionService<TPlatformConfig>(val gradeway: CommonGradeway<TPla
     }
 
     override fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean {
-        val entity = playersService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasEffectivePlayerPermission(entity, permission)
     }
 

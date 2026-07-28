@@ -49,7 +49,7 @@ class CommonBackupManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
     // the same list drives export, import and (reversed) the pre-import wipe without needing a
     // separately maintained ordering for any of the three.
     private val backupEntries by lazy {
-        listOf<BackupEntry>(
+        listOf(
             backupEntry(DatabaseGroupEntity),
             backupEntry(DatabasePermissionEntity),
             backupEntry(DatabasePermissionTemplateEntity),

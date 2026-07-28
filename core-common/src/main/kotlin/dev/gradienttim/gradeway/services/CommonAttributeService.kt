@@ -22,20 +22,16 @@ import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.*
 
-class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : AttributeService,
-    KoinComponent {
-    private val roleService: RoleService by inject()
-    private val playerService: PlayerService by inject()
-
+class CommonAttributeService<TPlatformConfig>(
+    val gradeway: CommonGradeway<TPlatformConfig>
+) : AttributeService {
     override fun <TValue : Any> addRoleAttribute(
         id: UUID,
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
-        val entity = roleService.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addRoleAttribute(entity, attribute)
     }
 
@@ -55,7 +51,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         idOrName: String,
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
-        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addRoleAttribute(entity, attribute)
     }
 
@@ -64,7 +60,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         key: Key,
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
-        val entity = roleService.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updateRoleAttribute(entity, key, value)
     }
 
@@ -79,7 +75,8 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         key: Key,
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
-        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        val entity =
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updateRoleAttribute(entity, key, value)
     }
 
@@ -87,7 +84,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         id: UUID,
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        val entity = roleService.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
         return removeRoleAttribute(entity, key)
     }
 
@@ -100,14 +97,15 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         idOrName: String,
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        val entity =
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
         return removeRoleAttribute(entity, key)
     }
 
     override fun clearRoleAttributes(
         id: UUID
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        val entity = roleService.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        val entity = gradeway.roles.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
         return clearRoleAttributes(entity)
     }
 
@@ -118,12 +116,13 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     override fun clearRoleAttributes(
         idOrName: String
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        val entity = roleService.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        val entity =
+            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
         return clearRoleAttributes(entity)
     }
 
     override fun hasRoleAttribute(id: UUID, key: Key): Boolean {
-        val entity = roleService.findById(id) ?: return false
+        val entity = gradeway.roles.findById(id) ?: return false
         return hasRoleAttribute(entity, key)
     }
 
@@ -132,12 +131,12 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     override fun hasRoleAttribute(idOrName: String, key: Key): Boolean {
-        val entity = roleService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return false
         return hasRoleAttribute(entity, key)
     }
 
     override fun getRoleAttribute(id: UUID, key: Key): RoleAttributeEntity? {
-        val entity = roleService.findById(id) ?: return null
+        val entity = gradeway.roles.findById(id) ?: return null
         return getRoleAttribute(entity, key)
     }
 
@@ -146,7 +145,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     override fun getRoleAttribute(idOrName: String, key: Key): RoleAttributeEntity? {
-        val entity = roleService.findByIdOrName(idOrName) ?: return null
+        val entity = gradeway.roles.findByIdOrName(idOrName) ?: return null
         return getRoleAttribute(entity, key)
     }
 
@@ -154,7 +153,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         id: UUID,
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
-        val entity = playerService.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addPlayerAttribute(entity, attribute)
     }
 
@@ -174,7 +173,8 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         idOrName: String,
         attribute: Attribute<TValue>
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
-        val entity = playerService.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        val entity =
+            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
         return addPlayerAttribute(entity, attribute)
     }
 
@@ -183,7 +183,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         key: Key,
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
-        val entity = playerService.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updatePlayerAttribute(entity, key, value)
     }
 
@@ -199,7 +199,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         value: TValue
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity =
-            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
         return updatePlayerAttribute(entity, key, value)
     }
 
@@ -207,7 +207,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         id: UUID,
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        val entity = playerService.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
         return removePlayerAttribute(entity, key)
     }
 
@@ -221,14 +221,14 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         key: Key
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
         val entity =
-            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
         return removePlayerAttribute(entity, key)
     }
 
     override fun clearPlayerAttributes(
         id: UUID
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        val entity = playerService.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        val entity = gradeway.players.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
         return clearPlayerAttributes(entity)
     }
 
@@ -240,12 +240,12 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         idOrName: String,
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
         val entity =
-            playerService.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
         return clearPlayerAttributes(entity)
     }
 
     override fun hasPlayerAttribute(id: UUID, key: Key): Boolean {
-        val entity = playerService.findById(id) ?: return false
+        val entity = gradeway.players.findById(id) ?: return false
         return hasPlayerAttribute(entity, key)
     }
 
@@ -254,12 +254,12 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     override fun hasPlayerAttribute(idOrName: String, key: Key): Boolean {
-        val entity = playerService.findByIdOrName(idOrName) ?: return false
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasPlayerAttribute(entity, key)
     }
 
     override fun getPlayerAttribute(id: UUID, key: Key): PlayerAttributeEntity? {
-        val entity = playerService.findById(id) ?: return null
+        val entity = gradeway.players.findById(id) ?: return null
         return getPlayerAttribute(entity, key)
     }
 
@@ -268,7 +268,7 @@ class CommonAttributeService<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     override fun getPlayerAttribute(idOrName: String, key: Key): PlayerAttributeEntity? {
-        val entity = playerService.findByIdOrName(idOrName) ?: return null
+        val entity = gradeway.players.findByIdOrName(idOrName) ?: return null
         return getPlayerAttribute(entity, key)
     }
 

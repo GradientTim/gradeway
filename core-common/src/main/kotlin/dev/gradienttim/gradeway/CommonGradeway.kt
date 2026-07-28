@@ -20,10 +20,10 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.koin.core.KoinApplication
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
@@ -59,7 +59,6 @@ class CommonGradeway<TPlatformConfig>(
 
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
-    internal lateinit var koin: KoinApplication
 
     private var expiredRoleSweepJob: Job? = null
 
@@ -97,7 +96,9 @@ class CommonGradeway<TPlatformConfig>(
             directory.mkdirs()
         }
 
-        koin = startKoin {
+        // GlobalContext is fine here: each platform plugin gets its own ClassLoader, so this shaded,
+        // non-relocated Koin copy has private static state, isolated from other plugins on the server.
+        startKoin {
             modules(serviceModule, managerModule, commonModule)
         }
 
@@ -124,9 +125,7 @@ class CommonGradeway<TPlatformConfig>(
         languages.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
 
-        if (::koin.isInitialized) {
-            koin.close()
-        }
+        stopKoin()
 
         state = GradewayState.UNLOADED
     }.onLeft {

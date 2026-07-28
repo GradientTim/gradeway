@@ -23,19 +23,14 @@ import dev.gradienttim.gradeway.platform.CommonCaches
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.time.Duration
 import java.time.Instant
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : PlayerService,
-    KoinComponent {
-    private val roleService: RoleService by inject()
-    private val attributeService: AttributeService by inject()
-    private val permissionService: PermissionService by inject()
-
+class CommonPlayerService<TPlatformConfig>(
+    val gradeway: CommonGradeway<TPlatformConfig>
+) : PlayerService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
     }
@@ -215,7 +210,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         until: Instant?
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
         val player = findById(playerId) ?: raise(PlayerService.AddRoleError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
         return addRole(player, role, until)
     }
 
@@ -233,7 +228,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID,
         until: Instant?
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.AddRoleError.TargetNotFound)
         return addRole(player, role, until)
     }
 
@@ -292,7 +287,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID
     ): Either<PlayerService.RemoveRoleError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.RemoveRoleError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
         return removeRole(player, role)
     }
 
@@ -308,7 +303,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         player: PlayerEntity,
         roleId: UUID
     ): Either<PlayerService.RemoveRoleError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.RemoveRoleError.TargetNotFound)
         return removeRole(player, role)
     }
 
@@ -361,7 +356,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         untilAt: Instant
     ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.SetRoleUntilAtError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
         return setRoleUntilAt(player, role, untilAt)
     }
 
@@ -370,7 +365,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID,
         untilAt: Instant
     ): Either<PlayerService.SetRoleUntilAtError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetRoleUntilAtError.TargetNotFound)
         return setRoleUntilAt(player, role, untilAt)
     }
 
@@ -440,7 +435,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         pausedAt: Instant
     ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.SetRolePausedAtError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
         return setRolePausedAt(player, role, pausedAt)
     }
 
@@ -458,7 +453,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID,
         pausedAt: Instant
     ): Either<PlayerService.SetRolePausedAtError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetRolePausedAtError.TargetNotFound)
         return setRolePausedAt(player, role, pausedAt)
     }
 
@@ -518,7 +513,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID
     ): Either<PlayerService.PauseRoleError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.PauseRoleError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
         return pauseRole(player, role)
     }
 
@@ -534,7 +529,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         player: PlayerEntity,
         roleId: UUID
     ): Either<PlayerService.PauseRoleError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.PauseRoleError.TargetNotFound)
         return pauseRole(player, role)
     }
 
@@ -590,7 +585,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID
     ): Either<PlayerService.ResumeRoleError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.ResumeRoleError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
         return resumeRole(player, role)
     }
 
@@ -606,7 +601,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         player: PlayerEntity,
         roleId: UUID
     ): Either<PlayerService.ResumeRoleError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.ResumeRoleError.TargetNotFound)
         return resumeRole(player, role)
     }
 
@@ -667,7 +662,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         roleId: UUID
     ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
         val player = findById(playerId) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
         return setPrimaryRole(player, role)
     }
 
@@ -683,7 +678,7 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         player: PlayerEntity,
         roleId: UUID
     ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(PlayerService.SetPrimaryRoleError.TargetNotFound)
         return setPrimaryRole(player, role)
     }
 
@@ -817,137 +812,137 @@ class CommonPlayerService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =
-        attributeService.addPlayerAttribute(id, attribute)
+        gradeway.attributes.addPlayerAttribute(id, attribute)
 
     override fun <TValue : Any> addAttribute(entity: PlayerEntity, attribute: Attribute<TValue>) =
-        attributeService.addPlayerAttribute(entity, attribute)
+        gradeway.attributes.addPlayerAttribute(entity, attribute)
 
     override fun <TValue : Any> addAttribute(idOrName: String, attribute: Attribute<TValue>) =
-        attributeService.addPlayerAttribute(idOrName, attribute)
+        gradeway.attributes.addPlayerAttribute(idOrName, attribute)
 
     override fun <TValue : Any> updateAttribute(id: UUID, key: Key, value: TValue) =
-        attributeService.updatePlayerAttribute(id, key, value)
+        gradeway.attributes.updatePlayerAttribute(id, key, value)
 
     override fun <TValue : Any> updateAttribute(entity: PlayerEntity, key: Key, value: TValue) =
-        attributeService.updatePlayerAttribute(entity, key, value)
+        gradeway.attributes.updatePlayerAttribute(entity, key, value)
 
     override fun <TValue : Any> updateAttribute(idOrName: String, key: Key, value: TValue) =
-        attributeService.updatePlayerAttribute(idOrName, key, value)
+        gradeway.attributes.updatePlayerAttribute(idOrName, key, value)
 
     override fun removeAttribute(id: UUID, key: Key) =
-        attributeService.removePlayerAttribute(id, key)
+        gradeway.attributes.removePlayerAttribute(id, key)
 
     override fun removeAttribute(entity: PlayerEntity, key: Key) =
-        attributeService.removePlayerAttribute(entity, key)
+        gradeway.attributes.removePlayerAttribute(entity, key)
 
     override fun removeAttribute(idOrName: String, key: Key) =
-        attributeService.removePlayerAttribute(idOrName, key)
+        gradeway.attributes.removePlayerAttribute(idOrName, key)
 
     override fun clearAttributes(id: UUID) =
-        attributeService.clearPlayerAttributes(id)
+        gradeway.attributes.clearPlayerAttributes(id)
 
     override fun clearAttributes(entity: PlayerEntity) =
-        attributeService.clearPlayerAttributes(entity)
+        gradeway.attributes.clearPlayerAttributes(entity)
 
     override fun clearAttributes(idOrName: String) =
-        attributeService.clearPlayerAttributes(idOrName)
+        gradeway.attributes.clearPlayerAttributes(idOrName)
 
     override fun hasAttribute(id: UUID, key: Key) =
-        attributeService.hasPlayerAttribute(id, key)
+        gradeway.attributes.hasPlayerAttribute(id, key)
 
     override fun hasAttribute(entity: PlayerEntity, key: Key) =
-        attributeService.hasPlayerAttribute(entity, key)
+        gradeway.attributes.hasPlayerAttribute(entity, key)
 
     override fun hasAttribute(idOrName: String, key: Key) =
-        attributeService.hasPlayerAttribute(idOrName, key)
+        gradeway.attributes.hasPlayerAttribute(idOrName, key)
 
     override fun getAttribute(id: UUID, key: Key) =
-        attributeService.getPlayerAttribute(id, key)
+        gradeway.attributes.getPlayerAttribute(id, key)
 
     override fun getAttribute(entity: PlayerEntity, key: Key) =
-        attributeService.getPlayerAttribute(entity, key)
+        gradeway.attributes.getPlayerAttribute(entity, key)
 
     override fun getAttribute(idOrName: String, key: Key) =
-        attributeService.getPlayerAttribute(idOrName, key)
+        gradeway.attributes.getPlayerAttribute(idOrName, key)
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =
-        permissionService.setPlayerPermission(id, permission, enabled)
+        gradeway.permissions.setPlayerPermission(id, permission, enabled)
 
     override fun setPermission(entity: PlayerEntity, permission: String, enabled: Boolean) =
-        permissionService.setPlayerPermission(entity, permission, enabled)
+        gradeway.permissions.setPlayerPermission(entity, permission, enabled)
 
     override fun setPermission(idOrName: String, permission: String, enabled: Boolean) =
-        permissionService.setPlayerPermission(idOrName, permission, enabled)
+        gradeway.permissions.setPlayerPermission(idOrName, permission, enabled)
 
     override fun setPermissions(id: UUID, permissions: Map<String, Boolean>) =
-        permissionService.setPlayerPermissions(id, permissions)
+        gradeway.permissions.setPlayerPermissions(id, permissions)
 
     override fun setPermissions(entity: PlayerEntity, permissions: Map<String, Boolean>) =
-        permissionService.setPlayerPermissions(entity, permissions)
+        gradeway.permissions.setPlayerPermissions(entity, permissions)
 
     override fun setPermissions(idOrName: String, permissions: Map<String, Boolean>) =
-        permissionService.setPlayerPermissions(idOrName, permissions)
+        gradeway.permissions.setPlayerPermissions(idOrName, permissions)
 
     override fun unsetPermission(id: UUID, permission: String) =
-        permissionService.unsetPlayerPermission(id, permission)
+        gradeway.permissions.unsetPlayerPermission(id, permission)
 
     override fun unsetPermission(entity: PlayerEntity, permission: String) =
-        permissionService.unsetPlayerPermission(entity, permission)
+        gradeway.permissions.unsetPlayerPermission(entity, permission)
 
     override fun unsetPermission(idOrName: String, permission: String) =
-        permissionService.unsetPlayerPermission(idOrName, permission)
+        gradeway.permissions.unsetPlayerPermission(idOrName, permission)
 
     override fun unsetPermissions(id: UUID, permissions: List<String>) =
-        permissionService.unsetPlayerPermissions(id, permissions)
+        gradeway.permissions.unsetPlayerPermissions(id, permissions)
 
     override fun unsetPermissions(entity: PlayerEntity, permissions: List<String>) =
-        permissionService.unsetPlayerPermissions(entity, permissions)
+        gradeway.permissions.unsetPlayerPermissions(entity, permissions)
 
     override fun unsetPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.unsetPlayerPermissions(idOrName, permissions)
+        gradeway.permissions.unsetPlayerPermissions(idOrName, permissions)
 
     override fun clearPermissions(id: UUID) =
-        permissionService.clearPlayerPermissions(id)
+        gradeway.permissions.clearPlayerPermissions(id)
 
     override fun clearPermissions(entity: PlayerEntity) =
-        permissionService.clearPlayerPermissions(entity)
+        gradeway.permissions.clearPlayerPermissions(entity)
 
     override fun clearPermissions(idOrName: String) =
-        permissionService.clearPlayerPermissions(idOrName)
+        gradeway.permissions.clearPlayerPermissions(idOrName)
 
     override fun hasPermission(id: UUID, permission: String) =
-        permissionService.hasPlayerPermission(id, permission)
+        gradeway.permissions.hasPlayerPermission(id, permission)
 
     override fun hasPermission(entity: PlayerEntity, permission: String) =
-        permissionService.hasPlayerPermission(entity, permission)
+        gradeway.permissions.hasPlayerPermission(entity, permission)
 
     override fun hasPermission(idOrName: String, permission: String) =
-        permissionService.hasPlayerPermission(idOrName, permission)
+        gradeway.permissions.hasPlayerPermission(idOrName, permission)
 
     override fun hasAnyPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasPlayerAnyPermissions(id, permissions)
+        gradeway.permissions.hasPlayerAnyPermissions(id, permissions)
 
     override fun hasAnyPermissions(entity: PlayerEntity, permissions: List<String>) =
-        permissionService.hasPlayerAnyPermissions(entity, permissions)
+        gradeway.permissions.hasPlayerAnyPermissions(entity, permissions)
 
     override fun hasAnyPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasPlayerAnyPermissions(idOrName, permissions)
+        gradeway.permissions.hasPlayerAnyPermissions(idOrName, permissions)
 
     override fun hasAllPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasPlayerAllPermissions(id, permissions)
+        gradeway.permissions.hasPlayerAllPermissions(id, permissions)
 
     override fun hasAllPermissions(entity: PlayerEntity, permissions: List<String>) =
-        permissionService.hasPlayerAllPermissions(entity, permissions)
+        gradeway.permissions.hasPlayerAllPermissions(entity, permissions)
 
     override fun hasAllPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasPlayerAllPermissions(idOrName, permissions)
+        gradeway.permissions.hasPlayerAllPermissions(idOrName, permissions)
 
     override fun getPermissions(id: UUID) =
-        permissionService.getPlayerPermissions(id)
+        gradeway.permissions.getPlayerPermissions(id)
 
     override fun getPermissions(entity: PlayerEntity) =
-        permissionService.getPlayerPermissions(entity)
+        gradeway.permissions.getPlayerPermissions(entity)
 
     override fun getPermissions(idOrName: String) =
-        permissionService.getPlayerPermissions(idOrName)
+        gradeway.permissions.getPlayerPermissions(idOrName)
 }

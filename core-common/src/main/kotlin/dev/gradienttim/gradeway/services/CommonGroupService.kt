@@ -24,14 +24,11 @@ import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.*
 
-class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : GroupService, KoinComponent {
-    private val roleService: RoleService by inject()
-    private val permissionService: PermissionService by inject()
-
+class CommonGroupService<TPlatformConfig>(
+    val gradeway: CommonGradeway<TPlatformConfig>
+) : GroupService {
     override fun create(
         name: String,
         builder: GroupEntity.() -> Unit
@@ -198,7 +195,7 @@ class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatform
 
     override fun addRoleToGroup(groupId: UUID, roleId: UUID): Either<AddTargetError, RoleGroupEntity> = either {
         val group = findById(groupId) ?: raise(AddTargetError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(AddTargetError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(AddTargetError.TargetNotFound)
         return addRoleToGroup(group, role)
     }
 
@@ -221,7 +218,7 @@ class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatform
     }
 
     override fun addRoleToGroup(group: GroupEntity, roleId: UUID): Either<AddTargetError, RoleGroupEntity> = either {
-        val role = roleService.findById(roleId) ?: raise(AddTargetError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(AddTargetError.TargetNotFound)
         return addRoleToGroup(group, role)
     }
 
@@ -251,7 +248,7 @@ class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatform
 
     override fun removeRoleFromGroup(groupId: UUID, roleId: UUID): Either<RemoveTargetError, Unit> = either {
         val group = findById(groupId) ?: raise(RemoveTargetError.EntityNotFound)
-        val role = roleService.findById(roleId) ?: raise(RemoveTargetError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(RemoveTargetError.TargetNotFound)
         return removeRoleFromGroup(group, role)
     }
 
@@ -277,7 +274,7 @@ class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatform
     }
 
     override fun removeRoleFromGroup(group: GroupEntity, roleId: UUID): Either<RemoveTargetError, Unit> = either {
-        val role = roleService.findById(roleId) ?: raise(RemoveTargetError.TargetNotFound)
+        val role = gradeway.roles.findById(roleId) ?: raise(RemoveTargetError.TargetNotFound)
         return removeRoleFromGroup(group, role)
     }
 
@@ -306,83 +303,83 @@ class CommonGroupService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatform
     }
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =
-        permissionService.setGroupPermission(id, permission, enabled)
+        gradeway.permissions.setGroupPermission(id, permission, enabled)
 
     override fun setPermission(entity: GroupEntity, permission: String, enabled: Boolean) =
-        permissionService.setGroupPermission(entity, permission, enabled)
+        gradeway.permissions.setGroupPermission(entity, permission, enabled)
 
     override fun setPermission(idOrName: String, permission: String, enabled: Boolean) =
-        permissionService.setGroupPermission(idOrName, permission, enabled)
+        gradeway.permissions.setGroupPermission(idOrName, permission, enabled)
 
     override fun setPermissions(id: UUID, permissions: Map<String, Boolean>) =
-        permissionService.setGroupPermissions(id, permissions)
+        gradeway.permissions.setGroupPermissions(id, permissions)
 
     override fun setPermissions(entity: GroupEntity, permissions: Map<String, Boolean>) =
-        permissionService.setGroupPermissions(entity, permissions)
+        gradeway.permissions.setGroupPermissions(entity, permissions)
 
     override fun setPermissions(idOrName: String, permissions: Map<String, Boolean>) =
-        permissionService.setGroupPermissions(idOrName, permissions)
+        gradeway.permissions.setGroupPermissions(idOrName, permissions)
 
     override fun unsetPermission(id: UUID, permission: String) =
-        permissionService.unsetGroupPermission(id, permission)
+        gradeway.permissions.unsetGroupPermission(id, permission)
 
     override fun unsetPermission(entity: GroupEntity, permission: String) =
-        permissionService.unsetGroupPermission(entity, permission)
+        gradeway.permissions.unsetGroupPermission(entity, permission)
 
     override fun unsetPermission(idOrName: String, permission: String) =
-        permissionService.unsetGroupPermission(idOrName, permission)
+        gradeway.permissions.unsetGroupPermission(idOrName, permission)
 
     override fun unsetPermissions(id: UUID, permissions: List<String>) =
-        permissionService.unsetGroupPermissions(id, permissions)
+        gradeway.permissions.unsetGroupPermissions(id, permissions)
 
     override fun unsetPermissions(entity: GroupEntity, permissions: List<String>) =
-        permissionService.unsetGroupPermissions(entity, permissions)
+        gradeway.permissions.unsetGroupPermissions(entity, permissions)
 
     override fun unsetPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.unsetGroupPermissions(idOrName, permissions)
+        gradeway.permissions.unsetGroupPermissions(idOrName, permissions)
 
     override fun clearPermissions(id: UUID) =
-        permissionService.clearGroupPermissions(id)
+        gradeway.permissions.clearGroupPermissions(id)
 
     override fun clearPermissions(entity: GroupEntity) =
-        permissionService.clearGroupPermissions(entity)
+        gradeway.permissions.clearGroupPermissions(entity)
 
     override fun clearPermissions(idOrName: String) =
-        permissionService.clearGroupPermissions(idOrName)
+        gradeway.permissions.clearGroupPermissions(idOrName)
 
     override fun hasPermission(id: UUID, permission: String) =
-        permissionService.hasGroupPermission(id, permission)
+        gradeway.permissions.hasGroupPermission(id, permission)
 
     override fun hasPermission(entity: GroupEntity, permission: String) =
-        permissionService.hasGroupPermission(entity, permission)
+        gradeway.permissions.hasGroupPermission(entity, permission)
 
     override fun hasPermission(idOrName: String, permission: String) =
-        permissionService.hasGroupPermission(idOrName, permission)
+        gradeway.permissions.hasGroupPermission(idOrName, permission)
 
     override fun hasAnyPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasGroupAnyPermissions(id, permissions)
+        gradeway.permissions.hasGroupAnyPermissions(id, permissions)
 
     override fun hasAnyPermissions(entity: GroupEntity, permissions: List<String>) =
-        permissionService.hasGroupAnyPermissions(entity, permissions)
+        gradeway.permissions.hasGroupAnyPermissions(entity, permissions)
 
     override fun hasAnyPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasGroupAnyPermissions(idOrName, permissions)
+        gradeway.permissions.hasGroupAnyPermissions(idOrName, permissions)
 
     override fun hasAllPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasGroupAllPermissions(id, permissions)
+        gradeway.permissions.hasGroupAllPermissions(id, permissions)
 
     override fun hasAllPermissions(entity: GroupEntity, permissions: List<String>) =
-        permissionService.hasGroupAllPermissions(entity, permissions)
+        gradeway.permissions.hasGroupAllPermissions(entity, permissions)
 
     override fun hasAllPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasGroupAllPermissions(idOrName, permissions)
+        gradeway.permissions.hasGroupAllPermissions(idOrName, permissions)
 
     override fun getPermissions(id: UUID) =
-        permissionService.getGroupPermissions(id)
+        gradeway.permissions.getGroupPermissions(id)
 
     override fun getPermissions(entity: GroupEntity) =
-        permissionService.getGroupPermissions(entity)
+        gradeway.permissions.getGroupPermissions(entity)
 
     override fun getPermissions(idOrName: String) =
-        permissionService.getGroupPermissions(idOrName)
+        gradeway.permissions.getGroupPermissions(idOrName)
 }

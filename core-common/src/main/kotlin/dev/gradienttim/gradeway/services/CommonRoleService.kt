@@ -21,14 +21,11 @@ import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import java.util.*
 
-class CommonRoleService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : RoleService, KoinComponent {
-    private val attributeService: AttributeService by inject()
-    private val permissionService: PermissionService by inject()
-
+class CommonRoleService<TPlatformConfig>(
+    val gradeway: CommonGradeway<TPlatformConfig>
+) : RoleService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
     }
@@ -330,137 +327,137 @@ class CommonRoleService<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformC
     }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =
-        attributeService.addRoleAttribute(id, attribute)
+        gradeway.attributes.addRoleAttribute(id, attribute)
 
     override fun <TValue : Any> addAttribute(entity: RoleEntity, attribute: Attribute<TValue>) =
-        attributeService.addRoleAttribute(entity, attribute)
+        gradeway.attributes.addRoleAttribute(entity, attribute)
 
     override fun <TValue : Any> addAttribute(idOrName: String, attribute: Attribute<TValue>) =
-        attributeService.addRoleAttribute(idOrName, attribute)
+        gradeway.attributes.addRoleAttribute(idOrName, attribute)
 
     override fun <TValue : Any> updateAttribute(id: UUID, key: Key, value: TValue) =
-        attributeService.updateRoleAttribute(id, key, value)
+        gradeway.attributes.updateRoleAttribute(id, key, value)
 
     override fun <TValue : Any> updateAttribute(entity: RoleEntity, key: Key, value: TValue) =
-        attributeService.updateRoleAttribute(entity, key, value)
+        gradeway.attributes.updateRoleAttribute(entity, key, value)
 
     override fun <TValue : Any> updateAttribute(idOrName: String, key: Key, value: TValue) =
-        attributeService.updateRoleAttribute(idOrName, key, value)
+        gradeway.attributes.updateRoleAttribute(idOrName, key, value)
 
     override fun removeAttribute(id: UUID, key: Key) =
-        attributeService.removeRoleAttribute(id, key)
+        gradeway.attributes.removeRoleAttribute(id, key)
 
     override fun removeAttribute(entity: RoleEntity, key: Key) =
-        attributeService.removeRoleAttribute(entity, key)
+        gradeway.attributes.removeRoleAttribute(entity, key)
 
     override fun removeAttribute(idOrName: String, key: Key) =
-        attributeService.removeRoleAttribute(idOrName, key)
+        gradeway.attributes.removeRoleAttribute(idOrName, key)
 
     override fun clearAttributes(id: UUID) =
-        attributeService.clearRoleAttributes(id)
+        gradeway.attributes.clearRoleAttributes(id)
 
     override fun clearAttributes(entity: RoleEntity) =
-        attributeService.clearRoleAttributes(entity)
+        gradeway.attributes.clearRoleAttributes(entity)
 
     override fun clearAttributes(idOrName: String) =
-        attributeService.clearRoleAttributes(idOrName)
+        gradeway.attributes.clearRoleAttributes(idOrName)
 
     override fun hasAttribute(id: UUID, key: Key) =
-        attributeService.hasRoleAttribute(id, key)
+        gradeway.attributes.hasRoleAttribute(id, key)
 
     override fun hasAttribute(entity: RoleEntity, key: Key) =
-        attributeService.hasRoleAttribute(entity, key)
+        gradeway.attributes.hasRoleAttribute(entity, key)
 
     override fun hasAttribute(idOrName: String, key: Key) =
-        attributeService.hasRoleAttribute(idOrName, key)
+        gradeway.attributes.hasRoleAttribute(idOrName, key)
 
     override fun getAttribute(id: UUID, key: Key) =
-        attributeService.getRoleAttribute(id, key)
+        gradeway.attributes.getRoleAttribute(id, key)
 
     override fun getAttribute(entity: RoleEntity, key: Key) =
-        attributeService.getRoleAttribute(entity, key)
+        gradeway.attributes.getRoleAttribute(entity, key)
 
     override fun getAttribute(idOrName: String, key: Key) =
-        attributeService.getRoleAttribute(idOrName, key)
+        gradeway.attributes.getRoleAttribute(idOrName, key)
 
     override fun setPermission(id: UUID, permission: String, enabled: Boolean) =
-        permissionService.setRolePermission(id, permission, enabled)
+        gradeway.permissions.setRolePermission(id, permission, enabled)
 
     override fun setPermission(entity: RoleEntity, permission: String, enabled: Boolean) =
-        permissionService.setRolePermission(entity, permission, enabled)
+        gradeway.permissions.setRolePermission(entity, permission, enabled)
 
     override fun setPermission(idOrName: String, permission: String, enabled: Boolean) =
-        permissionService.setRolePermission(idOrName, permission, enabled)
+        gradeway.permissions.setRolePermission(idOrName, permission, enabled)
 
     override fun setPermissions(id: UUID, permissions: Map<String, Boolean>) =
-        permissionService.setRolePermissions(id, permissions)
+        gradeway.permissions.setRolePermissions(id, permissions)
 
     override fun setPermissions(entity: RoleEntity, permissions: Map<String, Boolean>) =
-        permissionService.setRolePermissions(entity, permissions)
+        gradeway.permissions.setRolePermissions(entity, permissions)
 
     override fun setPermissions(idOrName: String, permissions: Map<String, Boolean>) =
-        permissionService.setRolePermissions(idOrName, permissions)
+        gradeway.permissions.setRolePermissions(idOrName, permissions)
 
     override fun unsetPermission(id: UUID, permission: String) =
-        permissionService.unsetRolePermission(id, permission)
+        gradeway.permissions.unsetRolePermission(id, permission)
 
     override fun unsetPermission(entity: RoleEntity, permission: String) =
-        permissionService.unsetRolePermission(entity, permission)
+        gradeway.permissions.unsetRolePermission(entity, permission)
 
     override fun unsetPermission(idOrName: String, permission: String) =
-        permissionService.unsetRolePermission(idOrName, permission)
+        gradeway.permissions.unsetRolePermission(idOrName, permission)
 
     override fun unsetPermissions(id: UUID, permissions: List<String>) =
-        permissionService.unsetRolePermissions(id, permissions)
+        gradeway.permissions.unsetRolePermissions(id, permissions)
 
     override fun unsetPermissions(entity: RoleEntity, permissions: List<String>) =
-        permissionService.unsetRolePermissions(entity, permissions)
+        gradeway.permissions.unsetRolePermissions(entity, permissions)
 
     override fun unsetPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.unsetRolePermissions(idOrName, permissions)
+        gradeway.permissions.unsetRolePermissions(idOrName, permissions)
 
     override fun clearPermissions(id: UUID) =
-        permissionService.clearRolePermissions(id)
+        gradeway.permissions.clearRolePermissions(id)
 
     override fun clearPermissions(entity: RoleEntity) =
-        permissionService.clearRolePermissions(entity)
+        gradeway.permissions.clearRolePermissions(entity)
 
     override fun clearPermissions(idOrName: String) =
-        permissionService.clearRolePermissions(idOrName)
+        gradeway.permissions.clearRolePermissions(idOrName)
 
     override fun hasPermission(id: UUID, permission: String) =
-        permissionService.hasRolePermission(id, permission)
+        gradeway.permissions.hasRolePermission(id, permission)
 
     override fun hasPermission(entity: RoleEntity, permission: String) =
-        permissionService.hasRolePermission(entity, permission)
+        gradeway.permissions.hasRolePermission(entity, permission)
 
     override fun hasPermission(idOrName: String, permission: String) =
-        permissionService.hasRolePermission(idOrName, permission)
+        gradeway.permissions.hasRolePermission(idOrName, permission)
 
     override fun hasAnyPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasRoleAnyPermissions(id, permissions)
+        gradeway.permissions.hasRoleAnyPermissions(id, permissions)
 
     override fun hasAnyPermissions(entity: RoleEntity, permissions: List<String>) =
-        permissionService.hasRoleAnyPermissions(entity, permissions)
+        gradeway.permissions.hasRoleAnyPermissions(entity, permissions)
 
     override fun hasAnyPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasRoleAnyPermissions(idOrName, permissions)
+        gradeway.permissions.hasRoleAnyPermissions(idOrName, permissions)
 
     override fun hasAllPermissions(id: UUID, permissions: List<String>) =
-        permissionService.hasRoleAllPermissions(id, permissions)
+        gradeway.permissions.hasRoleAllPermissions(id, permissions)
 
     override fun hasAllPermissions(entity: RoleEntity, permissions: List<String>) =
-        permissionService.hasRoleAllPermissions(entity, permissions)
+        gradeway.permissions.hasRoleAllPermissions(entity, permissions)
 
     override fun hasAllPermissions(idOrName: String, permissions: List<String>) =
-        permissionService.hasRoleAllPermissions(idOrName, permissions)
+        gradeway.permissions.hasRoleAllPermissions(idOrName, permissions)
 
     override fun getPermissions(id: UUID) =
-        permissionService.getRolePermissions(id)
+        gradeway.permissions.getRolePermissions(id)
 
     override fun getPermissions(entity: RoleEntity) =
-        permissionService.getRolePermissions(entity)
+        gradeway.permissions.getRolePermissions(entity)
 
     override fun getPermissions(idOrName: String) =
-        permissionService.getRolePermissions(idOrName)
+        gradeway.permissions.getRolePermissions(idOrName)
 }
