@@ -1,0 +1,41 @@
+schema_version: 1.0.0
+project:
+  name: Gradeway
+  content_type: software
+  repository: https://github.com/GradientTim/gradeway
+  version: 0.1.0
+  license: MIT
+ai_usage:
+  used: true
+  summary: Leveraged cloud-based AI agents and assistants (Claude Code and JetBrains AI Assistant) to streamline documentation, command management, and IDE workflows.
+  level: minimal
+  tools:
+    - name: Claude Code
+      type: agent
+      hosting: cloud_vendor
+      purpose:
+        - Project Markdown files
+        - Add/Remove/Modify commands
+        - Manage available translation keys
+        - Estimating proportion percentages.
+    - name: JetBrains AI Assistant
+      type: assistant
+      hosting: cloud_vendor
+      purpose:
+        - Git commit messages
+        - Inline code completions
+        - Generating KDoc comments
+  scope:
+    code_completion: true
+    documentation: true
+    testing: true
+    refactoring: true
+    code_review: false
+    code_generation: true
+  code_proportion:
+    ai_generated_percent: 19
+    ai_assisted_percent: 23
+    human_only_percent: 58
+declaration:
+  declared_by: Tim Kiesel
+  date: '2026-07-29'

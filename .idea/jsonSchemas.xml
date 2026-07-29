@@ -3,6 +3,23 @@
   <component name="JsonSchemaMappingsProjectConfiguration">
     <state>
       <map>
+        <entry key="AI Declaration Format Schema (aidecl)">
+          <value>
+            <SchemaInfo>
+              <option name="generatedName" value="New Schema" />
+              <option name="name" value="AI Declaration Format Schema (aidecl)" />
+              <option name="relativePathToSchema" value="https://raw.githubusercontent.com/ai-declaration/schema/refs/heads/main/schema.json" />
+              <option name="schemaVersion" value="JSON Schema 202,012" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="aidecl.yaml" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
         <entry key="Detekt Config (detekt.yml)">
           <value>
             <SchemaInfo>
