@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.kotlin.jvm)
+    id("gradeway-base")
+    id("gradeway-shadow")
+    id("com.google.devtools.ksp")
 }
 
 @Suppress("DataClassEqualsAndHashCodeShareKey")
@@ -10,15 +10,4 @@ dependencies {
     compileOnly(project(":core-api"))
 
     implementation("org.xerial:sqlite-jdbc:3.50.2.0")
-}
-
-tasks {
-    jar {
-        enabled = false
-    }
-
-    shadowJar {
-        configurations = listOf(project.configurations.shadow.get())
-        archiveFileName.set("gradeway-driver-sqlite-${rootProject.version}.jar")
-    }
 }

@@ -2,8 +2,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.time.Instant
 
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.plugin.serialization)
+    id("gradeway-base")
+    id("gradeway-publish")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {
@@ -23,7 +24,7 @@ dependencies {
     api(libs.bundles.cloud)
     api("com.mojang:brigadier:1.3.10")
     api(libs.bundles.ktoml)
-    api(libs.bundles.kyori)
+    api(libs.bundles.adventure)
     api(libs.bundles.arrow)
 
     testImplementation(kotlin("test"))

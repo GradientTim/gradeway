@@ -1,10 +1,11 @@
 plugins {
-    alias(libs.plugins.kapt)
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.plugin.serialization)
+    id("gradeway-base")
+    id("gradeway-shadow")
+    id("org.jetbrains.kotlin.kapt")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+@Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     implementation(project(":core-common"))
 
@@ -13,13 +14,4 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
     kapt("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
     testImplementation(kotlin("test"))
-}
-
-tasks {
-    shadowJar {
-        archiveFileName.set("gradeway-plugin-velocity-${rootProject.version}.jar")
-        filesMatching("META-INF/*.kotlin_module") {
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
-        }
-    }
 }

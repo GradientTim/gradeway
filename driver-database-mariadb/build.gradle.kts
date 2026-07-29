@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.kotlin.jvm)
+    id("gradeway-base")
+    id("gradeway-shadow")
+    id("com.google.devtools.ksp")
 }
 
 @Suppress("DataClassEqualsAndHashCodeShareKey")
@@ -10,15 +10,4 @@ dependencies {
     compileOnly(project(":core-api"))
 
     shadow("org.mariadb.jdbc:mariadb-java-client:3.5.6")
-}
-
-tasks {
-    jar {
-        enabled = false
-    }
-
-    shadowJar {
-        configurations = listOf(project.configurations.shadow.get())
-        archiveFileName.set("gradeway-driver-mariadb-${rootProject.version}.jar")
-    }
 }

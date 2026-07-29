@@ -1,6 +1,7 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.plugin.serialization)
+    id("gradeway-base")
+    id("gradeway-publish")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {
@@ -14,12 +15,4 @@ dependencies {
     api(libs.bundles.exposed)
     api(libs.bundles.arrow)
     compileOnly(libs.bundles.ktoml)
-}
-
-tasks {
-    compileKotlin {
-        compilerOptions {
-            freeCompilerArgs.set(listOf("-Xexplicit-backing-fields"))
-        }
-    }
 }

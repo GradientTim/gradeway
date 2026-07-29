@@ -1,15 +1,13 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
+    id("gradeway-base")
+    id("gradeway-shadow")
+    id("com.google.devtools.ksp")
 }
 
+@Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
-    implementation(project(":core-api"))
+    ksp(project(":core-api"))
+    compileOnly(project(":core-api"))
 
     implementation("redis.clients:jedis:7.5.2")
-}
-
-tasks {
-    jar {
-        archiveFileName.set("gradeway-driver-redis-${rootProject.version}.jar")
-    }
 }

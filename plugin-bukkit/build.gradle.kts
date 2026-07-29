@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.shadow)
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.plugin.serialization)
+    id("gradeway-base")
+    id("gradeway-shadow")
+    id("org.jetbrains.kotlin.plugin.serialization")
 }
 
 dependencies {
@@ -12,13 +12,4 @@ dependencies {
     implementation("net.kyori:adventure-platform-bukkit:4.4.1")
 
     compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
-}
-
-tasks {
-    shadowJar {
-        archiveFileName.set("gradeway-plugin-bukkit-${rootProject.version}.jar")
-        filesMatching("META-INF/*.kotlin_module") {
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
-        }
-    }
 }

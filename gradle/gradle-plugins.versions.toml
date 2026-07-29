@@ -1,0 +1,14 @@
+[versions]
+kotlin = "2.4.10"
+
+[libraries]
+detekt = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.5" }
+shadow = { module = "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin", version = "9.6.1" }
+spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "8.9.0" }
+
+google-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version = "2.3.10" }
+vanniktech-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.37.0" }
+
+jetbrains-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+jetbrains-kotlin-kapt = { module = "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin", version.ref = "kotlin" }
+jetbrains-kotlin-plugin-serialization = { module = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }

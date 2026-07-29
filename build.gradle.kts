@@ -1,36 +1,7 @@
-import dev.detekt.gradle.Detekt
-
-plugins {
-    alias(libs.plugins.detekt)
-    alias(libs.plugins.spotless)
-    alias(libs.plugins.ksp) apply false
-    alias(libs.plugins.kapt) apply false
-    alias(libs.plugins.shadow) apply false
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.kotlin.plugin.serialization) apply false
-}
-
 group = property("project.group") as String
 version = property("project.version") as String
 
-detekt {
-    config.setFrom(".config/detekt.yml")
-    source.setFrom(files(projectDir))
-}
-
-spotless {
-    kotlin {
-        target("**/*.kt")
-        targetExclude("**/build/**/*.kt")
-        licenseHeaderFile(rootProject.file(".assets/LICENSE_HEADER"))
-    }
-}
-
 tasks {
-    withType<Detekt>().configureEach {
-        exclude("**/Build*.kt")
-    }
-
     register("bumpVersion") {
         group = "release"
         description =
