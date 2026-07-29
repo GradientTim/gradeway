@@ -23,7 +23,7 @@ mavenPublishing {
 
     pom {
         url.set("https://github.com/GradientTim/gradeway")
-        name.set(rootProject.name)
+        name.set(moduleName)
         description.set(moduleDescription)
         inceptionYear.set(LocalDateTime.now().year.toString())
 
