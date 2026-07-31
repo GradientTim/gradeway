@@ -85,7 +85,22 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      */
     val directory: File
 
+    /**
+     * Represents the configuration environment related to database operations.
+     *
+     * This environment is used to retrieve and manage configuration values specific to database setups.
+     * It provides various methods to access or validate settings such as connection details, credentials,
+     * and other related options required for initializing or interacting with the database.
+     */
     val databaseEnvironment: Environment
+
+    /**
+     * Represents the configuration environment related to messaging operations.
+     *
+     * This environment is used to retrieve and manage configuration values specific to messaging setups.
+     * It provides various methods to access or validate settings such as connection details, credentials,
+     * and other related options required for initializing or interacting with the messaging system.
+     */
     val messagingEnvironment: Environment
 
     /**

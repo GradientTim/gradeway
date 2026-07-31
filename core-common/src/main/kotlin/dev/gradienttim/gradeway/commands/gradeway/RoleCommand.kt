@@ -18,14 +18,9 @@ import org.incendo.cloud.kotlin.MutableCommandBuilder
 import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.parser.standard.IntegerParser.integerParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
-import org.jetbrains.exposed.v1.core.alias
-import org.jetbrains.exposed.v1.core.innerJoin
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.lowerCase
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
-import javax.management.relation.RoleStatus
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
     gradeway: CommonGradeway<*>,

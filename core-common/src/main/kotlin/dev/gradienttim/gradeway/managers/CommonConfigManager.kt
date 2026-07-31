@@ -11,7 +11,6 @@ import com.akuleshov7.ktoml.source.decodeFromStream
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
-import kotlinx.serialization.encodeToString
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage

@@ -12,7 +12,6 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
 import dev.gradienttim.gradeway.platform.CommonLogger
-import kotlinx.serialization.serializer
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager

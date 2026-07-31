@@ -13,7 +13,8 @@ import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
-import dev.gradienttim.gradeway.services.RoleService.*
+import dev.gradienttim.gradeway.services.RoleService.AddParentError
+import dev.gradienttim.gradeway.services.RoleService.RemoveParentError
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
