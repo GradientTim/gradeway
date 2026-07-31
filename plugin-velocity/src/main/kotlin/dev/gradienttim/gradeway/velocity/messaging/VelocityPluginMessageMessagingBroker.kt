@@ -4,14 +4,17 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.velocity.messaging
 
+import arrow.core.Either
+import arrow.core.raise.context.either
+import arrow.core.raise.context.raise
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.PluginMessageEvent
 import com.velocitypowered.api.proxy.ProxyServer
 import com.velocitypowered.api.proxy.ServerConnection
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier
 import dev.gradienttim.gradeway.constants.MessagingConstants
-import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
 import dev.gradienttim.gradeway.messaging.MessagingBroker
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A [MessagingBroker] backed by vanilla Minecraft plugin messaging channels, acting as the relay
@@ -22,49 +25,63 @@ import dev.gradienttim.gradeway.messaging.MessagingBroker
  * [CommonMessagingManager][dev.gradienttim.gradeway.managers.CommonMessagingManager] already
  * filters out self-originated payloads by `serverId`.
  *
- * [MessagingBroker] authenticates every message on top of the [ServerConnection] origin check
- * already performed in [onPluginMessage] - the backend side of this channel cannot tell a relayed
- * message from one sent directly by a connecting player's client, so it relies on that same
- * shared secret.
- *
  * @property server The proxy server used to register the channel and reach backend servers.
  * @property plugin The plugin instance this broker's event listener is registered under.
  */
 class VelocityPluginMessageMessagingBroker(
     private val server: ProxyServer,
-    private val plugin: Any,
-    messagingAuthenticator: MessagingAuthenticator,
-) : MessagingBroker(messagingAuthenticator) {
-    private val identifier = MinecraftChannelIdentifier.from(MessagingConstants.SYNC_CHANNEL)
+    private val plugin: Any
+) : MessagingBroker {
+    private val listeners = ConcurrentHashMap<MinecraftChannelIdentifier, ((payload: ByteArray) -> Boolean)>()
 
-    override fun open() {
-        server.channelRegistrar.register(identifier)
-        server.eventManager.register(plugin, this)
-    }
+    override val warnNoEncryption: Boolean = true
 
-    override fun close() {
-        server.eventManager.unregisterListener(plugin, this)
-        server.channelRegistrar.unregister(identifier)
-    }
+    private val syncIdentifier = MinecraftChannelIdentifier.from(MessagingConstants.SYNC_CHANNEL)
 
-    override fun publishAuthenticated(channel: String, payload: ByteArray): Boolean {
-        return server.allServers.any { registeredServer ->
-            registeredServer.sendPluginMessage(identifier, payload)
+    override fun open(): Either<Throwable, Unit> = either {
+        try {
+            server.channelRegistrar.register(syncIdentifier)
+            server.eventManager.register(plugin, this)
+        } catch (throwable: Throwable) {
+            raise(throwable)
         }
     }
 
-    override fun subscribeChannel(channel: String): Boolean = true
+    override fun close(): Either<Throwable, Unit> = either {
+        try {
+            server.eventManager.unregisterListener(plugin, this)
+            server.channelRegistrar.unregister(syncIdentifier)
+        } catch (throwable: Throwable) {
+            raise(throwable)
+        }
+    }
+
+    override fun publish(channel: String, payload: ByteArray): Boolean {
+        return server.allServers.any { registeredServer ->
+            registeredServer.sendPluginMessage(syncIdentifier, payload)
+        }
+    }
+
+    override fun subscribe(channel: String, handler: (payload: ByteArray) -> Boolean): Boolean {
+        if (channel == syncIdentifier.id) {
+            listeners[syncIdentifier] = handler
+        }
+        return true
+    }
 
     @Subscribe
     fun onPluginMessage(event: PluginMessageEvent) {
-        if (event.identifier != identifier) return
+        if (event.identifier != syncIdentifier) return
 
         val source = event.source
         if (source !is ServerConnection) return
 
         event.result = PluginMessageEvent.ForwardResult.handled()
 
-        val verifiedPayload = dispatch(event.data) ?: return
-        publish(MessagingConstants.SYNC_CHANNEL, verifiedPayload)
+        val payload = event.data
+        val isSuccess = listeners[event.identifier]?.invoke(payload) ?: return
+        if (isSuccess) {
+            publish(MessagingConstants.SYNC_CHANNEL, payload)
+        }
     }
 }

@@ -15,6 +15,7 @@ import dev.gradienttim.gradeway.database.models.player.DatabasePlayerEntity
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.messaging.CommonMessagingBroker
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.messaging.NetworkPayload
 import dev.gradienttim.gradeway.messaging.payloads.*
@@ -80,16 +81,15 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         }
 
         try {
-            val newBroker = messagingDriver.createMessagingBroker(gradeway.environment)
-            newBroker.open()
+            val newBroker = messagingDriver.createMessagingBroker(gradeway.messagingEnvironment)
+            broker = CommonMessagingBroker(gradeway, newBroker)
+            broker!!.open().onLeft { raise(it) }
 
-            if (!newBroker.subscribe(MessagingConstants.SYNC_CHANNEL) { bytes -> handleIncoming(bytes) }) {
+            if (!broker!!.subscribe(MessagingConstants.SYNC_CHANNEL) { bytes -> handleIncoming(bytes) }) {
                 gradeway.logger.warn(
                     "Failed to subscribe to the '${MessagingConstants.SYNC_CHANNEL}' messaging channel.",
                 )
             }
-
-            broker = newBroker
         } catch (throwable: Throwable) {
             raise(throwable)
         }
@@ -97,7 +97,7 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
 
     override fun disable(): Either<Throwable, Unit> = either {
         try {
-            broker?.close()
+            broker?.close()?.onLeft { raise(it) }
             broker = null
         } catch (throwable: Throwable) {
             raise(throwable)
@@ -137,8 +137,8 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private fun handleIncoming(bytes: ByteArray) {
-        runCatching {
+    private fun handleIncoming(bytes: ByteArray): Boolean {
+        return runCatching {
             val networkPayload = ProtoBuf.decodeFromByteArray<NetworkPayload>(bytes)
             if (networkPayload.serverId == serverId) {
                 return@runCatching
@@ -148,7 +148,7 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
             listeners.forEach { listener -> runCatching { listener(payload) } }
         }.onFailure { throwable ->
             gradeway.logger.error("Failed to process an incoming messaging payload: ${throwable.localizedMessage}")
-        }
+        }.isSuccess
     }
 
     /**

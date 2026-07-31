@@ -134,4 +134,6 @@ interface Environment {
      * @return The boolean value associated with the first matching name, or [default].
      */
     fun booleanDefault(vararg names: String, default: Boolean): Boolean = boolean(*names) ?: default
+
+    enum class Type { DATABASE, MESSAGING }
 }

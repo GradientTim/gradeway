@@ -4,7 +4,9 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.driver.messaging
 
-import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
+import arrow.core.Either
+import arrow.core.raise.context.either
+import arrow.core.raise.context.raise
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import redis.clients.jedis.BinaryJedisPubSub
 import redis.clients.jedis.RedisClient
@@ -14,25 +16,34 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 class RedisMessagingBroker(
-    val builder: StandaloneClientBuilder<RedisClient>,
-    messagingAuthenticator: MessagingAuthenticator,
-) : MessagingBroker(messagingAuthenticator) {
+    val builder: StandaloneClientBuilder<RedisClient>
+) : MessagingBroker {
     private var redisClient: RedisClient? = null
     private val activePubSubs = ConcurrentHashMap<String, BinaryJedisPubSub>()
 
-    override fun open() {
-        redisClient = builder.build()
+    override val warnNoEncryption: Boolean = false
+
+    override fun open(): Either<Throwable, Unit> = either {
+        try {
+            redisClient = builder.build()
+        } catch (throwable: Throwable) {
+            raise(throwable)
+        }
     }
 
-    override fun close() {
-        activePubSubs.values.forEach { it.unsubscribe() }
-        activePubSubs.clear()
+    override fun close(): Either<Throwable, Unit> = either {
+        try {
+            activePubSubs.values.forEach { it.unsubscribe() }
+            activePubSubs.clear()
 
-        redisClient?.close()
-        redisClient = null
+            redisClient?.close()
+            redisClient = null
+        } catch (throwable: Throwable) {
+            raise(throwable)
+        }
     }
 
-    override fun publishAuthenticated(channel: String, payload: ByteArray): Boolean {
+    override fun publish(channel: String, payload: ByteArray): Boolean {
         val client = redisClient ?: return false
 
         return runCatching {
@@ -40,7 +51,7 @@ class RedisMessagingBroker(
         }.isSuccess
     }
 
-    override fun subscribeChannel(channel: String): Boolean {
+    override fun subscribe(channel: String, handler: (payload: ByteArray) -> Boolean): Boolean {
         val client = redisClient ?: return false
 
         try {
@@ -53,7 +64,7 @@ class RedisMessagingBroker(
 
             val jedisPubSub = object : BinaryJedisPubSub() {
                 override fun onMessage(ch: ByteArray, message: ByteArray) {
-                    runCatching { dispatch(message) }
+                    runCatching { handler(message) }
                 }
             }
 

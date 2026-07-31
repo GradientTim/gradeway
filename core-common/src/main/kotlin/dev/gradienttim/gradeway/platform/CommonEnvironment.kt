@@ -10,13 +10,18 @@ import dev.gradienttim.gradeway.extensions.get
 import io.github.cdimascio.dotenv.Dotenv
 import java.io.File
 
-class CommonEnvironment(val gradeway: CommonGradeway<*>) : Environment {
+class CommonEnvironment(val gradeway: CommonGradeway<*>, type: Environment.Type) : Environment {
     private val config: GradewayConfig<*> = gradeway.configs.config
     private val variables = mutableMapOf<String, Any>()
 
     init {
-        config.database.variables.forEach { (key, value) -> variables[key] = value }
-        config.messaging.variables.forEach { (key, value) -> variables[key] = value }
+        if (type == Environment.Type.DATABASE) {
+            config.database.variables.forEach { (key, value) -> variables[key] = value }
+        }
+
+        if (type == Environment.Type.MESSAGING) {
+            config.messaging.variables.forEach { (key, value) -> variables[key] = value }
+        }
 
         if (config.env.readFromFile) {
             loadFromFile(File(config.env.file))

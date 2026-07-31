@@ -10,7 +10,6 @@ import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.config.gradeway.DatabaseConfig
 import dev.gradienttim.gradeway.config.gradeway.EnvConfig
-import dev.gradienttim.gradeway.config.gradeway.MessagingConfig
 import dev.gradienttim.gradeway.managers.CommonConfigManager
 import java.nio.file.Files
 import kotlin.test.*
@@ -19,9 +18,9 @@ class CommonEnvironmentTest {
     private var gradeway: CommonGradeway<TestPlatformConfig>? = null
 
     /**
-     * [CommonGradeway.environment] is created lazily on first access and, once created, keeps
+     * [CommonGradeway.databaseEnvironment] is created lazily on first access and, once created, keeps
      * whatever [GradewayConfig] was current at that moment - so the config must be swapped in
-     * *before* [CommonGradeway.environment] is ever touched (which normally happens the first
+     * *before* [CommonGradeway.databaseEnvironment] is ever touched (which normally happens the first
      * time a database driver is enabled). Loading (without enabling) leaves it untouched, so we
      * can safely overwrite [dev.gradienttim.gradeway.managers.ConfigManager.config] here first.
      */
@@ -35,7 +34,7 @@ class CommonEnvironmentTest {
         instance.load().getOrElse { error(it.toString()) }
         (instance.configs as CommonConfigManager).config = config
         gradeway = instance
-        return instance.environment
+        return instance.databaseEnvironment
     }
 
     @AfterTest
@@ -67,21 +66,6 @@ class CommonEnvironmentTest {
         assertEquals(123456789012L, environment.long("TEST_LONG"))
         assertEquals(3.14, environment.double("TEST_DOUBLE"))
         assertEquals(true, environment.boolean("TEST_BOOL"))
-    }
-
-    @Test
-    fun `database and messaging variables are both consulted`() {
-        val environment = createEnvironment(
-            GradewayConfig(
-                platform = TestPlatformConfig(),
-                database = DatabaseConfig(variables = mapOf("FROM_DATABASE" to "db-value")),
-                messaging = MessagingConfig(variables = mapOf("FROM_MESSAGING" to "msg-value")),
-                env = EnvConfig(readFromFile = false),
-            )
-        )
-
-        assertEquals("db-value", environment.string("FROM_DATABASE"))
-        assertEquals("msg-value", environment.string("FROM_MESSAGING"))
     }
 
     @Test

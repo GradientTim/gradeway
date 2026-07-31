@@ -85,19 +85,8 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      */
     val directory: File
 
-    /**
-     * Represents the configuration and runtime environment for the Gradeway system.
-     *
-     * The `environment` property provides access to environmental variables and configuration
-     * values essential for the operation of the Gradeway lifecycle. It acts as an abstraction
-     * layer for retrieving various types of dynamically configured settings such as integers,
-     * strings, booleans, and more. These settings can be required, optional, or have default
-     * values when not explicitly provided.
-     *
-     * This environment abstraction is particularly useful for managing application-level
-     * configurations, database settings, external API keys, and other runtime-specific values.
-     */
-    val environment: Environment
+    val databaseEnvironment: Environment
+    val messagingEnvironment: Environment
 
     /**
      * Manages confirmation-based operations within the Gradeway system.

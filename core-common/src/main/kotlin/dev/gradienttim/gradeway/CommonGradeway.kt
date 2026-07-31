@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.Caches
 import dev.gradienttim.gradeway.platform.CommonCaches
 import dev.gradienttim.gradeway.platform.CommonEnvironment
+import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
@@ -54,7 +55,9 @@ class CommonGradeway<TPlatformConfig>(
     override val configs: ConfigManager<TPlatformConfig> by inject()
     override val backups: BackupManager by inject()
 
-    override val environment by lazy { CommonEnvironment(this) }
+    override val databaseEnvironment by lazy { CommonEnvironment(this, Environment.Type.DATABASE) }
+    override val messagingEnvironment by lazy { CommonEnvironment(this, Environment.Type.MESSAGING) }
+
     override var state: GradewayState = GradewayState.UNLOADED
 
     internal lateinit var miniMessage: MiniMessage

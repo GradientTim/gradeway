@@ -42,7 +42,7 @@ class CommonDatabaseManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
         }
 
         try {
-            val dataSource = databaseDriver.createDataSource(gradeway.environment)
+            val dataSource = databaseDriver.createDataSource(gradeway.databaseEnvironment)
             gradeway.database = Database.connect(dataSource)
 
             transaction(gradeway.database) {

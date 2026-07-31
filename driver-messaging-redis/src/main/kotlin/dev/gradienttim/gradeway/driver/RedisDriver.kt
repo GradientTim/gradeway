@@ -8,7 +8,6 @@ import dev.gradienttim.gradeway.driver.adapters.MessagingAdapter
 import dev.gradienttim.gradeway.driver.messaging.RedisMessagingBroker
 import dev.gradienttim.gradeway.driver.meta.CreateDriver
 import dev.gradienttim.gradeway.driver.meta.DriverType
-import dev.gradienttim.gradeway.messaging.MessagingAuthenticator
 import dev.gradienttim.gradeway.messaging.MessagingBroker
 import dev.gradienttim.gradeway.platform.Environment
 import redis.clients.jedis.DefaultJedisClientConfig
@@ -43,8 +42,6 @@ class RedisDriver : Driver(), MessagingAdapter {
             default = 0
         )
 
-        val sharedSecret = environment.stringRequired(MessagingAuthenticator.SHARED_SECRET_VARIABLE)
-
         val redisConfigBuilder = DefaultJedisClientConfig.builder()
             .database(redisDatabase)
 
@@ -55,6 +52,6 @@ class RedisDriver : Driver(), MessagingAdapter {
             .hostAndPort(messagingServerHost, messagingServerPort)
             .clientConfig(redisConfigBuilder.build())
 
-        return RedisMessagingBroker(redisClientBuilder, MessagingAuthenticator(sharedSecret))
+        return RedisMessagingBroker(redisClientBuilder)
     }
 }
