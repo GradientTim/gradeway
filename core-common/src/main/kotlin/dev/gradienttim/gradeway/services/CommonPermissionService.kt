@@ -2509,12 +2509,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun getEffectiveRolePermissions(id: UUID): Set<PermissionEntity> {
-        val entity = gradeway.roles.findById(id) ?: return emptySet()
-        return getEffectiveRolePermissions(entity)
+        return gradeway.caches.roleEffectivePermissions.get(id)
     }
 
     override fun getEffectiveRolePermissions(entity: RoleEntity): Set<PermissionEntity> {
-        return gradeway.caches.roleEffectivePermissions.get(entity.id.value)
+        return getEffectiveRolePermissions(entity.id.value)
     }
 
     override fun getEffectiveRolePermissions(idOrName: String): Set<PermissionEntity> {
@@ -2523,12 +2522,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun hasEffectiveRolePermission(id: UUID, permission: String): Boolean {
-        val entity = gradeway.roles.findById(id) ?: return false
-        return hasEffectiveRolePermission(entity, permission)
+        return getEffectiveRolePermissions(id).any { it.validatePermission(permission) }
     }
 
     override fun hasEffectiveRolePermission(entity: RoleEntity, permission: String): Boolean {
-        return getEffectiveRolePermissions(entity).any { it.validatePermission(permission) }
+        return hasEffectiveRolePermission(entity.id.value, permission)
     }
 
     override fun hasEffectiveRolePermission(idOrName: String, permission: String): Boolean {
@@ -2537,12 +2535,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun getEffectiveGroupPermissions(id: UUID): Set<PermissionEntity> {
-        val entity = gradeway.groups.findById(id) ?: return emptySet()
-        return getEffectiveGroupPermissions(entity)
+        return gradeway.caches.groupEffectivePermissions.get(id)
     }
 
     override fun getEffectiveGroupPermissions(entity: GroupEntity): Set<PermissionEntity> {
-        return gradeway.caches.groupEffectivePermissions.get(entity.id.value)
+        return getEffectiveGroupPermissions(entity.id.value)
     }
 
     override fun getEffectiveGroupPermissions(idOrName: String): Set<PermissionEntity> {
@@ -2551,12 +2548,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun hasEffectiveGroupPermission(id: UUID, permission: String): Boolean {
-        val entity = gradeway.groups.findById(id) ?: return false
-        return hasEffectiveGroupPermission(entity, permission)
+        return getEffectiveGroupPermissions(id).any { it.validatePermission(permission) }
     }
 
     override fun hasEffectiveGroupPermission(entity: GroupEntity, permission: String): Boolean {
-        return getEffectiveGroupPermissions(entity).any { it.validatePermission(permission) }
+        return hasEffectiveGroupPermission(entity.id.value, permission)
     }
 
     override fun hasEffectiveGroupPermission(idOrName: String, permission: String): Boolean {
@@ -2565,12 +2561,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun getEffectivePlayerPermissions(id: UUID): Set<PermissionEntity> {
-        val entity = gradeway.players.findById(id) ?: return emptySet()
-        return getEffectivePlayerPermissions(entity)
+        return gradeway.caches.playerEffectivePermissions.get(id)
     }
 
     override fun getEffectivePlayerPermissions(entity: PlayerEntity): Set<PermissionEntity> {
-        return gradeway.caches.playerEffectivePermissions.get(entity.id.value)
+        return getEffectivePlayerPermissions(entity.id.value)
     }
 
     override fun getEffectivePlayerPermissions(idOrName: String): Set<PermissionEntity> {
@@ -2579,12 +2574,11 @@ class CommonPermissionService<TPlatformConfig>(
     }
 
     override fun hasEffectivePlayerPermission(id: UUID, permission: String): Boolean {
-        val entity = gradeway.players.findById(id) ?: return false
-        return hasEffectivePlayerPermission(entity, permission)
+        return getEffectivePlayerPermissions(id).any { it.validatePermission(permission) }
     }
 
     override fun hasEffectivePlayerPermission(entity: PlayerEntity, permission: String): Boolean {
-        return getEffectivePlayerPermissions(entity).any { it.validatePermission(permission) }
+        return hasEffectivePlayerPermission(entity.id.value, permission)
     }
 
     override fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean {

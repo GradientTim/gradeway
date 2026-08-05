@@ -1,6 +1,6 @@
 name: gradeway
 prefix: Gradeway
-api-version: 26.2
+api-version: 26.1.2
 
 version: 0.1.0
 author: GradientTim

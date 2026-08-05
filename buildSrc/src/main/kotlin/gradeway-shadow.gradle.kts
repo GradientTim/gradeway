@@ -12,7 +12,7 @@ tasks {
     }
 
     shadowJar {
-        configurations = listOf(project.configurations.shadow.get())
+        configurations = listOf(project.configurations.runtimeClasspath.get(), project.configurations.shadow.get())
         archiveFileName.set("gradeway-$moduleName-$moduleVersion.jar")
 
         filesMatching("META-INF/*.kotlin_module") {

@@ -29,7 +29,13 @@ class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
 
     override fun load(): Either<Throwable, Unit> = either {
         try {
-            directory.listFiles { it.extension == "jar" }.forEach { file ->
+            val files = directory.listFiles { it.extension == "jar" }
+            if (files.isEmpty()) {
+                gradeway.logger.info("No driver jars found in '${directory.path}'.")
+            } else {
+                gradeway.logger.info("Found ${files.size} driver jar(s) in '${directory.path}'.")
+            }
+            files.forEach { file ->
                 loadDriver(file)
             }
         } catch (throwable: Throwable) {
@@ -39,9 +45,16 @@ class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
 
     override fun unload(): Either<Throwable, Unit> = either {
         try {
+            gradeway.logger.info("Unloading ${drivers.size} driver(s).")
             drivers.forEach { driver ->
-                driver.unload()
-                driver.classLoader?.close()
+                val (id, type) = driver.config
+                try {
+                    driver.unload()
+                    driver.classLoader?.close()
+                    gradeway.logger.info("Unloaded driver '$id' (type=$type).")
+                } catch (throwable: Throwable) {
+                    gradeway.logger.error("Failed to unload driver '$id' (type=$type): ${throwable.localizedMessage}")
+                }
             }
             drivers.clear()
         } catch (throwable: Throwable) {
@@ -60,12 +73,12 @@ class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
         driver.config = DriverConfig(id = id, type = type, entry = driver::class.qualifiedName ?: id)
 
         if (!drivers.add(driver)) {
-            gradeway.logger.warn("Unable to register driver '$id': Driver already registered.")
+            gradeway.logger.warn("Unable to register driver '$id' (type=$type): Driver already registered.")
             return false
         }
 
         driver.load()
-        gradeway.logger.info("Registered driver '$id'.")
+        gradeway.logger.info("Registered driver '$id' (type=$type).")
         return true
     }
 
@@ -98,12 +111,14 @@ class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
             driver.classLoader = driverClassLoader
 
             if (!drivers.add(driver)) {
-                gradeway.logger.warn("Unable to load driver '${file.name}': Driver already loaded.")
+                gradeway.logger.warn(
+                    "Unable to load driver '${file.name}' (id='${config.id}', type=${config.type}): Already loaded."
+                )
                 return
             }
 
             driver.load()
-            gradeway.logger.info("Loaded driver '${file.name}'.")
+            gradeway.logger.info("Loaded driver '${file.name}' (id='${config.id}', type=${config.type}).")
         } catch (throwable: Throwable) {
             gradeway.logger.error("Unable to load driver '${file.name}': ${throwable.localizedMessage}")
         } finally {

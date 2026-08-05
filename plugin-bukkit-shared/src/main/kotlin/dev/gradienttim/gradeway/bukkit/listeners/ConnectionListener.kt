@@ -38,6 +38,7 @@ class ConnectionListener(val gradeway: GradewayLifecycle<BukkitPlatformConfig>) 
         // op status (e.g., from ops.json) gets de-opped immediately if disableOp is enabled, rather
         // than waiting for the next incidental permission recalculation.
         player.recalculatePermissions()
+        player.updateCommands()
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

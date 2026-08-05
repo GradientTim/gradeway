@@ -62,8 +62,8 @@ interface PermissionEntity {
     fun validatePermission(permission: String): Boolean {
         return when (type) {
             Type.EQUALS -> value == permission
-            Type.STARTS_WITH -> value.startsWith(permission)
-            Type.ENDS_WITH -> value.endsWith(permission)
+            Type.STARTS_WITH -> permission.startsWith(value)
+            Type.ENDS_WITH -> permission.endsWith(value)
             Type.REGEX -> regex.matches(permission)
         }
     }
