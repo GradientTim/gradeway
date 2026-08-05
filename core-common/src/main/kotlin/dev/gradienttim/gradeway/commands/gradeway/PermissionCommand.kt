@@ -12,6 +12,7 @@ import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.services.PermissionService.*
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
@@ -29,6 +30,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -115,36 +117,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
 
                 val idOrValue = context.get<String>("idOrValue")
 
-                gradeway.permissions.deletePermission(idOrValue)
-                    .onLeft { error ->
-                        if (error is DeletePermissionError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permission.remove.entityNotFound",
-                                    Component.text(idOrValue)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.permissions.deletePermission(idOrValue)
+                            .onLeft { error ->
+                                if (error is DeletePermissionError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permission.remove.entityNotFound",
+                                            Component.text(idOrValue)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is DeletePermissionError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permission.remove.unexpectedError",
+                                            Component.text(idOrValue),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permission.remove.success",
+                                        Component.text(idOrValue)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is DeletePermissionError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permission.remove.unexpectedError",
-                                    Component.text(idOrValue),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.permission.remove.success",
-                                Component.text(idOrValue)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -326,11 +365,12 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
             }
         )
 
-        registerPermissionTemplateCommand(gradeway, audienceProvider)
+        registerPermissionTemplateCommand(rootLiteral, gradeway, audienceProvider)
     }
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -404,36 +444,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
                     return@handler
                 }
 
-                gradeway.permissions.deleteTemplate(uniqueId)
-                    .onLeft { error ->
-                        if (error is DeleteTemplateError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permissionTemplate.delete.entityNotFound",
-                                    Component.text(id)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.permissions.deleteTemplate(uniqueId)
+                            .onLeft { error ->
+                                if (error is DeleteTemplateError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permissionTemplate.delete.entityNotFound",
+                                            Component.text(id)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is DeleteTemplateError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permissionTemplate.delete.unexpectedError",
+                                            Component.text(id),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.delete.success",
+                                        Component.text(id),
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is DeleteTemplateError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permissionTemplate.delete.unexpectedError",
-                                    Component.text(id),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.permissionTemplate.delete.success",
-                                Component.text(id),
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -582,7 +659,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
                 }
             }
 
-            registerPermissionTemplatePermissionsCommand(gradeway, audienceProvider)
+            registerPermissionTemplatePermissionsCommand(rootLiteral, gradeway, audienceProvider)
         }
 
         registerGlobalListCommand(
@@ -630,6 +707,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
 }
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermissionsCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -780,36 +858,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
 
                 val idOrName = context.get<String>("idOrName")
 
-                gradeway.permissions.clearPermissionsFromTemplate(idOrName)
-                    .onLeft { error ->
-                        if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permissionTemplate.clearPermissions.entityNotFound",
-                                    Component.text(idOrName)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.permissions.clearPermissionsFromTemplate(idOrName)
+                            .onLeft { error ->
+                                if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permissionTemplate.clearPermissions.entityNotFound",
+                                            Component.text(idOrName)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is ClearPermissionsFromTemplateError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.permissionTemplate.clearPermissions.unexpectedError",
+                                            Component.text(idOrName),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.permissionTemplate.clearPermissions.success",
+                                        Component.text(idOrName)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is ClearPermissionsFromTemplateError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.permissionTemplate.clearPermissions.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.permissionTemplate.clearPermissions.success",
-                                Component.text(idOrName)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 

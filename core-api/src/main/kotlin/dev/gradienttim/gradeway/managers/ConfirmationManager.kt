@@ -65,10 +65,7 @@ interface ConfirmationManager : Loadable, Unloadable, Disableable {
         val sender: Audience
     ) {
         fun cancel(): Boolean {
-            if (!scheduler.isCancelled) {
-                return scheduler.cancel(true)
-            }
-            return false
+            return !scheduler.isCancelled && scheduler.cancel(true)
         }
 
         override fun equals(other: Any?): Boolean {

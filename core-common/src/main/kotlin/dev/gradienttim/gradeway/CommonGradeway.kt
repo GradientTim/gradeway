@@ -77,7 +77,10 @@ class CommonGradeway<TPlatformConfig>(
 
         val managerModule = module {
             single<ConfirmationManager> { CommonConfirmationManager() }
-            single<MigrationManager> { CommonMigrationManager(this@CommonGradeway) }
+            // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,
+            // before ever touching gradeway.migrations, so the registrations CommonMigrationManager's init
+            // block performs must already have happened - a lazily created single would run them too late.
+            single<MigrationManager>(createdAtStart = true) { CommonMigrationManager(this@CommonGradeway) }
             single<MessagingManager> { CommonMessagingManager(this@CommonGradeway) }
             single<DatabaseManager> { CommonDatabaseManager(this@CommonGradeway) }
             single<LanguageManager> { CommonLanguageManager(this@CommonGradeway) }

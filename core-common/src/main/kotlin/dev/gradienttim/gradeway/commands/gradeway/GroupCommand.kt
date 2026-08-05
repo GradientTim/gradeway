@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.database.models.group.GroupPermissionsTable
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.services.GroupService
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
@@ -25,6 +26,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -93,36 +95,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
 
                 val idOrName = context.get<String>("idOrName")
 
-                gradeway.groups.delete(idOrName)
-                    .onLeft { error ->
-                        if (error is GroupService.DeleteGroupError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.delete.entityNotFound",
-                                    Component.text(idOrName)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.groups.delete(idOrName)
+                            .onLeft { error ->
+                                if (error is GroupService.DeleteGroupError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.group.delete.entityNotFound",
+                                            Component.text(idOrName)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is GroupService.DeleteGroupError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.group.delete.unexpectedError",
+                                            Component.text(idOrName),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.group.delete.success",
+                                        Component.text(idOrName)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.DeleteGroupError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.delete.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.group.delete.success",
-                                Component.text(idOrName)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -254,6 +293,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
             registerGroupRolesCommand(gradeway, audienceProvider)
 
             registerEntityPermissionCommands(
+                rootLiteral = rootLiteral,
                 gradeway = gradeway,
                 entityType = "group",
                 audienceProvider = audienceProvider,

@@ -12,6 +12,7 @@ import dev.gradienttim.gradeway.database.models.role.RoleParentsTable
 import dev.gradienttim.gradeway.database.models.role.RolePermissionsTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.services.RoleService.*
 import net.kyori.adventure.text.Component
 import org.incendo.cloud.kotlin.MutableCommandBuilder
@@ -23,6 +24,7 @@ import org.jetbrains.exposed.v1.jdbc.select
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -104,36 +106,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
                     return@handler
                 }
 
-                gradeway.roles.delete(uuid)
-                    .onLeft { error ->
-                        if (error is DeleteRoleError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.delete.entityNotFound",
-                                    Component.text(id)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.roles.delete(uuid)
+                            .onLeft { error ->
+                                if (error is DeleteRoleError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.role.delete.entityNotFound",
+                                            Component.text(id)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is DeleteRoleError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.role.delete.unexpectedError",
+                                            Component.text(id),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.role.delete.success",
+                                        Component.text(id)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is DeleteRoleError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.role.delete.unexpectedError",
-                                    Component.text(id),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.role.delete.success",
-                                Component.text(id)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -143,6 +182,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
             }
 
             registerEntityAttributeCommands(
+                rootLiteral = rootLiteral,
                 gradeway = gradeway,
                 entityType = "role",
                 audienceProvider = audienceProvider,
@@ -208,6 +248,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
             )
 
             registerEntityPermissionCommands(
+                rootLiteral = rootLiteral,
                 gradeway = gradeway,
                 entityType = "role",
                 audienceProvider = audienceProvider,

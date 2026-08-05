@@ -35,13 +35,13 @@ fun <C : Any> createGradewayCommand(
 //     val help = MinecraftHelp.create("/$literal help", commandManager, audienceProvider)
 
     commandManager.buildAndRegister(literal, aliases = aliases) {
-        registerRoleCommand(gradeway, audienceProvider)
-        registerGroupCommand(gradeway, audienceProvider)
+        registerRoleCommand(literal, gradeway, audienceProvider)
+        registerGroupCommand(literal, gradeway, audienceProvider)
         registerCacheCommand(gradeway, audienceProvider)
-        registerPlayerCommand(gradeway, audienceProvider)
-        registerBackupCommand(gradeway, audienceProvider)
+        registerPlayerCommand(literal, gradeway, audienceProvider)
+        registerBackupCommand(literal, gradeway, audienceProvider)
         registerMigrationCommand(literal, gradeway, audienceProvider)
-        registerPermissionCommand(gradeway, audienceProvider)
+        registerPermissionCommand(literal, gradeway, audienceProvider)
         registerConfirmationCommand(gradeway, audienceProvider)
 
         registerCopy("reload") {

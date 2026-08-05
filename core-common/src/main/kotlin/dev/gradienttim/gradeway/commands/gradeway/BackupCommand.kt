@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.commands.gradeway
 
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.managers.BackupManager
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import org.incendo.cloud.kotlin.MutableCommandBuilder
@@ -14,50 +15,88 @@ import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
 import org.incendo.cloud.parser.standard.StringParser.stringParser
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
     fun handleImport(audience: Audience, fileName: String, wipe: Boolean = true) {
-        gradeway.backups.import(fileName, wipe)
-            .onLeft { error ->
-                if (error is BackupManager.ImportError.FileNotFound) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.backup.import.fileNotFound",
-                            Component.text(fileName)
+        gradeway.confirmations.request(
+            sender = audience,
+            task = {
+                gradeway.backups.import(fileName, wipe)
+                    .onLeft { error ->
+                        if (error is BackupManager.ImportError.FileNotFound) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.backup.import.fileNotFound",
+                                    Component.text(fileName)
+                                )
+                            )
+                            return@request
+                        }
+                        if (error is BackupManager.ImportError.CorruptArchive) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.backup.import.corruptArchive",
+                                    Component.text(fileName),
+                                    Component.text(error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@request
+                        }
+                        if (error is BackupManager.ImportError.Unexpected) {
+                            audience.sendMessage(
+                                Component.translatable(
+                                    "gradeway.command.backup.import.unexpectedError",
+                                    Component.text(fileName),
+                                    Component.text(error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@request
+                        }
+                    }
+                    .onRight {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.command.backup.import.success",
+                                Component.text(fileName)
+                            )
                         )
-                    )
-                    return
-                }
-                if (error is BackupManager.ImportError.CorruptArchive) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.backup.import.corruptArchive",
-                            Component.text(fileName),
-                            Component.text(error.throwable.message ?: "Unknown")
-                        )
-                    )
-                    return
-                }
-                if (error is BackupManager.ImportError.Unexpected) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.backup.import.unexpectedError",
-                            Component.text(fileName),
-                            Component.text(error.throwable.message ?: "Unknown")
-                        )
-                    )
-                    return
-                }
-            }
-            .onRight {
+                    }
+            },
+            onTimeout = { jobId ->
                 audience.sendMessage(
                     Component.translatable(
-                        "gradeway.command.backup.import.success",
-                        Component.text(fileName)
+                        "gradeway.confirmation.timeout",
+                        Component.text(jobId)
                     )
                 )
             }
+        ).onLeft { error ->
+            if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                audience.sendMessage(
+                    Component.translatable("gradeway.confirmation.request.failedToRegister")
+                )
+                return
+            }
+            if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                audience.sendMessage(
+                    Component.translatable(
+                        "gradeway.confirmation.request.unexpectedError",
+                        Component.text(error.throwable.message ?: "Unknown")
+                    )
+                )
+                return
+            }
+        }.onRight { jobId ->
+            audience.sendMessage(
+                Component.translatable(
+                    "gradeway.confirmation.request.success",
+                    Component.text(rootLiteral),
+                    Component.text(jobId)
+                )
+            )
+        }
     }
 
     registerCopy("backup") {

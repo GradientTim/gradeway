@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.attribute.AttributeType
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import dev.gradienttim.gradeway.services.AttributeService.*
 import dev.gradienttim.gradeway.services.PermissionService.*
@@ -284,6 +285,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerRoleRelatio
 }
 
 internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermissionCommands(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     entityType: String,
     audienceProvider: AudienceProvider<C>,
@@ -432,36 +434,73 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
 
                 val idOrName = context.get<String>("idOrName")
 
-                handleClearPermissions(idOrName)
-                    .onLeft { error ->
-                        if (error is ClearPermissionsError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.$entityType.clearPermission.entityNotFound",
-                                    Component.text(idOrName),
-                                ),
-                            )
-                            return@handler
-                        }
-                        if (error is ClearPermissionsError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.$entityType.clearPermissions.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                ),
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        handleClearPermissions(idOrName)
+                            .onLeft { error ->
+                                if (error is ClearPermissionsError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.$entityType.clearPermission.entityNotFound",
+                                            Component.text(idOrName),
+                                        ),
+                                    )
+                                    return@request
+                                }
+                                if (error is ClearPermissionsError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.$entityType.clearPermissions.unexpectedError",
+                                            Component.text(idOrName),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        ),
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.$entityType.clearPermissions.success",
+                                        Component.text(idOrName),
+                                    ),
+                                )
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.$entityType.clearPermissions.success",
-                                Component.text(idOrName),
-                            ),
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
+                            )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -755,6 +794,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
 }
 
 internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttributeCommands(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     entityType: String,
     audienceProvider: AudienceProvider<C>,
@@ -981,45 +1021,82 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
 
                 val idOrName = context.get<String>("idOrName")
 
-                handleClearAttributes(idOrName)
-                    .onLeft { error ->
-                        if (error is ClearAttributesError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.$entityType.clearAttributes.entityNotFound",
-                                    Component.text(idOrName)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        handleClearAttributes(idOrName)
+                            .onLeft { error ->
+                                if (error is ClearAttributesError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.$entityType.clearAttributes.entityNotFound",
+                                            Component.text(idOrName)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is ClearAttributesError.NoAttributesFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.$entityType.clearAttributes.noAttributesFound",
+                                            Component.text(idOrName)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is ClearAttributesError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.$entityType.clearAttributes.unexpectedError",
+                                            Component.text(idOrName),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.$entityType.clearAttributes.success",
+                                        Component.text(idOrName)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is ClearAttributesError.NoAttributesFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.$entityType.clearAttributes.noAttributesFound",
-                                    Component.text(idOrName)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is ClearAttributesError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.$entityType.clearAttributes.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.$entityType.clearAttributes.success",
-                                Component.text(idOrName)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 

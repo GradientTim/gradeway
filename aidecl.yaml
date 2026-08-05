@@ -33,9 +33,9 @@ ai_usage:
     code_review: false
     code_generation: true
   code_proportion:
-    ai_generated_percent: 19
+    ai_generated_percent: 20
     ai_assisted_percent: 23
-    human_only_percent: 58
+    human_only_percent: 57
 declaration:
   declared_by: Tim Kiesel
   date: '2026-07-29'

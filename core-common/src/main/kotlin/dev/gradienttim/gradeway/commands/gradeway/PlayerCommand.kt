@@ -12,6 +12,7 @@ import dev.gradienttim.gradeway.database.models.player.PlayerPermissionsTable
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.extensions.formatUTC
 import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.utilities.TimeParser
 import net.kyori.adventure.audience.Audience
@@ -29,6 +30,7 @@ import java.time.Instant
 import java.util.*
 
 internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
+    rootLiteral: String,
     gradeway: CommonGradeway<*>,
     audienceProvider: AudienceProvider<C>,
 ) {
@@ -126,36 +128,73 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
                     return@handler
                 }
 
-                gradeway.players.delete(uniqueId)
-                    .onLeft { error ->
-                        if (error is PlayerService.DeletePlayerError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.delete.entityNotFound",
-                                    Component.text(id)
+                gradeway.confirmations.request(
+                    sender = audience,
+                    task = {
+                        gradeway.players.delete(uniqueId)
+                            .onLeft { error ->
+                                if (error is PlayerService.DeletePlayerError.EntityNotFound) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.delete.entityNotFound",
+                                            Component.text(id)
+                                        )
+                                    )
+                                    return@request
+                                }
+                                if (error is PlayerService.DeletePlayerError.Unexpected) {
+                                    audience.sendMessage(
+                                        Component.translatable(
+                                            "gradeway.command.player.delete.unexpectedError",
+                                            Component.text(id),
+                                            Component.text(error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@request
+                                }
+                            }
+                            .onRight {
+                                audience.sendMessage(
+                                    Component.translatable(
+                                        "gradeway.command.player.delete.success",
+                                        Component.text(id)
+                                    )
                                 )
-                            )
-                            return@handler
-                        }
-                        if (error is PlayerService.DeletePlayerError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.player.delete.unexpectedError",
-                                    Component.text(id),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
+                            }
+                    },
+                    onTimeout = { jobId ->
                         audience.sendMessage(
                             Component.translatable(
-                                "gradeway.command.player.delete.success",
-                                Component.text(id)
+                                "gradeway.confirmation.timeout",
+                                Component.text(jobId)
                             )
                         )
                     }
+                ).onLeft { error ->
+                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
+                        audience.sendMessage(
+                            Component.translatable("gradeway.confirmation.request.failedToRegister")
+                        )
+                        return@handler
+                    }
+                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
+                        audience.sendMessage(
+                            Component.translatable(
+                                "gradeway.confirmation.request.unexpectedError",
+                                Component.text(error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@handler
+                    }
+                }.onRight { jobId ->
+                    audience.sendMessage(
+                        Component.translatable(
+                            "gradeway.confirmation.request.success",
+                            Component.text(rootLiteral),
+                            Component.text(jobId)
+                        )
+                    )
+                }
             }
         }
 
@@ -167,6 +206,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
             registerPlayerRolesCommand(gradeway, audienceProvider)
 
             registerEntityAttributeCommands(
+                rootLiteral = rootLiteral,
                 gradeway = gradeway,
                 entityType = "player",
                 audienceProvider = audienceProvider,
@@ -232,6 +272,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
             )
 
             registerEntityPermissionCommands(
+                rootLiteral = rootLiteral,
                 gradeway = gradeway,
                 entityType = "player",
                 audienceProvider = audienceProvider,
