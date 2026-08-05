@@ -1,7 +1,12 @@
 plugins {
     id("gradeway-base")
     id("gradeway-shadow")
+    id("gradeway-release")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+kotlin {
+    jvmToolchain(25)
 }
 
 dependencies {

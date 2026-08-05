@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re-)release, e.g. v0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # core-api is a plain jar published as a library; every driver-* and
+      # plugin-* module builds a shaded jar via the gradeway-shadow convention
+      # plugin. Running the bare `shadowJar` task name (no project path)
+      # triggers it in every subproject that declares it.
+      - name: Build release artifacts
+        run: ./gradlew :core-api:jar shadowJar
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p release-artifacts
+          find . -path "*/build/libs/*.jar" \
+            ! -name "*-sources.jar" \
+            ! -name "*-javadoc.jar" \
+            -exec cp {} release-artifacts/ \;
+          ls -la release-artifacts
+
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        id: changelog
+        with:
+          config: cliff.toml
+          args: --latest --strip all
+        env:
+          OUTPUT: release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag || github.ref_name }}
+          body_path: release-notes.md
+          files: release-artifacts/*.jar

@@ -6,6 +6,10 @@ plugins {
     id("org.jetbrains.kotlin.jvm")
 }
 
+kotlin {
+    jvmToolchain(21)
+}
+
 detekt {
     config.setFrom(rootProject.file(".config/detekt.yml"))
     source.setFrom(files(projectDir))

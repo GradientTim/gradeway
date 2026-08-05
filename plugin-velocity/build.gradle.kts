@@ -1,6 +1,7 @@
 plugins {
     id("gradeway-base")
     id("gradeway-shadow")
+    id("gradeway-release")
     id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
 }

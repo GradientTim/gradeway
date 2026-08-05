@@ -9,6 +9,9 @@ spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = 
 google-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version = "2.3.10" }
 vanniktech-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.37.0" }
 
+modrinth-minotaur = { module = "com.modrinth.minotaur:com.modrinth.minotaur.gradle.plugin", version = "2.9.0" }
+papermc-hangar-publish = { module = "io.papermc.hangar-publish-plugin:io.papermc.hangar-publish-plugin.gradle.plugin", version = "0.1.4" }
+
 jetbrains-kotlin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 jetbrains-kotlin-kapt = { module = "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin", version.ref = "kotlin" }
 jetbrains-kotlin-plugin-serialization = { module = "org.jetbrains.kotlin.plugin.serialization:org.jetbrains.kotlin.plugin.serialization.gradle.plugin", version.ref = "kotlin" }

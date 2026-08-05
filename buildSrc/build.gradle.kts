@@ -10,6 +10,9 @@ dependencies {
     implementation(gradlePlugins.google.ksp)
     implementation(gradlePlugins.vanniktech.publish)
 
+    implementation(gradlePlugins.modrinth.minotaur)
+    implementation(gradlePlugins.papermc.hangar.publish)
+
     implementation(gradlePlugins.jetbrains.kotlin)
     implementation(gradlePlugins.jetbrains.kotlin.kapt)
     implementation(gradlePlugins.jetbrains.kotlin.plugin.serialization)

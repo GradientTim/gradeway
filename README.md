@@ -6,7 +6,19 @@ A Minecraft permission gateway.
 > However, you can already use it and provide feedback to help improve the project further.  
 > Feel free to request changes/features or provide your feedback on my Discord server: https://discord.gg/f35EemU4jS
 
+<!-- modrinth_exclude.start -->
 [Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS)
+
+<a href="https://modrinth.com/project/gradeway" target="_blank">
+<img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">
+</a>
+
+<a href="https://hangar.papermc.io/GradientTim/gradeway" target="_blank">
+<img alt="hangar" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/hangar_vector.svg">
+</a>
+<!-- modrinth_exclude.end -->
+
+***
 
 ## Features
 
@@ -41,7 +53,9 @@ See [DATABASE.md](./DATABASE.md) for an interactive diagram of the schema.
 
 ## Building from Source
 
-Requires JDK 25. (`sdk install java 25.0.3-tem`)
+Requires a JDK 17+ to run Gradle itself.  
+The actual JDK 21/25 toolchains used to compile each module are auto-provisioned by Gradle on first build (via the
+Foojay resolver).
 
 ```bash
 git clone https://github.com/GradientTim/gradeway.git
