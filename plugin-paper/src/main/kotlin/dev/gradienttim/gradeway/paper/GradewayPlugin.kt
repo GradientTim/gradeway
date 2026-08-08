@@ -57,7 +57,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(gradeway), this)
+        server.pluginManager.registerEvents(ConnectionListener(gradeway, this), this)
     }
 
     private fun registerCommands() {

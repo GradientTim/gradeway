@@ -809,7 +809,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
         registerCopy("add") {
             permission("gradeway.$entityType.attributes.add")
 
-            required("key", stringParser())
+            required("key", quotedStringParser())
             required("type", stringParser()) {
                 suggests { remaining ->
                     suggestAttributeTypes(remaining.lowercase())
@@ -891,7 +891,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
         registerCopy("update") {
             permission("gradeway.$entityType.attributes.update")
 
-            required("key", stringParser())
+            required("key", quotedStringParser())
             required("value", stringParser())
 
             handler { context ->
@@ -961,7 +961,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
         registerCopy("remove") {
             permission("gradeway.$entityType.attributes.remove")
 
-            required("key", stringParser())
+            required("key", quotedStringParser())
 
             handler { context ->
                 val audience = audienceProvider.apply(context.sender())

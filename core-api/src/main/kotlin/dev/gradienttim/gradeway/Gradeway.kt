@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import dev.gradienttim.gradeway.services.*
+import org.koin.mp.KoinPlatform
 
 /**
  * Core interface representing the Gradeway system, which provides services for managing roles
@@ -96,4 +97,26 @@ interface Gradeway<TPlatformConfig> {
      * - Finding roles by their identifiers or names.
      */
     val roles: RoleService
+
+    companion object {
+        /**
+         * Attempts to retrieve an instance of the Gradeway class if available from the Koin dependency injection framework.
+         * Returns null if the instance is not found or if Koin has not been initialized.
+         *
+         * @return An instance of Gradeway or null if it is unavailable.
+         */
+        fun getOrNull(): Gradeway<*>? = KoinPlatform.getKoinOrNull()?.getOrNull<Gradeway<*>>()
+
+        /**
+         * Retrieves an instance of the Gradeway class or throws an exception if it's unavailable.
+         *
+         * This method is used to get the global Gradeway instance from the Koin dependency injection framework.
+         * If the instance is not found or if Koin is not initialized, an error is thrown.
+         *
+         * @return The Gradeway instance.
+         * @throws IllegalStateException if the Gradeway instance or the global Koin scope is not initialized.
+         */
+        fun getOrThrow(): Gradeway<*> = getOrNull()
+            ?: error("The global Koin scope or the Gradeway instance was not initialized yet.")
+    }
 }
