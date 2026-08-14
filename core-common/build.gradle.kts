@@ -3,6 +3,7 @@ import java.time.Instant
 
 plugins {
     id("gradeway-base")
+    id("gradeway-dokka")
     id("gradeway-publish")
     id("org.jetbrains.kotlin.plugin.serialization")
 }

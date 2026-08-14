@@ -13,6 +13,7 @@ dependencies {
     implementation(gradlePlugins.modrinth.minotaur)
     implementation(gradlePlugins.papermc.hangar.publish)
 
+    implementation(gradlePlugins.jetbrains.dokka)
     implementation(gradlePlugins.jetbrains.kotlin)
     implementation(gradlePlugins.jetbrains.kotlin.kapt)
     implementation(gradlePlugins.jetbrains.kotlin.plugin.serialization)

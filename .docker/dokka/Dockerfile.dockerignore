@@ -1,0 +1,32 @@
+# Allowlist: only what `./gradlew dokkaGenerate` needs. settings.gradle.kts includes every
+# module, so Gradle's configuration phase needs all of their build.gradle.kts present, not just
+# core-api/core-common - hence the full module list below, not just the two that get published.
+*
+
+!gradlew
+!gradle.properties
+!settings.gradle.kts
+!build.gradle.kts
+!gradle/
+!buildSrc/
+
+!core-api/
+!core-common/
+!driver-database-h2/
+!driver-database-mariadb/
+!driver-database-mysql/
+!driver-database-oracle/
+!driver-database-postgres/
+!driver-database-sqlite/
+!driver-database-sqlserver/
+!driver-messaging-redis/
+!plugin-bukkit/
+!plugin-bukkit-shared/
+!plugin-bungeecord/
+!plugin-paper/
+!plugin-velocity/
+
+# Re-exclude generated/cache dirs that would otherwise be dragged back in by the `!dir/` rules
+# above.
+**/build/
+**/.gradle/

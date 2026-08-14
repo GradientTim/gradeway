@@ -1,5 +1,14 @@
+plugins {
+    id("org.jetbrains.dokka")
+}
+
 group = property("project.group") as String
 version = property("project.version") as String
+
+dependencies {
+    dokka(project(":core-api"))
+    dokka(project(":core-common"))
+}
 
 tasks {
     register("bumpVersion") {
