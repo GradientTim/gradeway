@@ -7,7 +7,7 @@ A Minecraft permission gateway.
 > Feel free to request changes/features or provide your feedback on my Discord server: https://discord.gg/f35EemU4jS
 
 <!-- modrinth_exclude.start -->
-[Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS)
+[Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
 
 <a href="https://modrinth.com/project/gradeway" target="_blank">
 <img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">
@@ -34,7 +34,15 @@ A Minecraft permission gateway.
 
 ## Installation
 
-TODO
+### For server admins
+
+See the [installation guide](https://docs.gradienttim.dev/gradeway/admin/install) for downloading and configuring
+Gradeway on your server.
+
+### For developers
+
+See the [installation guide](https://docs.gradienttim.dev/gradeway/dev/install) for depending on Gradeway from your own
+plugin.
 
 ## Supported platforms and databases
 
