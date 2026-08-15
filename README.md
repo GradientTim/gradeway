@@ -1,4 +1,4 @@
-# Gradeway [WIP]
+# Gradeway
 
 A Minecraft permission gateway.
 
