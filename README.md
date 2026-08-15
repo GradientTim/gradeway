@@ -2,10 +2,6 @@
 
 A Minecraft permission gateway.
 
-> This project has not yet been fully released, which means it may contain some bugs and may undergo some changes in future versions.  
-> However, you can already use it and provide feedback to help improve the project further.  
-> Feel free to request changes/features or provide your feedback on my Discord server: https://discord.gg/f35EemU4jS
-
 <!-- modrinth_exclude.start -->
 [Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
 
