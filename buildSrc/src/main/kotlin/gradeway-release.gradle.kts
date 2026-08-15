@@ -47,7 +47,11 @@ if (modrinthToken != null) {
     }
 }
 
-if (hangarApiKey != null) {
+// Hangar only recognizes PAPER, WATERFALL and VELOCITY as platforms - there is no plain "Bukkit"
+// or "BungeeCord" platform, so those modules have nothing to publish there.
+val hangarSupported = hangarApiKey != null && project.name in listOf("plugin-paper", "plugin-velocity")
+
+if (hangarSupported) {
     hangarPublish {
         publications.register("plugin") {
             id = "gradeway"
@@ -84,7 +88,7 @@ tasks {
 
     val releaseDependencies = listOfNotNull(
         if (modrinthToken != null) tasks.modrinth else null,
-        if (hangarApiKey != null) tasks.publishAllPublicationsToHangar else null,
+        if (hangarSupported) tasks.publishAllPublicationsToHangar else null,
     )
 
     if (releaseDependencies.isNotEmpty()) {

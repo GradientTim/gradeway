@@ -3,7 +3,7 @@
 A Minecraft permission gateway.
 
 <!-- modrinth_exclude.start -->
-[Changelog](./CHANGELOG.md) – [Security Policy](./SECURITY.md) – [Code of Conduct](./CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
+[Changelog](https://github.com/GradientTim/gradeway/blob/main/CHANGELOG.md) – [Security Policy](https://github.com/GradientTim/gradeway/blob/main/SECURITY.md) – [Code of Conduct](https://github.com/GradientTim/gradeway/blob/main/CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
 
 <a href="https://modrinth.com/project/gradeway" target="_blank">
 <img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">
@@ -44,16 +44,18 @@ plugin.
 
 Platforms: `Bukkit`, `Paper`, `BungeeCord`, and `Velocity`.  
 Drivers: `Postgres`, `MySQL`, `MariaDB`, `SQLite`, `SQL Server`, `Oracle`, `H2`, and `Redis` as pluggable backends.  
-See [COMPATIBILITY.md](./COMPATIBILITY.md) for the full overview.
+See [COMPATIBILITY.md](https://github.com/GradientTim/gradeway/blob/main/COMPATIBILITY.md) for the full overview.
 
 ## Architecture
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for how the Player, Role, and Group model works – especially relevant if you're
+See [ARCHITECTURE.md](https://github.com/GradientTim/gradeway/blob/main/ARCHITECTURE.md) for how the Player, Role, and
+Group model works – especially relevant if you're
 coming from LuckPerms, where "group" means something different.
 
 ## Database Schema
 
-See [DATABASE.md](./DATABASE.md) for an interactive diagram of the schema.
+See [DATABASE.md](https://github.com/GradientTim/gradeway/blob/main/DATABASE.md) for an interactive diagram of the
+schema.
 
 ## Building from Source
 
@@ -71,7 +73,8 @@ Build a single module instead, e.g. `./gradlew :core-common:build`.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup, project layout, and PR expectations.  
+See [CONTRIBUTING.md](https://github.com/GradientTim/gradeway/blob/main/CONTRIBUTING.md) for the development setup,
+project layout, and PR expectations.  
 The [Discord server](https://discord.gg/f35EemU4jS) is the fastest way to discuss a change before you start.
 
 ## License
