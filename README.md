@@ -82,4 +82,4 @@ The [Discord server](https://discord.gg/f35EemU4jS) is the fastest way to discus
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE).
+This project is licensed under the [MIT License](https://github.com/GradientTim/gradeway/blob/main/LICENSE).
