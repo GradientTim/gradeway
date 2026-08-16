@@ -2,9 +2,59 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [0.1.1] - 2026-08-16
+
+### **feat
+
+- *(messaging)* Add signing support and PostgreSQL messaging backend**
+
+### **fix
+
+- *(build, docs)* Disable Hangar publishing due to upload size limits** [skip ci]
+
+- *(build, docs)* Restrict Hangar publishing to supported modules and update links** [skip ci]
+
+## [0.1.0] - 2026-08-14
+
+### **docs
+
+- *(readme)* Update sections with installation guides and API reference**
+
+### **feat
+
+- *(build, docs)* Add Dokka integration and Dockerfile for HTML site generation**
+
+- *(commands)* Add more confirmations for destructive actions**
+
+- *(core, build)* Improve permission handling and driver lifecycle management**
+
+### **fix
+
+- *(docs)* Update punctuation for clarity and consistency across documentation**
 
 ### Features
+
+- *(core-api, commands)* Enhance DI support and payload-specific command refresh handling
+
+- *(build)* Add gradeway-release plugin and automate multi-platform publishing
+
+- *(core, build)* Streamline imports and enhance environment configuration
+
+- *(core-api)* Remove `MessagingAuthenticator`, refactor brokers for modular lifecycle contracts
+
+- *(build)* Add renovate configuration and improve Gradle publishing metadata
+
+- *(skills)* Add `calc-ai-code-proportion` to analyze code composition
+
+- *(build)* Centralize repository declarations for simplified dependency management
+
+- *(docs)* Enhance visual identity and expand architecture documentation
+
+- *(docs)* Migrate database schema to new markdown format
+
+- *(docs)* Add compatibility matrix and expand project documentation
+
+- *(github)* Add contributing docs, issue templates, and CI updates
 
 - *(commands)* Introduce cache management commands and enhance parser consistency
 
@@ -41,6 +91,7 @@ All notable changes to this project are documented in this file.
 - *(commands)* Add backup command for export and import support
 
 - *(commands)* Improve permission command handling and error clarity
+
 
 ### Refactor
 
