@@ -28,7 +28,7 @@ val modrinthToken = findProperty("gradeway.modrinth.token") as? String
 // the mappings for Modrinth loader types
 val moduleLoaders = when (project.name) {
     "plugin-bukkit" -> listOf("bukkit", "spigot")
-    "plugin-paper" -> listOf("paper", "purpur")
+    "plugin-paper" -> listOf("paper", "purpur", "folia")
     "plugin-bungeecord" -> listOf("bungeecord")
     "plugin-velocity" -> listOf("velocity")
     else -> emptyList()
