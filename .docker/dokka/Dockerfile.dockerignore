@@ -19,6 +19,7 @@
 !driver-database-postgres/
 !driver-database-sqlite/
 !driver-database-sqlserver/
+!driver-messaging-postgres/
 !driver-messaging-redis/
 !plugin-bukkit/
 !plugin-bukkit-shared/
