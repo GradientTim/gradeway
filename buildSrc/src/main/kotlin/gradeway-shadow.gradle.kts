@@ -4,7 +4,7 @@ plugins {
 }
 
 val moduleName = findProperty("module.name") as? String ?: project.name
-val moduleVersion = findProperty("module.version") as? String ?: rootProject.version
+val moduleVersion = rootProject.version
 
 tasks {
     jar {
@@ -13,7 +13,7 @@ tasks {
 
     shadowJar {
         configurations = listOf(project.configurations.runtimeClasspath.get(), project.configurations.shadow.get())
-        archiveFileName.set("gradeway-$moduleName-$moduleVersion.jar")
+        archiveFileName.set("gradeway-$moduleName-${rootProject.version}.jar")
 
         filesMatching("META-INF/*.kotlin_module") {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE

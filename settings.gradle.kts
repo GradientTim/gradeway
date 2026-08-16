@@ -36,6 +36,7 @@ include(
 )
 
 include(
+    "driver-messaging-postgres",
     "driver-messaging-redis",
 )
 

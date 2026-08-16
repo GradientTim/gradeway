@@ -2,6 +2,8 @@ name: gradeway
 prefix: Gradeway
 api-version: 26.1.1
 
+folia-supported: true
+
 version: 0.1.0
 author: GradientTim
 

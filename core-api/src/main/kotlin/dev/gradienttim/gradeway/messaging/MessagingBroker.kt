@@ -31,6 +31,20 @@ interface MessagingBroker : Openable, Closeable {
     val warnNoEncryption: Boolean
 
     /**
+     * Indicates whether a warning should be issued if signing is not enabled for the messaging broker.
+     *
+     * This flag is used to inform users or developers about scenarios where signing is not being used
+     * for message transmission. Signing ensures the authenticity and integrity of the messages being
+     * exchanged between brokers and subscribers, without affecting their confidentiality. When set to
+     * `true`, the system may log a warning or notify about the absence of signing, encouraging
+     * appropriate security measures.
+     *
+     * This property is particularly useful in environments where the underlying transport itself
+     * doesn't already guarantee that a message wasn't forged or tampered with in transit.
+     */
+    val warnNoSigning: Boolean
+
+    /**
      * Publishes a message to the specified channel.
      *
      * This method is used to send a payload of data to a messaging channel.

@@ -4,14 +4,13 @@ plugins {
 }
 
 val gradewayModuleName = findProperty("module.name") as? String ?: project.name
-val gradewayModuleVersion = findProperty("module.version") as? String ?: rootProject.version.toString()
 
 val githubModulePath = project.path.removePrefix(":").replace(":", "/")
 
 dokka {
     dokkaSourceSets.configureEach {
         moduleName.set(gradewayModuleName)
-        moduleVersion.set(gradewayModuleVersion)
+        moduleVersion.set(rootProject.version.toString())
 
         sourceLink {
             localDirectory.set(file("src/main/kotlin"))

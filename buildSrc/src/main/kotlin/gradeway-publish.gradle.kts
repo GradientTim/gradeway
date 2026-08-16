@@ -5,7 +5,6 @@ plugins {
 }
 
 val moduleName = findProperty("module.name") as? String ?: project.name
-val moduleVersion = findProperty("module.version") as? String ?: rootProject.version.toString()
 val moduleDescription = findProperty("module.description") as? String ?: "A Minecraft permission gateway."
 
 mavenPublishing {
@@ -18,7 +17,7 @@ mavenPublishing {
     coordinates(
         groupId = rootProject.group.toString(),
         artifactId = moduleName,
-        version = moduleVersion
+        version = rootProject.version.toString()
     )
 
     pom {

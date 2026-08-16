@@ -35,6 +35,7 @@ class VelocityPluginMessageMessagingBroker(
     private val listeners = ConcurrentHashMap<MinecraftChannelIdentifier, ((payload: ByteArray) -> Boolean)>()
 
     override val warnNoEncryption: Boolean = true
+    override val warnNoSigning: Boolean = true
 
     private val syncIdentifier = MinecraftChannelIdentifier.from(MessagingConstants.SYNC_CHANNEL)
 

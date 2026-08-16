@@ -4,68 +4,67 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.utilities
 
-import dev.gradienttim.gradeway.messaging.CommonMessagingBroker
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 
 class CryptoTest {
     @Test
-    fun `signed payload verifies and returns the original bytes`() {
-        val crypto = Crypto(
-            key = "top-secret",
-            algorithm = CommonMessagingBroker.ALGORITHM,
-            signatureLengthBytes = CommonMessagingBroker.SIGNATURE_LENGTH_BYTES
-        )
+    fun `encrypted payload decrypts back to the original bytes`() {
+        val crypto = Crypto(key = "top-secret")
 
         val payload = "gradeway-payload".toByteArray()
-        val verifiedPayload = crypto.verify(crypto.sign(payload))
+        val decryptedPayload = crypto.decrypt(crypto.encrypt(payload))
 
-        assertContentEquals(payload, verifiedPayload)
+        assertContentEquals(payload, decryptedPayload)
     }
 
     @Test
-    fun `tampered payload fails verification`() {
-        val crypto = Crypto(
-            key = "top-secret",
-            algorithm = CommonMessagingBroker.ALGORITHM,
-            signatureLengthBytes = CommonMessagingBroker.SIGNATURE_LENGTH_BYTES
-        )
+    fun `encrypted payload does not expose the plaintext`() {
+        val crypto = Crypto(key = "top-secret")
 
-        val signedPayload = crypto.sign("gradeway-payload".toByteArray())
-        signedPayload[signedPayload.lastIndex] = signedPayload[signedPayload.lastIndex].inc()
+        val payload = "gradeway-payload".toByteArray()
+        val encryptedPayload = crypto.encrypt(payload)
 
-        assertNull(crypto.verify(signedPayload))
+        assertNotEquals(payload.toList(), encryptedPayload.toList())
+        assertNull(String(encryptedPayload).takeIf { it.contains("gradeway-payload") })
     }
 
     @Test
-    fun `payload signed with a different shared secret fails verification`() {
-        val crypto1 = Crypto(
-            key = "top-secret",
-            algorithm = CommonMessagingBroker.ALGORITHM,
-            signatureLengthBytes = CommonMessagingBroker.SIGNATURE_LENGTH_BYTES
-        )
+    fun `encrypting the same payload twice produces different ciphertext`() {
+        val crypto = Crypto(key = "top-secret")
 
-        val crypto2 = Crypto(
-            key = "bottom-secret",
-            algorithm = CommonMessagingBroker.ALGORITHM,
-            signatureLengthBytes = CommonMessagingBroker.SIGNATURE_LENGTH_BYTES
-        )
+        val payload = "gradeway-payload".toByteArray()
 
-        val signedPayload = crypto1.sign("gradeway-payload".toByteArray())
-
-        assertNull(crypto2.verify(signedPayload))
+        assertNotEquals(crypto.encrypt(payload).toList(), crypto.encrypt(payload).toList())
     }
 
     @Test
-    fun `input shorter than the signature length fails verification without throwing`() {
-        val crypto = Crypto(
-            key = "top-secret",
-            algorithm = CommonMessagingBroker.ALGORITHM,
-            signatureLengthBytes = CommonMessagingBroker.SIGNATURE_LENGTH_BYTES
-        )
+    fun `tampered payload fails decryption`() {
+        val crypto = Crypto(key = "top-secret")
 
-        assertNull(crypto.verify(ByteArray(4)))
-        assertNull(crypto.verify(ByteArray(0)))
+        val encryptedPayload = crypto.encrypt("gradeway-payload".toByteArray())
+        encryptedPayload[encryptedPayload.lastIndex] = encryptedPayload[encryptedPayload.lastIndex].inc()
+
+        assertNull(crypto.decrypt(encryptedPayload))
+    }
+
+    @Test
+    fun `payload encrypted with a different shared secret fails decryption`() {
+        val crypto1 = Crypto(key = "top-secret")
+        val crypto2 = Crypto(key = "bottom-secret")
+
+        val encryptedPayload = crypto1.encrypt("gradeway-payload".toByteArray())
+
+        assertNull(crypto2.decrypt(encryptedPayload))
+    }
+
+    @Test
+    fun `input shorter than the iv length fails decryption without throwing`() {
+        val crypto = Crypto(key = "top-secret")
+
+        assertNull(crypto.decrypt(ByteArray(4)))
+        assertNull(crypto.decrypt(ByteArray(0)))
     }
 }

@@ -13,7 +13,7 @@ plugins {
 }
 
 val moduleName = findProperty("module.name") as? String ?: project.name
-val moduleVersion = findProperty("module.version") as? String ?: rootProject.version.toString()
+val moduleVersion = rootProject.version.toString()
 
 val supportedMinecraftVersions = arrayOf(
     "26.1",

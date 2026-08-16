@@ -5,70 +5,71 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.utilities
 
 import java.security.MessageDigest
-import javax.crypto.Mac
+import java.security.SecureRandom
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Provides functionality for signing and verifying payloads using cryptographic algorithms.
+ * Provides authenticated encryption and decryption of payloads using AES-GCM.
  *
- * This class allows you to securely sign data and later verify it to ensure its integrity
- * and authenticity. It uses a symmetric key and a specified cryptographic algorithm for
- * signing and verification.
+ * This class encrypts data so its contents are unreadable in transit and authenticates it, so
+ * tampering or use of the wrong key is detected. The shared-secret [key] string is hashed to a
+ * fixed-length AES key, so any non-empty key string is accepted.
  *
- * @property key The secret key used for generating and verifying signatures.
- * @property algorithm The cryptographic algorithm used for signing, such as HmacSHA256.
- * @property signatureLengthBytes The length of the cryptographic signature in bytes.
+ * @property key The shared secret used to derive the AES key for encryption and decryption.
  */
-open class Crypto(
-    val key: String,
-    val algorithm: String,
-    val signatureLengthBytes: Int
-) {
-    private val secretKeySpec = SecretKeySpec(key.toByteArray(), algorithm)
-    private val mac = Mac.getInstance(algorithm).apply { init(secretKeySpec) }
+open class Crypto(val key: String) {
+    private val secretKeySpec = SecretKeySpec(
+        MessageDigest.getInstance("SHA-256").digest(key.toByteArray()),
+        "AES"
+    )
+    private val secureRandom = SecureRandom()
 
     /**
-     * Signs the given payload by generating a cryptographic signature and appending it
-     * to the original payload.
+     * Encrypts the given payload with a fresh random IV, producing ciphertext that is both
+     * confidential and tamper-evident.
      *
-     * The method uses the specified cryptographic algorithm and secret key to compute
-     * the signature, ensuring the integrity and authenticity of the data.
-     *
-     * @param payload The data to be signed as a byte array. This should contain the payload
-     *                that needs to be secured.
-     * @return A byte array representing the signed payload, which includes the cryptographic
-     *         signature followed by the original payload.
+     * @param payload The plaintext data to encrypt.
+     * @return A byte array containing the IV followed by the AES-GCM ciphertext (which itself
+     *         includes the authentication tag).
      */
-    fun sign(payload: ByteArray): ByteArray {
-        val payloadSignature = mac.doFinal(payload)
-        return payloadSignature + payload
+    fun encrypt(payload: ByteArray): ByteArray {
+        val iv = ByteArray(IV_LENGTH_BYTES).also(secureRandom::nextBytes)
+
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, GCMParameterSpec(TAG_LENGTH_BITS, iv))
+
+        return iv + cipher.doFinal(payload)
     }
 
     /**
-     * Verifies the integrity and authenticity of the provided signed payload.
+     * Decrypts and authenticates a payload previously produced by [encrypt].
      *
-     * This method checks if the signed payload contains a valid cryptographic signature
-     * generated using the specified algorithm and secret key. If the signature is valid,
-     * the method extracts and returns the original payload. Otherwise, it returns null.
-     *
-     * @param signedPayload The signed payload as a byte array. This should include a cryptographic
-     *                      signature followed by the original payload.
-     * @return The original payload as a byte array if the signature is valid, or null if the signature
-     *         is invalid or the signed payload is malformed.
+     * @param encryptedPayload The IV-prefixed ciphertext to decrypt.
+     * @return The original plaintext if the payload was encrypted with the same key and hasn't
+     *         been tampered with, or null if decryption/authentication fails or the input is
+     *         malformed.
      */
-    fun verify(signedPayload: ByteArray): ByteArray? {
-        if (signedPayload.size < signatureLengthBytes) {
+    fun decrypt(encryptedPayload: ByteArray): ByteArray? {
+        if (encryptedPayload.size < IV_LENGTH_BYTES) {
             return null
         }
 
-        val receivedSignature = signedPayload.copyOfRange(0, signatureLengthBytes)
-        val payload = signedPayload.copyOfRange(signatureLengthBytes, signedPayload.size)
-        val expectedSignature = mac.doFinal(payload)
+        return runCatching {
+            val iv = encryptedPayload.copyOfRange(0, IV_LENGTH_BYTES)
+            val ciphertext = encryptedPayload.copyOfRange(IV_LENGTH_BYTES, encryptedPayload.size)
 
-        if (!MessageDigest.isEqual(receivedSignature, expectedSignature)) {
-            return null
-        }
+            val cipher = Cipher.getInstance(TRANSFORMATION)
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, GCMParameterSpec(TAG_LENGTH_BITS, iv))
 
-        return payload
+            cipher.doFinal(ciphertext)
+        }.getOrNull()
+    }
+
+    private companion object {
+        const val TRANSFORMATION = "AES/GCM/NoPadding"
+        const val IV_LENGTH_BYTES = 12
+        const val TAG_LENGTH_BITS = 128
     }
 }

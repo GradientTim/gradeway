@@ -22,6 +22,7 @@ class RedisMessagingBroker(
     private val activePubSubs = ConcurrentHashMap<String, BinaryJedisPubSub>()
 
     override val warnNoEncryption: Boolean = false
+    override val warnNoSigning: Boolean = false
 
     override fun open(): Either<Throwable, Unit> = either {
         try {

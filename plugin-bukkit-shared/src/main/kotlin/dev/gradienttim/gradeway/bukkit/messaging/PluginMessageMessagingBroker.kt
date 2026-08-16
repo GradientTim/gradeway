@@ -31,6 +31,7 @@ class PluginMessageMessagingBroker(
     private val listeners = ConcurrentHashMap<String, ((payload: ByteArray) -> Boolean)>()
 
     override val warnNoEncryption: Boolean = true
+    override val warnNoSigning: Boolean = true
 
     override fun open(): Either<Throwable, Unit> = either {
         try {

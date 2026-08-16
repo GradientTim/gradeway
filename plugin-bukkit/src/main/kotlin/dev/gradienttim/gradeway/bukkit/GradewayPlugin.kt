@@ -18,6 +18,7 @@ import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.LegacyPaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
+    val sharedInstance = BukkitSharedInstance(this)
     var adventure: BukkitAudiences? = null
         internal set
 
@@ -66,7 +67,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(gradeway, this), this)
+        server.pluginManager.registerEvents(ConnectionListener(gradeway, sharedInstance), this)
     }
 
     private fun registerCommands() {

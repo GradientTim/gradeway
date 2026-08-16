@@ -17,6 +17,7 @@ import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
+    val sharedInstance = PaperSharedInstance(this)
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
         directory = dataFolder,
@@ -57,7 +58,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(gradeway, this), this)
+        server.pluginManager.registerEvents(ConnectionListener(gradeway, sharedInstance), this)
     }
 
     private fun registerCommands() {
