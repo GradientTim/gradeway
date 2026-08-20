@@ -2,11 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.1.2] - 2026-08-20
+
+### **chore
+
+- *(scheduler)* Refactor platform-specific schedulers and remove unused Bukkit/Paper classes**
+
 ## [0.1.1] - 2026-08-16
 
 ### **feat
 
 - *(messaging)* Add signing support and PostgreSQL messaging backend**
+
 
 ### **fix
 

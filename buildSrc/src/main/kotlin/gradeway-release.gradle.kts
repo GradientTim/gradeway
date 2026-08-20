@@ -2,14 +2,7 @@ import gradle.kotlin.dsl.accessors._7efdda50f9f959eb80d21b302d04c803.shadowJar
 
 plugins {
     id("com.modrinth.minotaur")
-
-    // Hangar publishing is disabled for now - plugin-paper's shaded jar (~16.4MB even after
-    // shadowJar { minimize() }) exceeds Hangar's 15MB per-version upload limit, and the classes
-    // pushing it over (kotlin-reflect, Exposed's DAO layer) are genuinely load-bearing, not dead
-    // code that can be safely stripped. Re-enable once there's a real fix (e.g., loading the
-    // persistence layer through the same dynamic driver-loading mechanism used for
-    // driver-database-*, instead of shading it directly into the platform jar).
-    // id("io.papermc.hangar-publish-plugin")
+    id("io.papermc.hangar-publish-plugin")
 }
 
 val moduleName = findProperty("module.name") as? String ?: project.name
@@ -22,8 +15,10 @@ val supportedMinecraftVersions = arrayOf(
     "26.2"
 )
 
-// val hangarApiKey = findProperty("gradeway.hangar.apiKey") as? String
+val hangarApiKey = findProperty("gradeway.hangar.apiKey") as? String
 val modrinthToken = findProperty("gradeway.modrinth.token") as? String
+
+val readMeContent = rootProject.file("README.md").readText()
 
 // the mappings for Modrinth loader types
 val moduleLoaders = when (project.name) {
@@ -47,44 +42,44 @@ if (modrinthToken != null) {
         versionNumber.set(moduleVersion)
 
         uploadFile.set(tasks.shadowJar.flatMap { it.archiveFile })
-        syncBodyFrom = rootProject.file("README.md").readText()
+        syncBodyFrom = readMeContent
 
         loaders.addAll(moduleLoaders)
         gameVersions.addAll(*supportedMinecraftVersions)
     }
 }
 
-// Hangar only recognizes PAPER, WATERFALL and VELOCITY as platforms - there is no plain "Bukkit"
-// or "BungeeCord" platform, so those modules have nothing to publish there.
-// val hangarSupported = hangarApiKey != null && project.name in listOf("plugin-paper", "plugin-velocity")
-//
-// if (hangarSupported) {
-//     hangarPublish {
-//         publications.register("plugin") {
-//             id = "gradeway"
-//             version = moduleVersion
-//             channel = "Release"
-//
-//             apiKey = hangarApiKey
-//
-//             platforms {
-//                 if (project.name == "plugin-paper") {
-//                     paper {
-//                         jar = tasks.shadowJar.flatMap { it.archiveFile }
-//                         platformVersions.addAll(*supportedMinecraftVersions)
-//                     }
-//                 }
-//
-//                 if (project.name == "plugin-velocity") {
-//                     velocity {
-//                         jar = tasks.shadowJar.flatMap { it.archiveFile }
-//                         platformVersions.addAll(*supportedMinecraftVersions)
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+val hangarSupported = hangarApiKey != null && project.name in listOf("plugin-paper", "plugin-velocity")
+
+if (hangarSupported) {
+    hangarPublish {
+        publications.register("plugin") {
+            id = "gradeway"
+            version = moduleVersion
+            channel = "Release"
+
+            apiKey = hangarApiKey
+
+            pages.resourcePage(readMeContent)
+
+            platforms {
+                if (project.name == "plugin-paper") {
+                    paper {
+                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        platformVersions.addAll(*supportedMinecraftVersions)
+                    }
+                }
+
+                if (project.name == "plugin-velocity") {
+                    velocity {
+                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        platformVersions.addAll(*supportedMinecraftVersions)
+                    }
+                }
+            }
+        }
+    }
+}
 
 tasks {
     if (modrinthToken != null) {
@@ -95,7 +90,7 @@ tasks {
 
     val releaseDependencies = listOfNotNull(
         if (modrinthToken != null) tasks.modrinth else null,
-        // if (hangarSupported) tasks.publishAllPublicationsToHangar else null,
+        if (hangarSupported) tasks.publishAllPublicationsToHangar else null,
     )
 
     if (releaseDependencies.isNotEmpty()) {

@@ -5,22 +5,39 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
+import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
+import dev.gradienttim.gradeway.managers.ConfirmationManager
+import dev.gradienttim.gradeway.platform.CommonLogger
 import net.kyori.adventure.audience.Audience
+import java.nio.file.Files
 import kotlin.test.*
 
 class CommonConfirmationManagerTest {
-    private val manager = CommonConfirmationManager()
+    private var gradeway: CommonGradeway<TestPlatformConfig>? = null
+    private lateinit var manager: ConfirmationManager
     private val sender = object : Audience {}
 
     @BeforeTest
     fun setUp() {
-        manager.load().getOrElse { error(it.toString()) }
+        val instance = CommonGradeway(
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            scheduler = TestScheduler(),
+            directory = Files.createTempDirectory("confirmation-manager-test").toFile(),
+            defaultPlatformConfig = TestPlatformConfig(),
+            platformConfigSerializer = TestPlatformConfig.serializer(),
+        )
+        instance.load().getOrElse { error(it.toString()) }
+        gradeway = instance
+        manager = instance.confirmations
     }
 
     @AfterTest
     fun tearDown() {
-        manager.disable()
-        manager.unload()
+        manager.disable().getOrElse { error(it.toString()) }
+        gradeway?.unload()?.getOrElse { error(it.toString()) }
+        gradeway = null
     }
 
     @Test
