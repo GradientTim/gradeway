@@ -10,7 +10,6 @@ kotlinx-serialization = "1.11.0"
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.4" }
 koin-core = { module = "io.insert-koin:koin-core", version = "4.1.1" }
 google-devtools-ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.3.5" }
-apache-commons-configuration2 = { module = "org.apache.commons:commons-configuration2", version = "2.15.1" }
 apache-commons-compress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
 
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -20,7 +19,6 @@ kyori-adventure = { module = "net.kyori:adventure-api", version.ref = "adventure
 kyori-adventure-minimessage = { module = "net.kyori:adventure-text-minimessage", version.ref = "adventure" }
 
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
-arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
 
 akuleshov7-ktoml-core = { module = "com.akuleshov7:ktoml-core", version.ref = "ktoml" }
 akuleshov7-ktoml-file = { module = "com.akuleshov7:ktoml-file", version.ref = "ktoml" }
@@ -43,4 +41,4 @@ exposed-migration = ["exposed-migration-core", "exposed-migration-jdbc"]
 adventure = ["kyori-adventure", "kyori-adventure-minimessage"]
 cloud = ["cloud-core", "cloud-kotlin", "cloud-minecraft-extras", "cloud-brigadier"]
 ktoml = ["akuleshov7-ktoml-core", "akuleshov7-ktoml-file"]
-arrow = ["arrow-core", "arrow-fx-coroutines"]
+arrow = ["arrow-core"]

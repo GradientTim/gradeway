@@ -25,7 +25,7 @@ class CommonConfirmationManagerTest {
 
     @Test
     fun `request registers a job with an id from the unambiguous alphabet`() {
-        val id = manager.request(sender, task = {}, onTimeout = {}).getOrElse { error(it.toString()) }
+        val id = manager.request(sender, handler = {}, onTimeout = {}).getOrElse { error(it.toString()) }
 
         assertEquals(6, id.length)
         assertTrue(id.all { it in "23456789ABCDEFGHJKLMNPQRSTUVWXYZ" })
@@ -35,7 +35,7 @@ class CommonConfirmationManagerTest {
     @Test
     fun `confirm runs the task and removes the job`() {
         var ran = false
-        val id = manager.request(sender, task = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
+        val id = manager.request(sender, handler = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
 
         manager.confirm(sender, id).getOrElse { error(it.toString()) }
 
@@ -46,7 +46,7 @@ class CommonConfirmationManagerTest {
     @Test
     fun `confirm from the wrong sender fails without running the task`() {
         var ran = false
-        val id = manager.request(sender, task = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
+        val id = manager.request(sender, handler = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
         val impostor = object : Audience {}
 
         val result = manager.confirm(impostor, id)
@@ -66,7 +66,7 @@ class CommonConfirmationManagerTest {
     @Test
     fun `cancel removes the job without running the task`() {
         var ran = false
-        val id = manager.request(sender, task = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
+        val id = manager.request(sender, handler = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
 
         manager.cancel(sender, id).getOrElse { error(it.toString()) }
 
@@ -76,7 +76,7 @@ class CommonConfirmationManagerTest {
 
     @Test
     fun `cancel from the wrong sender fails`() {
-        val id = manager.request(sender, task = {}, onTimeout = {}).getOrElse { error(it.toString()) }
+        val id = manager.request(sender, handler = {}, onTimeout = {}).getOrElse { error(it.toString()) }
         val impostor = object : Audience {}
 
         val result = manager.cancel(impostor, id)
@@ -94,8 +94,8 @@ class CommonConfirmationManagerTest {
 
     @Test
     fun `disable cancels and clears every outstanding job`() {
-        manager.request(sender, task = {}, onTimeout = {}).getOrElse { error(it.toString()) }
-        manager.request(sender, task = {}, onTimeout = {}).getOrElse { error(it.toString()) }
+        manager.request(sender, handler = {}, onTimeout = {}).getOrElse { error(it.toString()) }
+        manager.request(sender, handler = {}, onTimeout = {}).getOrElse { error(it.toString()) }
 
         manager.disable().getOrElse { error(it.toString()) }
 

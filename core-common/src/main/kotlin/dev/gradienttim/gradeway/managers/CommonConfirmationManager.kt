@@ -6,36 +6,13 @@ package dev.gradienttim.gradeway.managers
 
 import arrow.core.Either
 import arrow.core.raise.either
+import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.managers.ConfirmationManager.*
 import net.kyori.adventure.audience.Audience
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-class CommonConfirmationManager : ConfirmationManager {
+class CommonConfirmationManager(val gradeway: CommonGradeway<*>) : ConfirmationManager {
     override val jobs = mutableSetOf<Job>()
-
-    private lateinit var executorService: ScheduledExecutorService
-
-    override fun load(): Either<Throwable, Unit> = either {
-        try {
-            if (!::executorService.isInitialized || executorService.isShutdown) {
-                executorService = Executors.newSingleThreadScheduledExecutor()
-            }
-        } catch (throwable: Throwable) {
-            raise(throwable)
-        }
-    }
-
-    override fun unload(): Either<Throwable, Unit> = either {
-        try {
-            if (::executorService.isInitialized) {
-                executorService.shutdown()
-            }
-        } catch (throwable: Throwable) {
-            raise(throwable)
-        }
-    }
 
     override fun disable(): Either<Throwable, Unit> = either {
         try {
@@ -48,19 +25,22 @@ class CommonConfirmationManager : ConfirmationManager {
 
     override fun request(
         sender: Audience,
-        task: () -> Unit,
+        handler: () -> Unit,
         onTimeout: (id: String) -> Unit
     ): Either<RequestJobError, String> = either {
         try {
             val id = generateJobId()
 
-            val scheduler = executorService.schedule({
+            val task = gradeway.scheduler.runTaskLater(
+                delay = 1L,
+                unit = TimeUnit.MINUTES
+            ) {
                 onTimeout(id)
                 cancel(sender, id)
-            }, 1L, TimeUnit.MINUTES)
+            }
 
-            if (!jobs.add(Job(id, task, scheduler, sender))) {
-                scheduler.cancel(true)
+            if (!jobs.add(Job(id, task, handler, sender))) {
+                task.cancel()
                 raise(RequestJobError.FailedToRegister)
             }
 
@@ -79,7 +59,7 @@ class CommonConfirmationManager : ConfirmationManager {
 
         try {
             job.cancel()
-            job.task()
+            job.handler()
             jobs.remove(job)
         } catch (throwable: Throwable) {
             raise(ConfirmJobError.Unexpected(throwable))

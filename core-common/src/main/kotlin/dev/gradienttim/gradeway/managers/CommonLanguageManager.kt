@@ -7,11 +7,12 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.extensions.cleanUnusedKeys
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
+import dev.gradienttim.gradeway.extensions.fillMissingKeys
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
 import net.kyori.adventure.translation.GlobalTranslator
-import org.apache.commons.configuration2.PropertiesConfiguration
 import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.FileSystems
@@ -34,7 +35,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
             translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
 
             val availableLocales = Locale.availableLocales().toList()
-            directory.listFiles { it.extension == "properties" }.forEach { file ->
+            directory.listFiles { it.extension == "properties" }?.forEach { file ->
                 val name = file.name.removeSuffix(".properties")
                 val locale = Locale.of(name)
 
@@ -113,27 +114,22 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
     }
 
     private fun updateTranslationFile(source: Path, destination: File) {
-        val templateConfig = PropertiesConfiguration()
-        val existingConfig = PropertiesConfiguration()
+        val templateProperties = Properties()
+        val destinationProperties = Properties()
 
-        source.inputStream().use { templateConfig.read(InputStreamReader(it)) }
-        destination.inputStream().use { existingConfig.read(InputStreamReader(it)) }
+        source.inputStream().use { templateProperties.load(InputStreamReader(it)) }
+        destination.inputStream().use { destinationProperties.load(InputStreamReader(it)) }
 
-        val templateKeys = templateConfig.keys.asSequence().toList()
-        val existingKeys = existingConfig.keys.asSequence().toList()
+        val unusedKeysCount = destinationProperties.cleanUnusedKeys(templateProperties)
+        val missingKeysCount = destinationProperties.fillMissingKeys(templateProperties)
 
-        templateKeys.forEach { key ->
-            if (existingConfig.containsKey(key)) {
-                templateConfig.setProperty(key, existingConfig.getProperty(key))
-            }
+        if (unusedKeysCount > 0 || missingKeysCount > 0) {
+            gradeway.logger.info(
+                "Updated translation file: ${destination.name}. " +
+                        "Unused keys: $unusedKeysCount, missing keys: $missingKeysCount"
+            )
+
+            destination.outputStream().use { destinationProperties.store(it, "Updated unused/missing keys") }
         }
-
-        existingKeys.forEach { key ->
-            if (!templateConfig.containsKey(key)) {
-                existingConfig.clearProperty(key)
-            }
-        }
-
-        destination.writer().use { templateConfig.write(it) }
     }
 }

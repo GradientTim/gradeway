@@ -5,10 +5,10 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.bukkit.listeners
 
 import dev.gradienttim.gradeway.GradewayLifecycle
-import dev.gradienttim.gradeway.bukkit.SharedInstance
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.messaging.payloads.*
+import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -20,8 +20,8 @@ import java.lang.invoke.MethodHandles
 import java.util.*
 
 class ConnectionListener(
-    val gradeway: GradewayLifecycle<BukkitPlatformConfig>,
-    val sharedInstance: SharedInstance
+    val server: Server,
+    val gradeway: GradewayLifecycle<BukkitPlatformConfig>
 ) : Listener {
     private var entityPermissionHandle: MethodHandle? = null
 
@@ -98,14 +98,14 @@ class ConnectionListener(
     private fun refreshCommandsFor(playerId: String) {
         val uuid = runCatching { UUID.fromString(playerId) }.getOrNull() ?: return
         runOnMainThread {
-            val player = sharedInstance.server.getPlayer(uuid) ?: return@runOnMainThread
+            val player = server.getPlayer(uuid) ?: return@runOnMainThread
             refreshCommands(player)
         }
     }
 
     private fun refreshAllCommands() {
         runOnMainThread {
-            sharedInstance.server.onlinePlayers.forEach(::refreshCommands)
+            server.onlinePlayers.forEach(::refreshCommands)
         }
     }
 
@@ -115,10 +115,10 @@ class ConnectionListener(
     }
 
     private fun runOnMainThread(action: () -> Unit) {
-        if (sharedInstance.server.isPrimaryThread) {
+        if (server.isPrimaryThread) {
             action()
         } else {
-            sharedInstance.scheduler.runTask(action)
+            gradeway.scheduler.runTask(action)
         }
     }
 

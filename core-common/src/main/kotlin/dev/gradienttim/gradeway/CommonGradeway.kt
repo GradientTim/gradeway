@@ -13,7 +13,6 @@ import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
-import kotlinx.coroutines.*
 import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -24,17 +23,16 @@ import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import java.io.File
 import java.time.Instant
-import kotlin.time.Duration.Companion.milliseconds
 
 class CommonGradeway<TPlatformConfig>(
     override val logger: Logger,
+    override val scheduler: Scheduler,
     override val directory: File,
     override val defaultPlatformConfig: TPlatformConfig,
     val platformConfigSerializer: KSerializer<TPlatformConfig>,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override val caches: Caches by inject()
-    override var backgroundScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
@@ -59,13 +57,11 @@ class CommonGradeway<TPlatformConfig>(
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
 
-    private var expiredRoleSweepJob: Job? = null
+    private var expiredRoleSweepTask: Scheduler.Task? = null
 
     override fun load(): Either<Throwable, Unit> = either {
         if (!state.allowLoad) raise(GradewayAlreadyLoadedThrowable())
         state = GradewayState.PROCESSING
-
-        backgroundScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
         val serviceModule = module {
             single<PermissionService> { CommonPermissionService(this@CommonGradeway) }
@@ -76,7 +72,7 @@ class CommonGradeway<TPlatformConfig>(
         }
 
         val managerModule = module {
-            single<ConfirmationManager> { CommonConfirmationManager() }
+            single<ConfirmationManager> { CommonConfirmationManager(this@CommonGradeway) }
             // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,
             // before ever touching gradeway.migrations, so the registrations CommonMigrationManager's init
             // block performs must already have happened - a lazily created single would run them too late.
@@ -108,7 +104,6 @@ class CommonGradeway<TPlatformConfig>(
         drivers.load().onLeft { raise(it) }
         languages.load().onLeft { raise(it) }
         messaging.load().onLeft { raise(it) }
-        confirmations.load().onLeft { raise(it) }
 
         state = GradewayState.LOADED
     }.onLeft {
@@ -120,9 +115,7 @@ class CommonGradeway<TPlatformConfig>(
         state = GradewayState.PROCESSING
 
         caches.invalidateAll()
-        backgroundScope.cancel()
 
-        confirmations.unload().onLeft { raise(it) }
         messaging.unload().onLeft { raise(it) }
         languages.unload().onLeft { raise(it) }
         drivers.unload().onLeft { raise(it) }
@@ -152,13 +145,10 @@ class CommonGradeway<TPlatformConfig>(
 
         val expireRolesJobIntervalSeconds =
             maxOf(configs.config.sweep.expiredRoleSweepIntervalSeconds, MIN_EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS)
-        expiredRoleSweepJob = backgroundScope.launch {
-            while (isActive) {
-                @Suppress("MagicNumber")
-                delay((expireRolesJobIntervalSeconds * 1000).milliseconds)
-                players.removeExpiredRoles().onLeft {
-                    logger.warn("Failed to sweep expired player roles: $it")
-                }
+
+        expiredRoleSweepTask = scheduler.runTaskTimer(interval = expireRolesJobIntervalSeconds) {
+            players.removeExpiredRoles().onLeft {
+                logger.warn("Failed to sweep expired player roles: $it")
             }
         }
     }
@@ -166,8 +156,8 @@ class CommonGradeway<TPlatformConfig>(
     override fun disable(): Either<Throwable, Unit> = either {
         checkIsLoaded()
 
-        expiredRoleSweepJob?.cancel()
-        expiredRoleSweepJob = null
+        expiredRoleSweepTask?.cancel()
+        expiredRoleSweepTask = null
 
         databases.disable().onLeft { raise(it) }
         messaging.disable().onLeft { raise(it) }

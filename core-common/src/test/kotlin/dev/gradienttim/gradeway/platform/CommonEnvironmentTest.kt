@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.platform
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.config.gradeway.DatabaseConfig
 import dev.gradienttim.gradeway.config.gradeway.EnvConfig
@@ -27,6 +28,7 @@ class CommonEnvironmentTest {
     private fun createEnvironment(config: GradewayConfig<TestPlatformConfig>): Environment {
         val instance = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            scheduler = TestScheduler(),
             directory = Files.createTempDirectory("environment-test").toFile(),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),

@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.bukkit.command.BukkitAudienceProvider
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -18,12 +19,12 @@ import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.LegacyPaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
-    val sharedInstance = BukkitSharedInstance(this)
     var adventure: BukkitAudiences? = null
         internal set
 
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromJavaLogger(logger),
+        scheduler = BukkitScheduler(this),
         directory = dataFolder,
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
@@ -67,7 +68,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(gradeway, sharedInstance), this)
+        server.pluginManager.registerEvents(ConnectionListener(server, gradeway), this)
     }
 
     private fun registerCommands() {

@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -26,6 +27,7 @@ class CommonDriverManagerTest {
     private fun createManager(): CommonDriverManager<TestPlatformConfig> {
         val gradeway = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            scheduler = TestScheduler(),
             directory = Files.createTempDirectory("driver-manager-test").toFile(),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),

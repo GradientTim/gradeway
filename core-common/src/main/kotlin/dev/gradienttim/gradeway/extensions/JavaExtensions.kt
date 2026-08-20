@@ -10,6 +10,7 @@ import java.io.InputStream
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Properties
 
 internal val UUID_REGEX = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
@@ -77,6 +78,23 @@ fun File.createDirectoryIfNotExists(
     }
 
     return directory
+}
+
+fun Properties.cleanUnusedKeys(origin: Properties): Int {
+    val unusedKeys = keys - origin.keys
+    unusedKeys.forEach { unusedKey ->
+        remove(unusedKey)
+    }
+    return unusedKeys.size
+}
+
+fun Properties.fillMissingKeys(origin: Properties): Int {
+    val missingKeys = origin.keys.filter { !containsKey(it) }
+    missingKeys.forEach { missingKey ->
+        val value = origin[missingKey] ?: return@forEach
+        this[missingKey] = value
+    }
+    return missingKeys.size
 }
 
 /**

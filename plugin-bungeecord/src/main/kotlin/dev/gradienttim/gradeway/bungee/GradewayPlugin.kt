@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.bungee.config.BungeeCordPlatformConfig
 import dev.gradienttim.gradeway.bungee.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bungee.listeners.PermissionListener
 import dev.gradienttim.gradeway.bungee.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bungee.platform.BungeeCordScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -25,6 +26,7 @@ class GradewayPlugin : Plugin() {
 
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromJavaLogger(logger),
+        scheduler = BungeeCordScheduler(this),
         directory = dataFolder,
         defaultPlatformConfig = BungeeCordPlatformConfig(),
         platformConfigSerializer = BungeeCordPlatformConfig.serializer(),

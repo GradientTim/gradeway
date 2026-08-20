@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
 import dev.gradienttim.gradeway.config.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.platform.CommonLogger
@@ -19,6 +20,7 @@ import kotlin.test.assertTrue
 class CommonConfigManagerTest {
     private fun createGradeway(): CommonGradeway<TestPlatformConfig> = CommonGradeway(
         logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+        scheduler = TestScheduler(),
         directory = Files.createTempDirectory("config-manager-test").toFile(),
         defaultPlatformConfig = TestPlatformConfig(),
         platformConfigSerializer = TestPlatformConfig.serializer(),

@@ -49,7 +49,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerMigrationCommand(
 
             gradeway.confirmations.request(
                 sender = audience,
-                task = {
+                handler = {
                     gradeway.migrations.migrate(strategy, file)
                         .onLeft { error ->
                             if (error is MigrationManager.MigrateError.FileNotFound) {

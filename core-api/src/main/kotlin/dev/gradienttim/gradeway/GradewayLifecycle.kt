@@ -8,8 +8,8 @@ import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.Caches
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
+import dev.gradienttim.gradeway.platform.Scheduler
 import dev.gradienttim.gradeway.utilities.lifecycle.*
-import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.time.Instant
 
@@ -65,14 +65,13 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
     val logger: Logger
 
     /**
-     * A coroutine scope for fire-and-forget background side-tasks (e.g., best-effort cleanup work
-     * that should not block whatever hot path triggered it) that are tied to the Gradeway lifecycle.
+     * Provides task scheduling capabilities for the GradewayLifecycle system.
      *
-     * The scope is recreated fresh on every [load] and canceled on every [unload], so background
-     * work launched here is guaranteed to be torn down alongside the database and other resources
-     * it may depend on, rather than being able to outlive them across a reload.
+     * The `scheduler` variable allows the execution of tasks either immediately, after a specified delay,
+     * or periodically at fixed intervals. It acts as a utility for managing asynchronous behaviors,
+     * ensuring proper execution timing of operations within the system.
      */
-    val backgroundScope: CoroutineScope
+    val scheduler: Scheduler
 
     /**
      * Represents the root directory for the Gradeway system's runtime files,

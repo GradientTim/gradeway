@@ -436,7 +436,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityPermi
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         handleClearPermissions(idOrName)
                             .onLeft { error ->
                                 if (error is ClearPermissionsError.EntityNotFound) {
@@ -1023,7 +1023,7 @@ internal fun <C : Any, TListResult> MutableCommandBuilder<C>.registerEntityAttri
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         handleClearAttributes(idOrName)
                             .onLeft { error ->
                                 if (error is ClearAttributesError.EntityNotFound) {

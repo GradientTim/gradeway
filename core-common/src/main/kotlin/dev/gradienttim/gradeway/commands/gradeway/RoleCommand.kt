@@ -108,7 +108,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerRoleCommand(
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.roles.delete(uuid)
                             .onLeft { error ->
                                 if (error is DeleteRoleError.EntityNotFound) {

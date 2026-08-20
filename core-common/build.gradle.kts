@@ -12,7 +12,6 @@ dependencies {
     api(project(":core-api"))
 
     implementation(libs.apache.commons.compress)
-    implementation(libs.apache.commons.configuration2)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.protobuf)

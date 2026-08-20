@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.google.devtools.ksp)
+    compileOnly(libs.google.devtools.ksp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.apache.commons.compress)
 

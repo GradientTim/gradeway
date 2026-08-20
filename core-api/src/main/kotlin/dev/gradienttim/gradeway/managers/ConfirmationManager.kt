@@ -5,30 +5,28 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.platform.Scheduler
 import dev.gradienttim.gradeway.utilities.lifecycle.Disableable
-import dev.gradienttim.gradeway.utilities.lifecycle.Loadable
-import dev.gradienttim.gradeway.utilities.lifecycle.Unloadable
 import net.kyori.adventure.audience.Audience
-import java.util.concurrent.ScheduledFuture
 
 /**
  * Interface for managing confirmation operations, including scheduling tasks for confirmation
  * and handling task cancellations. Implementors of this interface are expected to manage the
  * lifecycle of scheduled confirmations and ensure proper cleanup when disabled.
  */
-interface ConfirmationManager : Loadable, Unloadable, Disableable {
+interface ConfirmationManager : Disableable {
     val jobs: Set<Job>
 
     /**
      * Schedules a task for execution and sets up a timeout handler for the task.
      *
      * @param sender The sender who requested the task.
-     * @param task The function representing the task to be scheduled for execution.
+     * @param handler The function representing the task to be scheduled for execution.
      * @param onTimeout The function to invoke when the task times out. Receives the task's unique identifier as a parameter.
      * @return An Either containing a [RequestJobError] if the task scheduling fails,
      *         or a String representing the unique identifier of the scheduled task if successful.
      */
-    fun request(sender: Audience, task: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String>
+    fun request(sender: Audience, handler: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String>
 
     /**
      * Confirms a scheduled task identified by its unique identifier.
@@ -60,12 +58,12 @@ interface ConfirmationManager : Loadable, Unloadable, Disableable {
 
     data class Job(
         val id: String,
-        val task: () -> Unit,
-        val scheduler: ScheduledFuture<*>,
+        val task: Scheduler.Task,
+        val handler: () -> Unit,
         val sender: Audience
     ) {
         fun cancel(): Boolean {
-            return !scheduler.isCancelled && scheduler.cancel(true)
+            return task.cancel()
         }
 
         override fun equals(other: Any?): Boolean {

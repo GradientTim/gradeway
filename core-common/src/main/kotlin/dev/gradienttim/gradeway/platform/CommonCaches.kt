@@ -219,7 +219,7 @@ class CommonCaches(val gradeway: CommonGradeway<*>) : Caches {
      * delete here is pure housekeeping and can safely happen a moment later.
      */
     private fun scheduleExpiredRoleCleanup(player: PlayerEntity) {
-        gradeway.backgroundScope.launch {
+        gradeway.scheduler.runTaskLater {
             gradeway.players.removeExpiredRoles(player)
                 .onLeft { error ->
                     gradeway.logger.error("Failed to remove expired roles for ${player.id.value}: $error")

@@ -119,7 +119,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionCommand(
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.permissions.deletePermission(idOrValue)
                             .onLeft { error ->
                                 if (error is DeletePermissionError.EntityNotFound) {
@@ -446,7 +446,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplateComman
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.permissions.deleteTemplate(uniqueId)
                             .onLeft { error ->
                                 if (error is DeleteTemplateError.EntityNotFound) {
@@ -860,7 +860,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPermissionTemplatePermis
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.permissions.clearPermissionsFromTemplate(idOrName)
                             .onLeft { error ->
                                 if (error is ClearPermissionsFromTemplateError.EntityNotFound) {

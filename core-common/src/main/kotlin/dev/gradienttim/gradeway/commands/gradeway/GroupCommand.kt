@@ -97,7 +97,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.groups.delete(idOrName)
                             .onLeft { error ->
                                 if (error is GroupService.DeleteGroupError.EntityNotFound) {

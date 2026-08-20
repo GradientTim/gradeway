@@ -21,6 +21,7 @@ import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
+import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.velocity.VelocityCommandManager
@@ -41,6 +42,7 @@ class GradewayVelocity @Inject constructor(
 ) {
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(logger),
+        scheduler = VelocityScheduler(this),
         directory = dataDirectory.toFile(),
         defaultPlatformConfig = VelocityPlatformConfig(),
         platformConfigSerializer = VelocityPlatformConfig.serializer(),

@@ -8,6 +8,7 @@ import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestDatabaseDriver
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
@@ -31,6 +32,7 @@ class CommonDatabaseManagerTest {
     private fun createLoadedGradeway(): CommonGradeway<TestPlatformConfig> {
         val instance = CommonGradeway(
             logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            scheduler = TestScheduler(),
             directory = Files.createTempDirectory("database-manager-test").toFile(),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),

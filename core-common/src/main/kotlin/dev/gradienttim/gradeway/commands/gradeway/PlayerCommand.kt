@@ -130,7 +130,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerPlayerCommand(
 
                 gradeway.confirmations.request(
                     sender = audience,
-                    task = {
+                    handler = {
                         gradeway.players.delete(uniqueId)
                             .onLeft { error ->
                                 if (error is PlayerService.DeletePlayerError.EntityNotFound) {

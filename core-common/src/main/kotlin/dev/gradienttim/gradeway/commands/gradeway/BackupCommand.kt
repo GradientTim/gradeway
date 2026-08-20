@@ -22,7 +22,7 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
     fun handleImport(audience: Audience, fileName: String, wipe: Boolean = true) {
         gradeway.confirmations.request(
             sender = audience,
-            task = {
+            handler = {
                 gradeway.backups.import(fileName, wipe)
                     .onLeft { error ->
                         if (error is BackupManager.ImportError.FileNotFound) {

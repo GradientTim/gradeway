@@ -8,18 +8,22 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
+import dev.gradienttim.gradeway.paper.platform.FoliaScheduler
 import dev.gradienttim.gradeway.platform.CommonLogger
+import io.papermc.paper.ServerBuildInfo
+import net.kyori.adventure.key.Key
 import org.bukkit.plugin.java.JavaPlugin
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.paper.PaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
-    val sharedInstance = PaperSharedInstance(this)
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
+        scheduler = if (isFolia()) FoliaScheduler(this) else BukkitScheduler(this),
         directory = dataFolder,
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
@@ -58,7 +62,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(gradeway, sharedInstance), this)
+        server.pluginManager.registerEvents(ConnectionListener(server, gradeway), this)
     }
 
     private fun registerCommands() {
@@ -74,5 +78,10 @@ class GradewayPlugin : JavaPlugin() {
             commandManager = commandManager,
             audienceProvider = audienceProvider
         )
+    }
+
+    // https://docs.papermc.io/paper/dev/folia-support/#checking-for-folia
+    private fun isFolia(): Boolean {
+        return ServerBuildInfo.buildInfo().isBrandCompatible(Key.key("papermc", "folia"))
     }
 }
