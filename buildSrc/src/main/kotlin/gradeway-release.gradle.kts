@@ -70,12 +70,13 @@ if (hangarSupported) {
                     }
                 }
 
-                if (project.name == "plugin-velocity") {
-                    velocity {
-                        jar = tasks.shadowJar.flatMap { it.archiveFile }
-                        platformVersions.addAll(*supportedMinecraftVersions)
-                    }
-                }
+                // fix the MB file size.
+//                if (project.name == "plugin-velocity") {
+//                    velocity {
+//                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+//                        platformVersions.addAll(*supportedMinecraftVersions)
+//                    }
+//                }
             }
         }
     }
