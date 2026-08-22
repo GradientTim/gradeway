@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    implementation("redis.clients:jedis:7.5.2")
+    implementation("redis.clients:jedis:8.0.0")
 }
