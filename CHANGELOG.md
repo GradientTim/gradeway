@@ -2,11 +2,25 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.2.0] - 2026-08-22
+
+### **refactor
+
+- *(plugin)* Restructure platform-specific plugins and artifact resolution**
+
 ## [0.1.2] - 2026-08-20
 
 ### **chore
 
 - *(scheduler)* Refactor platform-specific schedulers and remove unused Bukkit/Paper classes**
+
+- *(docker)* Include driver-messaging-postgres in dockerignore whitelist** [skip ci]
+
+### **feat
+
+- *(build)* Re-enable Hangar publishing with dynamic loading and refactor release tasks**
+
+- *(plugin-paper)* Add support for Folia as a module loader** [skip ci]
 
 ## [0.1.1] - 2026-08-16
 
@@ -26,6 +40,7 @@ All notable changes to this project are documented in this file.
 ### **docs
 
 - *(readme)* Update sections with installation guides and API reference**
+
 
 ### **feat
 
