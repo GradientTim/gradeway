@@ -114,12 +114,13 @@ def main() -> None:
     active = {PURPOSE_BUCKETS[p] for p in purposes if p in PURPOSE_BUCKETS}
 
     all_kt = [p for p in repo_root.rglob("*.kt") if not is_excluded(p)]
+    all_java = [p for p in repo_root.rglob("*.java") if not is_excluded(p)]
     all_md = [p for p in repo_root.rglob("*.md") if not is_excluded(p)]
     all_props = [p for p in repo_root.rglob("*.properties") if not is_excluded(p)]
     commands_dir = find_commands_dir(repo_root)
     commands_kt = list(commands_dir.rglob("*.kt")) if commands_dir else []
 
-    total_lines = count_lines(all_kt) + count_lines(all_md) + count_lines(all_props)
+    total_lines = count_lines(all_kt) + count_lines(all_java) + count_lines(all_md) + count_lines(all_props)
     if total_lines == 0:
         sys.exit("no countable source files found - is repo_root correct?")
 
@@ -133,7 +134,7 @@ def main() -> None:
 
     assisted_lines = 0
     if ("assisted", "kdoc") in active:
-        kdoc_all = count_kdoc_lines(all_kt)
+        kdoc_all = count_kdoc_lines(all_kt) + count_kdoc_lines(all_java)
         # KDoc lines inside commands/** are already counted in generated_lines (via the
         # whole-file commands count) when that bucket is also active - subtract so the
         # same physical lines aren't double counted across both buckets.

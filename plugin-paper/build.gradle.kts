@@ -16,25 +16,8 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    paperLibrary("org.incendo:cloud-paper:2.0.0-beta.17")
+    implementation("org.incendo:cloud-paper:2.0.0-beta.17")
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.9-alpha")
-}
-
-afterEvaluate {
-    val runtimeConfig = configurations.runtimeClasspath.get()
-
-    runtimeConfig.resolvedConfiguration.resolvedArtifacts
-        .filter { it.moduleVersion.id.group != "gradeway" }
-        .map { it.moduleVersion.id }
-        .forEach { identifier ->
-            val coordinate = buildString {
-                append(identifier.group).append(":")
-                append(identifier.name).append(":")
-                append(identifier.version)
-            }
-
-            dependencies.add("paperLibrary", coordinate)
-        }
 }
 
 tasks {
@@ -42,6 +25,7 @@ tasks {
         // defining what to include is simpler than excluding every "dependency" from core-common/core-api
         include(
             "dev/gradienttim/gradeway/**",
+            "_GRADEWAY/**",
             "languages/**",
             "paper-libraries.json",
             "paper-plugin.yml"
@@ -65,7 +49,7 @@ paper {
 
     foliaSupported = true
     hasOpenClassloader = false
-    generateLibrariesJson = true
+    generateLibrariesJson = false
 
     authors = listOf("GradientTim")
 }

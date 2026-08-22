@@ -4,14 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.velocity
 
-import com.google.inject.Inject
-import com.velocitypowered.api.event.Subscribe
-import com.velocitypowered.api.event.proxy.ProxyInitializeEvent
-import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
-import com.velocitypowered.api.plugin.Plugin
-import com.velocitypowered.api.plugin.annotation.DataDirectory
-import com.velocitypowered.api.proxy.ProxyServer
-import dev.gradienttim.gradeway.BuildInfo
+import com.velocitypowered.api.command.CommandSource
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
@@ -24,33 +17,30 @@ import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.velocity.VelocityCommandManager
 import org.slf4j.Logger
 import java.nio.file.Path
 import kotlin.jvm.optionals.getOrNull
 
-@Plugin(
-    id = "gradeway",
-    name = "Gradeway",
-    authors = ["GradientTim"],
-    version = BuildInfo.VERSION,
-)
-class GradewayVelocity @Inject constructor(
-    val server: ProxyServer,
+class GradewayVelocityInstance(
+    val plugin: GradewayPlugin,
     val logger: Logger,
-    @DataDirectory val dataDirectory: Path,
+    val directory: Path,
 ) {
-    val gradeway = CommonGradeway(
-        logger = CommonLogger.fromSlf4jLogger(logger),
-        scheduler = VelocityScheduler(this),
-        directory = dataDirectory.toFile(),
-        defaultPlatformConfig = VelocityPlatformConfig(),
-        platformConfigSerializer = VelocityPlatformConfig.serializer(),
-    )
+    private lateinit var gradeway: CommonGradeway<VelocityPlatformConfig>
 
-    @Subscribe
-    @Suppress("UnusedParameter")
-    fun onProxyInitialize(event: ProxyInitializeEvent) {
+    fun initialize() {
+        if (::gradeway.isInitialized) return
+
+        gradeway = CommonGradeway(
+            logger = CommonLogger.fromSlf4jLogger(logger),
+            scheduler = VelocityScheduler(plugin),
+            directory = directory.toFile(),
+            defaultPlatformConfig = VelocityPlatformConfig(),
+            platformConfigSerializer = VelocityPlatformConfig.serializer(),
+        )
+
         gradeway.load()
             .onLeft {
                 logger.error("Failed to load Gradeway: ${it.message}")
@@ -59,7 +49,7 @@ class GradewayVelocity @Inject constructor(
                 gradeway.drivers.registerDriver(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
-                    driver = VelocityPluginMessageDriver(server, this)
+                    driver = VelocityPluginMessageDriver(plugin.server, this)
                 )
 
                 gradeway.enable()
@@ -73,9 +63,9 @@ class GradewayVelocity @Inject constructor(
             }
     }
 
-    @Subscribe
-    @Suppress("UnusedParameter")
-    fun onProxyShutdown(event: ProxyShutdownEvent) {
+    fun terminate() {
+        if (!::gradeway.isInitialized) return
+
         gradeway.disable()
             .onLeft { logger.error("Failed to disable Gradeway: ${it.message}") }
             .onRight {
@@ -85,26 +75,29 @@ class GradewayVelocity @Inject constructor(
     }
 
     private fun registerEvents() {
-        server.eventManager.register(this, ConnectionListener(gradeway))
-        server.eventManager.register(this, PermissionListener(gradeway))
+        plugin.server.eventManager.register(plugin, ConnectionListener(gradeway))
+        plugin.server.eventManager.register(plugin, PermissionListener(gradeway))
     }
 
     private fun registerCommands() {
-        registerGradewayCommand()
-    }
-
-    private fun registerGradewayCommand() {
-        val pluginContainer = server.pluginManager.getPlugin("gradeway").getOrNull()
+        val pluginContainer = plugin.server.pluginManager.getPlugin("gradeway").getOrNull()
             ?: error("Unable to get PluginContainer from Gradeway.")
 
         val audienceProvider = VelocityAudienceProvider()
         val commandManager = VelocityCommandManager(
             pluginContainer,
-            server,
+            plugin.server,
             ExecutionCoordinator.simpleCoordinator(),
             SenderMapper.identity()
         )
 
+        registerGradewayCommand(audienceProvider, commandManager)
+    }
+
+    private fun registerGradewayCommand(
+        audienceProvider: AudienceProvider<CommandSource>,
+        commandManager: VelocityCommandManager<CommandSource>
+    ) {
         createGradewayCommand(
             literal = "gradewayvelocity",
             aliases = arrayOf("gradewayv", "gwvelocity", "gwv"),

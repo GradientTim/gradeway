@@ -2,6 +2,7 @@ plugins {
     id("gradeway-base")
     id("gradeway-shadow")
     id("gradeway-release")
+    id("gradeway-artifact-metadata")
     id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
@@ -14,5 +15,26 @@ dependencies {
 
     compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
     kapt("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
-    testImplementation(kotlin("test"))
+}
+
+gradewayArtifactMetadata {
+    exclude = setOf(
+        "org.slf4j",
+        "net.kyori",
+        "com.mojang:brigadier",
+        "org.jspecify:jspecify",
+        "org.jetbrains:annotations",
+        "com.velocitypowered"
+    )
+}
+
+tasks {
+    shadowJar {
+        include(
+            "dev/gradienttim/gradeway/**",
+            "_GRADEWAY/**.txt",
+            "languages/**",
+            "velocity-plugin.json"
+        )
+    }
 }

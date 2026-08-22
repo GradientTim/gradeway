@@ -7,6 +7,7 @@
 !gradle.properties
 !settings.gradle.kts
 !build.gradle.kts
+!README.md
 !gradle/
 !buildSrc/
 

@@ -15,25 +15,34 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import net.kyori.adventure.platform.bungeecord.BungeeAudiences
-import net.md_5.bungee.api.plugin.Plugin
+import net.md_5.bungee.api.CommandSender
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.bungee.BungeeCommandManager
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.minecraft.extras.AudienceProvider
+import java.io.File
+import java.util.logging.Logger
 
-class GradewayPlugin : Plugin() {
+class GradewayBungeeCordInstance(
+    val plugin: GradewayPlugin,
+    val logger: Logger,
+    val directory: File,
+) {
     var adventure: BungeeAudiences? = null
-        internal set
+    private lateinit var gradeway: CommonGradeway<BungeeCordPlatformConfig>
 
-    val gradeway = CommonGradeway(
-        logger = CommonLogger.fromJavaLogger(logger),
-        scheduler = BungeeCordScheduler(this),
-        directory = dataFolder,
-        defaultPlatformConfig = BungeeCordPlatformConfig(),
-        platformConfigSerializer = BungeeCordPlatformConfig.serializer(),
-    )
+    fun initialize() {
+        if (::gradeway.isInitialized) return
 
-    override fun onEnable() {
-        adventure = BungeeAudiences.create(this)
+        adventure = BungeeAudiences.create(plugin)
+
+        gradeway = CommonGradeway(
+            logger = CommonLogger.fromJavaLogger(logger),
+            scheduler = BungeeCordScheduler(plugin),
+            directory = directory,
+            defaultPlatformConfig = BungeeCordPlatformConfig(),
+            platformConfigSerializer = BungeeCordPlatformConfig.serializer(),
+        )
 
         gradeway.load()
             .onLeft { throwable ->
@@ -43,7 +52,7 @@ class GradewayPlugin : Plugin() {
                 gradeway.drivers.registerDriver(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
-                    driver = PluginMessageDriver(this)
+                    driver = PluginMessageDriver(plugin)
                 )
 
                 gradeway.enable()
@@ -57,7 +66,9 @@ class GradewayPlugin : Plugin() {
             }
     }
 
-    override fun onDisable() {
+    fun terminate() {
+        if (!::gradeway.isInitialized) return
+
         adventure?.close()
         adventure = null
 
@@ -70,18 +81,25 @@ class GradewayPlugin : Plugin() {
     }
 
     private fun registerEvents() {
-        proxy.pluginManager.registerListener(this, ConnectionListener(gradeway))
-        proxy.pluginManager.registerListener(this, PermissionListener(gradeway))
+        plugin.proxy.pluginManager.registerListener(plugin, ConnectionListener(gradeway))
+        plugin.proxy.pluginManager.registerListener(plugin, PermissionListener(gradeway))
     }
 
     private fun registerCommands() {
         val audienceProvider = BungeeAudienceProvider(this)
         val commandManager = BungeeCommandManager(
-            this,
+            plugin,
             ExecutionCoordinator.simpleCoordinator(),
             SenderMapper.identity()
         )
 
+        registerGradewayCommand(audienceProvider, commandManager)
+    }
+
+    private fun registerGradewayCommand(
+        audienceProvider: AudienceProvider<CommandSender>,
+        commandManager: BungeeCommandManager<CommandSender>
+    ) {
         createGradewayCommand(
             literal = "gradewaybungeecord",
             aliases = arrayOf("gradewaybc", "gwbungeecord", "gwbc", "gwbungee", "gradewaybungee"),

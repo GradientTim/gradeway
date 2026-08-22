@@ -1,5 +1,0 @@
-name: gradeway
-version: 0.1.0
-author: GradientTim
-
-main: dev.gradienttim.gradeway.bungee.GradewayPlugin

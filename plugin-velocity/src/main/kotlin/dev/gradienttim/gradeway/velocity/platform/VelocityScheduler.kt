@@ -7,10 +7,10 @@ package dev.gradienttim.gradeway.velocity.platform
 import com.velocitypowered.api.scheduler.ScheduledTask
 import com.velocitypowered.api.scheduler.TaskStatus
 import dev.gradienttim.gradeway.platform.Scheduler
-import dev.gradienttim.gradeway.velocity.GradewayVelocity
+import dev.gradienttim.gradeway.velocity.GradewayPlugin
 import java.util.concurrent.TimeUnit
 
-class VelocityScheduler(val plugin: GradewayVelocity) : Scheduler {
+class VelocityScheduler(val plugin: GradewayPlugin) : Scheduler {
     override fun runTask(task: () -> Unit) {
         plugin.server.scheduler.buildTask(plugin, task).schedule()
     }

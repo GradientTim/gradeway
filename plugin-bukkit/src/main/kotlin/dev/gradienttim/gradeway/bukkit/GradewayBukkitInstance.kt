@@ -14,24 +14,34 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import net.kyori.adventure.platform.bukkit.BukkitAudiences
-import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.command.CommandSender
+import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.minecraft.extras.AudienceProvider
 import org.incendo.cloud.paper.LegacyPaperCommandManager
+import java.io.File
+import java.util.logging.Logger
 
-class GradewayPlugin : JavaPlugin() {
+class GradewayBukkitInstance(
+    val plugin: GradewayPlugin,
+    val logger: Logger,
+    val directory: File
+) {
     var adventure: BukkitAudiences? = null
-        internal set
+    private lateinit var gradeway: CommonGradeway<BukkitPlatformConfig>
 
-    val gradeway = CommonGradeway(
-        logger = CommonLogger.fromJavaLogger(logger),
-        scheduler = BukkitScheduler(this),
-        directory = dataFolder,
-        defaultPlatformConfig = BukkitPlatformConfig(),
-        platformConfigSerializer = BukkitPlatformConfig.serializer(),
-    )
+    fun initialize() {
+        if (::gradeway.isInitialized) return
 
-    override fun onEnable() {
-        adventure = BukkitAudiences.create(this)
+        adventure = BukkitAudiences.create(plugin)
+
+        gradeway = CommonGradeway(
+            logger = CommonLogger.fromJavaLogger(logger),
+            scheduler = BukkitScheduler(plugin),
+            directory = directory,
+            defaultPlatformConfig = BukkitPlatformConfig(),
+            platformConfigSerializer = BukkitPlatformConfig.serializer(),
+        )
 
         gradeway.load()
             .onLeft { throwable ->
@@ -41,7 +51,7 @@ class GradewayPlugin : JavaPlugin() {
                 gradeway.drivers.registerDriver(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
-                    driver = PluginMessageDriver(this)
+                    driver = PluginMessageDriver(plugin)
                 )
 
                 gradeway.enable()
@@ -55,7 +65,9 @@ class GradewayPlugin : JavaPlugin() {
             }
     }
 
-    override fun onDisable() {
+    fun terminate() {
+        if (!::gradeway.isInitialized) return
+
         adventure?.close()
         adventure = null
 
@@ -68,16 +80,24 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(server, gradeway), this)
+        plugin.server.pluginManager.registerEvents(ConnectionListener(plugin.server, gradeway), plugin)
     }
 
     private fun registerCommands() {
         val audienceProvider = BukkitAudienceProvider(this)
-        val commandManager = LegacyPaperCommandManager.createNative(
-            this,
-            ExecutionCoordinator.simpleCoordinator()
+        val commandManager = LegacyPaperCommandManager(
+            plugin,
+            ExecutionCoordinator.simpleCoordinator(),
+            SenderMapper.identity()
         )
 
+        registerGradewayCommand(audienceProvider, commandManager)
+    }
+
+    private fun registerGradewayCommand(
+        audienceProvider: AudienceProvider<CommandSender>,
+        commandManager: LegacyPaperCommandManager<CommandSender>
+    ) {
         createGradewayCommand(
             literal = "gradeway",
             aliases = arrayOf("gw", "gradewayb", "gwbukkit", "gwb"),
