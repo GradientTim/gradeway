@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    shadow("com.oracle.database.jdbc:ojdbc8:23.26.0.0.0")
+    shadow("com.oracle.database.jdbc:ojdbc8:23.26.3.0.0")
 }
