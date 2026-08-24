@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    shadow("org.mariadb.jdbc:mariadb-java-client:3.5.6")
+    shadow("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 }
