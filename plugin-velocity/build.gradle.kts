@@ -13,8 +13,8 @@ dependencies {
 
     implementation("org.incendo:cloud-velocity:2.0.0")
 
-    compileOnly("com.velocitypowered:velocity-api:3.5.1")
-    kapt("com.velocitypowered:velocity-api:3.5.1")
+    compileOnly("com.velocitypowered:velocity-api:4.1.0")
+    kapt("com.velocitypowered:velocity-api:4.1.0")
 }
 
 gradewayArtifactMetadata {
