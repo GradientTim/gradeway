@@ -28,7 +28,7 @@ dependencies {
     api(libs.bundles.arrow)
 
     testImplementation(kotlin("test"))
-    testImplementation("com.h2database:h2:2.4.240")
+    testImplementation("com.h2database:h2:2.5.250")
 }
 
 val generatedSourceDir = layout.buildDirectory.dir("generated/sources/build-info/kotlin")
