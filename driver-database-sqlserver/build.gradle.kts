@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    implementation("com.microsoft.sqlserver:mssql-jdbc:13.4.0.jre11")
+    implementation("com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11")
 }
