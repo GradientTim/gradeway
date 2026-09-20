@@ -11,10 +11,10 @@ plugins {
 dependencies {
     implementation(project(":core-common"))
 
-    implementation("org.incendo:cloud-velocity:2.0.0")
+    implementation("org.incendo:cloud-velocity:2.0.1")
 
-    compileOnly("com.velocitypowered:velocity-api:4.1.1")
-    kapt("com.velocitypowered:velocity-api:4.1.1")
+    compileOnly("com.velocitypowered:velocity-api:4.2.0")
+    kapt("com.velocitypowered:velocity-api:4.2.0")
 }
 
 gradewayArtifactMetadata {

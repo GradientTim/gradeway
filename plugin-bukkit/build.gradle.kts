@@ -13,7 +13,7 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    implementation("org.incendo:cloud-paper:2.0.0")
+    implementation("org.incendo:cloud-paper:2.0.1")
     implementation("net.kyori:adventure-platform-bukkit:4.4.1")
 
     compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")

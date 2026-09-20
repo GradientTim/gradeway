@@ -16,8 +16,8 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    implementation("org.incendo:cloud-paper:2.0.0")
-    compileOnly("io.papermc.paper:paper-api:26.2.build.123-stable")
+    implementation("org.incendo:cloud-paper:2.0.1")
+    compileOnly("io.papermc.paper:paper-api:26.2.build.126-stable")
 }
 
 tasks {
