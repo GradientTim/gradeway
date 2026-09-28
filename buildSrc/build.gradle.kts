@@ -19,6 +19,6 @@ dependencies {
     implementation(gradlePlugins.jetbrains.kotlin.plugin.serialization)
 
     // Fix Jackson compatibility for plugin-yml
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.2")
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.22.3")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.3")
 }

@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    shadow("com.h2database:h2:2.5.250")
+    shadow("com.h2database:h2:2.5.252")
 }

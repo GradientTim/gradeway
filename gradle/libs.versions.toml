@@ -7,7 +7,7 @@ adventure = "5.2.0"
 kotlinx-serialization = "1.11.0"
 
 [libraries]
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.2.4" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version = "3.3.0" }
 koin-core = { module = "io.insert-koin:koin-core", version = "4.2.2" }
 google-devtools-ksp = { module = "com.google.devtools.ksp:symbol-processing-api", version = "2.3.12" }
 apache-commons-compress = { module = "org.apache.commons:commons-compress", version = "1.28.0" }
