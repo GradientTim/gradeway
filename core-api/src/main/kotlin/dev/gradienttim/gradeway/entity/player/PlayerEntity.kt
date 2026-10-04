@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
+import dev.gradienttim.gradeway.reference.TrackReference
 import dev.gradienttim.gradeway.services.PlayerService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -24,7 +25,8 @@ import java.util.*
  */
 interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
     PermissionReference<PlayerPermissionEntity>,
-    PermissionTemplateReference<PlayerPermissionTemplateEntity> {
+    PermissionTemplateReference<PlayerPermissionTemplateEntity>,
+    TrackReference {
     /**
      * The unique identifier for the entity. This value is immutable and is used to distinctly identify
      * the entity instance across systems or databases. It is typically generated as a UUID, ensuring

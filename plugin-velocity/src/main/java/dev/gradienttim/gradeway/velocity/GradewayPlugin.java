@@ -6,7 +6,7 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import dev.gradienttim.gradeway.BuildInfo;
+import dev.gradienttim.gradeway.ProjectMeta;
 import dev.gradienttim.gradeway.artifact.ArtifactMetadata;
 import dev.gradienttim.gradeway.artifact.CommonArtifactResolver;
 import dev.gradienttim.gradeway.velocity.artifact.VelocityArtifactInjector;
@@ -19,7 +19,7 @@ import java.nio.file.Path;
         id = "gradeway",
         name = "Gradeway",
         authors = {"GradientTim"},
-        version = BuildInfo.VERSION
+        version = ProjectMeta.VERSION
 )
 public class GradewayPlugin {
     final ProxyServer server;
@@ -37,14 +37,14 @@ public class GradewayPlugin {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        var metadata = ArtifactMetadata.load();
+        ArtifactMetadata metadata = ArtifactMetadata.load();
         if (metadata == null) {
             logger.warn("Failed to load metadata");
             return;
         }
 
         try {
-            var resolver = CommonArtifactResolver.builder()
+            CommonArtifactResolver resolver = CommonArtifactResolver.builder()
                     .logInfo(logger::info)
                     .logWarn(logger::warn)
                     .logError(logger::error)

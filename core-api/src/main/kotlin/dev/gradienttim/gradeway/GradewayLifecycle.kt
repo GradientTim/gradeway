@@ -4,13 +4,15 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway
 
+import dev.gradienttim.gradeway.configs.PlatformConfig
 import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.Caches
 import dev.gradienttim.gradeway.platform.Environment
 import dev.gradienttim.gradeway.platform.Logger
 import dev.gradienttim.gradeway.platform.Scheduler
 import dev.gradienttim.gradeway.utilities.lifecycle.*
-import java.io.File
+import kotlinx.serialization.KSerializer
+import java.nio.file.Path
 import java.time.Instant
 
 /**
@@ -27,8 +29,22 @@ import java.time.Instant
  * instances. By coupling lifecycle operations with the standard Gradeway capabilities,
  * this interface facilitates clean and predictable resource management practices.
  */
-interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadable, Unloadable, Reloadable, Enableable,
-    Disableable {
+interface GradewayLifecycle<TPlatformConfig : PlatformConfig> : Gradeway<TPlatformConfig>, Loadable, Unloadable,
+    Reloadable, Enableable, Disableable {
+    /**
+     * Serializer for platform-specific configuration within the Gradeway system.
+     *
+     * This variable is responsible for handling the serialization and deserialization
+     * of `TPlatformConfig` objects. It allows platform configuration data to be
+     * converted to and from a serialized format, enabling persistence and transfer
+     * of configuration across different contexts or storage systems.
+     *
+     * The implementation of this serializer is expected to conform to the `KSerializer`
+     * interface, supporting operations for encoding and decoding platform configuration
+     * objects as needed by the Gradeway infrastructure.
+     */
+    val platformConfigSerializer: KSerializer<TPlatformConfig>
+
     /**
      * Retrieves the current point in time as an [Instant].
      *
@@ -36,6 +52,28 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      * of invocation, making it suitable for scenarios where precise timing is required.
      */
     val now: () -> Instant
+
+    /**
+     * Represents the current operational state of the Gradeway lifecycle.
+     *
+     * The `state` variable reflects the lifecycle's active phase, which determines
+     * what operations are permissible based on the underlying state of the system.
+     * It can assume one of the following values from the [GradewayState] enumeration:
+     *
+     * - `LOADED`: Indicates that the Gradeway system is fully initialized and operational.
+     *   Loading additional resources is not allowed, but unloading is permitted.
+     *
+     * - `UNLOADED`: Indicates that the Gradeway system is not currently active.
+     *   Loading is allowed, but unloading is not applicable since the system is inactive.
+     *
+     * - `PROCESSING`: Indicates that the Gradeway system is in the midst of ongoing operations
+     *   such as a transition or critical task. Neither loading nor unloading is permissible
+     *   during this state to ensure stability.
+     *
+     * This variable plays a key role in governing the lifecycle control of the implementing class,
+     * impacting permissible operations like a load, unload, and reload.
+     */
+    val state: GradewayState
 
     /**
      * Provides centralized access to caching functionality within the Gradeway lifecycle.
@@ -51,6 +89,13 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      * the application.
      */
     val caches: Caches
+
+    /**
+     * Provides access to environment variables and configuration values through the `Environment` interface.
+     * Used to retrieve typed values such as integers, longs, doubles, strings, and booleans
+     * based on a series of names, along with optional default values or marked as required.
+     */
+    val environment: Environment
 
     /**
      * Logger instance used to log informational, warning, and error messages within the `GradewayLifecycle` class.
@@ -82,25 +127,7 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      * initialized during the system setup phase and is expected to persist across
      * different runtime sessions.
      */
-    val directory: File
-
-    /**
-     * Represents the configuration environment related to database operations.
-     *
-     * This environment is used to retrieve and manage configuration values specific to database setups.
-     * It provides various methods to access or validate settings such as connection details, credentials,
-     * and other related options required for initializing or interacting with the database.
-     */
-    val databaseEnvironment: Environment
-
-    /**
-     * Represents the configuration environment related to messaging operations.
-     *
-     * This environment is used to retrieve and manage configuration values specific to messaging setups.
-     * It provides various methods to access or validate settings such as connection details, credentials,
-     * and other related options required for initializing or interacting with the messaging system.
-     */
-    val messagingEnvironment: Environment
+    val directory: Path
 
     /**
      * Manages confirmation-based operations within the Gradeway system.
@@ -237,26 +264,4 @@ interface GradewayLifecycle<TPlatformConfig> : Gradeway<TPlatformConfig>, Loadab
      * `ImportError` types, allowing structured handling of unexpected issues.
      */
     val backups: BackupManager
-
-    /**
-     * Represents the current operational state of the Gradeway lifecycle.
-     *
-     * The `state` variable reflects the lifecycle's active phase, which determines
-     * what operations are permissible based on the underlying state of the system.
-     * It can assume one of the following values from the [GradewayState] enumeration:
-     *
-     * - `LOADED`: Indicates that the Gradeway system is fully initialized and operational.
-     *   Loading additional resources is not allowed, but unloading is permitted.
-     *
-     * - `UNLOADED`: Indicates that the Gradeway system is not currently active.
-     *   Loading is allowed, but unloading is not applicable since the system is inactive.
-     *
-     * - `PROCESSING`: Indicates that the Gradeway system is in the midst of ongoing operations
-     *   such as a transition or critical task. Neither loading nor unloading is permissible
-     *   during this state to ensure stability.
-     *
-     * This variable plays a key role in governing the lifecycle control of the implementing class,
-     * impacting permissible operations like a load, unload, and reload.
-     */
-    val state: GradewayState
 }

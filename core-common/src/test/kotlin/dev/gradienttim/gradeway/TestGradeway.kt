@@ -13,9 +13,9 @@ import java.util.concurrent.TimeUnit
 
 fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
     val gradeway = CommonGradeway(
-        logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+        logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
         scheduler = TestScheduler(),
-        directory = Files.createTempDirectory("gradeway-test").toFile(),
+        directory = Files.createTempDirectory("gradeway-test"),
         defaultPlatformConfig = TestPlatformConfig(),
         platformConfigSerializer = TestPlatformConfig.serializer(),
     )
@@ -28,7 +28,7 @@ fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
                 type = DriverType.DATABASE,
                 driver = TestDatabaseDriver()
             )
-            gradeway.configs.config.database.driver = "test"
+            gradeway.configs.driversEntry.config.database.driver = "test"
 
             gradeway.enable().onLeft { error("Failed to enable test Gradeway: $it") }
         }

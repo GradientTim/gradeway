@@ -8,23 +8,22 @@ import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.TestScheduler
-import dev.gradienttim.gradeway.managers.ConfirmationManager
 import dev.gradienttim.gradeway.platform.CommonLogger
-import net.kyori.adventure.audience.Audience
 import java.nio.file.Files
+import java.util.*
 import kotlin.test.*
 
 class CommonConfirmationManagerTest {
     private var gradeway: CommonGradeway<TestPlatformConfig>? = null
     private lateinit var manager: ConfirmationManager
-    private val sender = object : Audience {}
+    private val sender = UUID.randomUUID()
 
     @BeforeTest
     fun setUp() {
         val instance = CommonGradeway(
-            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
             scheduler = TestScheduler(),
-            directory = Files.createTempDirectory("confirmation-manager-test").toFile(),
+            directory = Files.createTempDirectory("confirmation-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
         )
@@ -64,7 +63,7 @@ class CommonConfirmationManagerTest {
     fun `confirm from the wrong sender fails without running the task`() {
         var ran = false
         val id = manager.request(sender, handler = { ran = true }, onTimeout = {}).getOrElse { error(it.toString()) }
-        val impostor = object : Audience {}
+        val impostor = UUID.randomUUID()
 
         val result = manager.confirm(impostor, id)
 
@@ -94,7 +93,7 @@ class CommonConfirmationManagerTest {
     @Test
     fun `cancel from the wrong sender fails`() {
         val id = manager.request(sender, handler = {}, onTimeout = {}).getOrElse { error(it.toString()) }
-        val impostor = object : Audience {}
+        val impostor = UUID.randomUUID()
 
         val result = manager.cancel(impostor, id)
 

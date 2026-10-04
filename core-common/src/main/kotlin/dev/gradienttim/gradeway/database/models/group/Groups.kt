@@ -27,8 +27,8 @@ object GroupsTable : UUIDTable(name = TableConstants.GROUPS_TABLE_NAME) {
     val name = varchar("name", TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)
     val defaultWeight = integer("default_weight").default(-1)
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
 }
 
 class DatabaseGroupEntity(id: EntityID<UUID>) : UUIDEntity(id), GroupEntity, KoinComponent {

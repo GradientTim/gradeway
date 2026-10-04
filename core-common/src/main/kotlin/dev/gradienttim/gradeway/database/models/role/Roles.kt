@@ -30,9 +30,10 @@ import java.util.*
 object RolesTable : UUIDTable(name = TableConstants.ROLES_TABLE_NAME) {
     val name = varchar("name", TableConstants.ROLES_TABLE_MAX_NAME_LENGTH).uniqueIndex()
     val weight = integer("weight").default(-1)
+    val isDefault = bool("is_default").default(false)
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
 }
 
 class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinComponent {
@@ -41,6 +42,7 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
             put("id", data.id.value.toString())
             put("name", data.name)
             put("weight", data.weight)
+            put("isDefault", data.isDefault)
             put("createdAt", data.createdAt.toEpochMilli())
             put("updatedAt", data.updatedAt.toEpochMilli())
         }
@@ -51,6 +53,7 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
             return new(id) {
                 name = json.getValue("name").jsonPrimitive.content
                 weight = json.getValue("weight").jsonPrimitive.int
+                isDefault = json["isDefault"]?.jsonPrimitive?.booleanOrNull ?: false
                 createdAt = Instant.ofEpochMilli(json.getValue("createdAt").jsonPrimitive.long)
                 updatedAt = Instant.ofEpochMilli(json.getValue("updatedAt").jsonPrimitive.long)
             }
@@ -64,6 +67,7 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
 
     override var name by RolesTable.name
     override var weight by RolesTable.weight
+    override var isDefault by RolesTable.isDefault
 
     override var createdAt by RolesTable.createdAt
     override var updatedAt by RolesTable.updatedAt

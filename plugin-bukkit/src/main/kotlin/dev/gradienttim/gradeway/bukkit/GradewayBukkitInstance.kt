@@ -4,8 +4,10 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.bukkit
 
+import com.mojang.brigadier.CommandDispatcher
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.bukkit.command.BukkitAudienceProvider
+import dev.gradienttim.gradeway.bukkit.command.BukkitBrigadierCommand
+import dev.gradienttim.gradeway.bukkit.command.BukkitCommandContext
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
@@ -13,27 +15,20 @@ import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
-import net.kyori.adventure.platform.bukkit.BukkitAudiences
 import org.bukkit.command.CommandSender
-import org.incendo.cloud.SenderMapper
-import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.paper.LegacyPaperCommandManager
-import java.io.File
+import java.nio.file.Path
 import java.util.logging.Logger
 
 class GradewayBukkitInstance(
     val plugin: GradewayPlugin,
     val logger: Logger,
-    val directory: File
+    val directory: Path
 ) {
-    var adventure: BukkitAudiences? = null
+    private val commandDispatcher = CommandDispatcher<CommandSender>()
     private lateinit var gradeway: CommonGradeway<BukkitPlatformConfig>
 
     fun initialize() {
         if (::gradeway.isInitialized) return
-
-        adventure = BukkitAudiences.create(plugin)
 
         gradeway = CommonGradeway(
             logger = CommonLogger.fromJavaLogger(logger),
@@ -68,9 +63,6 @@ class GradewayBukkitInstance(
     fun terminate() {
         if (!::gradeway.isInitialized) return
 
-        adventure?.close()
-        adventure = null
-
         gradeway.disable()
             .onLeft { logger.severe("Failed to disable Gradeway: ${it.message}") }
             .onRight {
@@ -84,26 +76,30 @@ class GradewayBukkitInstance(
     }
 
     private fun registerCommands() {
-        val audienceProvider = BukkitAudienceProvider(this)
-        val commandManager = LegacyPaperCommandManager(
-            plugin,
-            ExecutionCoordinator.simpleCoordinator(),
-            SenderMapper.identity()
-        )
+        val commandContext = BukkitCommandContext()
 
-        registerGradewayCommand(audienceProvider, commandManager)
+        registerGradewayCommand(commandContext)
     }
 
-    private fun registerGradewayCommand(
-        audienceProvider: AudienceProvider<CommandSender>,
-        commandManager: LegacyPaperCommandManager<CommandSender>
-    ) {
-        createGradewayCommand(
+    private fun registerGradewayCommand(context: BukkitCommandContext) {
+        val gradewayCommand = createGradewayCommand(
             literal = "gradeway",
-            aliases = arrayOf("gw", "gradewayb", "gwbukkit", "gwb"),
             gradeway = gradeway,
-            commandManager = commandManager,
-            audienceProvider = audienceProvider
+            commandContext = context,
         )
+
+        val command = BukkitBrigadierCommand(
+            dispatcher = commandDispatcher,
+            context = context,
+            builder = gradewayCommand,
+        )
+
+        val pluginCommand = plugin.getCommand("gradeway") ?: run {
+            logger.severe("Command 'gradeway' is not declared in plugin.yml")
+            return
+        }
+
+        pluginCommand.setExecutor(command)
+        pluginCommand.tabCompleter = command
     }
 }

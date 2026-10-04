@@ -132,6 +132,56 @@ class LuckPermsMigrationStrategyTest {
     }
 
     @Test
+    fun `migrate imports tracks with stages in the exported order`() {
+        val json = exportJson(
+            groups = """{"default": {"nodes": []}, "member": {"nodes": []}, "admin": {"nodes": []}}""",
+            users = "{}",
+            tracks = """{"staff": {"groups": ["default", "member", "admin"]}}"""
+        )
+
+        strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
+
+        val track = gradeway.tracks.findTrackBySlug("staff") ?: error("expected track 'staff' to be imported")
+        listOf("default", "member", "admin").forEachIndexed { position, roleName ->
+            val role = gradeway.roles.findByName(roleName) ?: error("expected role '$roleName' to be imported")
+            val stage = gradeway.tracks.findStageByRole(track.id.value, role.id.value)
+                ?: error("expected stage for role '$roleName'")
+            assertEquals(position, stage.position)
+        }
+    }
+
+    @Test
+    fun `migrate skips unknown groups in a track and keeps positions contiguous`() {
+        val json = exportJson(
+            groups = """{"default": {"nodes": []}, "admin": {"nodes": []}}""",
+            users = "{}",
+            tracks = """{"staff": {"groups": ["default", "unknown-group", "admin"]}}"""
+        )
+
+        strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
+
+        val track = gradeway.tracks.findTrackBySlug("staff") ?: error("expected track 'staff' to be imported")
+        val admin = gradeway.roles.findByName("admin") ?: error("expected role 'admin' to be imported")
+        val stage = gradeway.tracks.findStageByRole(track.id.value, admin.id.value)
+            ?: error("expected stage for role 'admin'")
+        assertEquals(1, stage.position)
+    }
+
+    @Test
+    fun `migrate skips tracks whose name is not a valid slug`() {
+        val longName = "a".repeat(64)
+        val json = exportJson(
+            groups = """{"default": {"nodes": []}}""",
+            users = "{}",
+            tracks = """{"$longName": {"groups": ["default"]}}"""
+        )
+
+        strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
+
+        assertNull(gradeway.tracks.findTrackBySlug(longName))
+    }
+
+    @Test
     fun `migrate wipes existing data before importing`() {
         val preExistingRole = gradeway.roles.create("pre-existing-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
@@ -140,6 +190,17 @@ class LuckPermsMigrationStrategyTest {
         strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
 
         assertFalse(gradeway.roles.existsById(preExistingRole.id.value))
+    }
+
+    @Test
+    fun `migrate wipes existing tracks before importing`() {
+        val preExistingTrack = gradeway.tracks.createTrack("pre-${UUID.randomUUID().toString().take(8)}")
+            .getOrElse { error(it.toString()) }
+
+        val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
+        strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
+
+        assertNull(gradeway.tracks.findTrackById(preExistingTrack.id.value))
     }
 
     @Test

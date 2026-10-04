@@ -32,8 +32,12 @@ object PlayerAttributesTable : UUIDTable(name = TableConstants.PLAYER_ATTRIBUTES
     val key = adventureKey("key")
     val value = text("value")
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
+
+    init {
+        uniqueIndex(playerId, key)
+    }
 }
 
 class DatabasePlayerAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerAttributeEntity {

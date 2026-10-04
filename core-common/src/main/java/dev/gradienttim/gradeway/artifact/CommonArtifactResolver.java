@@ -17,7 +17,9 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -66,17 +68,17 @@ public class CommonArtifactResolver {
             try {
                 Files.createDirectories(directory);
 
-                var futures = dependencies.stream()
+                List<CompletableFuture<Path>> futures = dependencies.stream()
                         .map(dependency -> java.util.concurrent.CompletableFuture.supplyAsync(
                                 () -> resolveDependency(dependency),
                                 executor
                         ))
                         .toList();
 
-                var resolvedPaths = new HashSet<Path>();
-                for (var future : futures) {
+                HashSet<Path> resolvedPaths = new HashSet<Path>();
+                for (CompletableFuture<Path> future : futures) {
                     try {
-                        var result = future.get();
+                        Path result = future.get();
                         if (result != null) {
                             resolvedPaths.add(result);
                         }
@@ -85,7 +87,7 @@ public class CommonArtifactResolver {
                     }
                 }
 
-                for (var path : resolvedPaths) {
+                for (Path path : resolvedPaths) {
                     if (!injector.inject(path)) {
                         logWarn.accept("Failed to inject dependency '" + path + "'");
                     }
@@ -109,17 +111,17 @@ public class CommonArtifactResolver {
     }
 
     private Path resolveDependency(ArtifactDependency dependency) {
-        var dependencyFile = directory.resolve(dependency.formatFileName());
+        Path dependencyFile = directory.resolve(dependency.formatFileName());
         if (Files.exists(dependencyFile)) {
             return dependencyFile;
         }
 
-        for (var repository : repositories) {
-            var dependencyUrl = repository.buildUrl(dependency);
-            var expectedChecksum = fetchChecksum(dependencyUrl);
+        for (ArtifactRepository repository : repositories) {
+            String dependencyUrl = repository.buildUrl(dependency);
+            String expectedChecksum = fetchChecksum(dependencyUrl);
 
             if (expectedChecksum != null) {
-                var result = downloadDependency(dependency, dependencyUrl, dependencyFile, expectedChecksum);
+                Path result = downloadDependency(dependency, dependencyUrl, dependencyFile, expectedChecksum);
                 if (result != null) {
                     return result;
                 }
@@ -145,12 +147,12 @@ public class CommonArtifactResolver {
         try {
             logInfo.accept("Downloading dependency '" + dependency.formatCoordinate() + "'...");
 
-            var request = HttpRequest.newBuilder()
+            HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(dependencyUrl))
                     .GET()
                     .build();
 
-            var response = httpClient.send(
+            HttpResponse<InputStream> response = httpClient.send(
                     request,
                     HttpResponse.BodyHandlers.ofInputStream()
             );
@@ -181,7 +183,7 @@ public class CommonArtifactResolver {
                     "' into '" + dependencyFile + "'");
 
             if (expectedChecksum != null) {
-                var downloadedChecksum = sha1Hex(dependencyFile);
+                String downloadedChecksum = sha1Hex(dependencyFile);
                 if (downloadedChecksum == null ||
                         !downloadedChecksum.equalsIgnoreCase(expectedChecksum)) {
                     logError.accept("Downloaded dependency '" + dependency.formatCoordinate() +
@@ -200,13 +202,13 @@ public class CommonArtifactResolver {
 
     private String fetchChecksum(String artifactUrl) {
         try {
-            var checksumUrl = artifactUrl + ".sha1";
-            var request = HttpRequest.newBuilder()
+            String checksumUrl = artifactUrl + ".sha1";
+            HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(checksumUrl))
                     .GET()
                     .build();
 
-            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
                 return response.body().trim();
             }
@@ -220,9 +222,9 @@ public class CommonArtifactResolver {
 
     private String sha1Hex(Path path) {
         try {
-            var buffer = new byte[BUFFER_SIZE];
+            byte[] buffer = new byte[BUFFER_SIZE];
 
-            try (var input = Files.newInputStream(path)) {
+            try (InputStream input = Files.newInputStream(path)) {
                 int bytesRead;
                 while ((bytesRead = input.read(buffer)) != -1) {
                     sha1Digest.update(buffer, 0, bytesRead);
@@ -237,7 +239,7 @@ public class CommonArtifactResolver {
     }
 
     private String bytesToHex(byte[] bytes) {
-        var stringBuilder = new StringBuilder();
+        StringBuilder stringBuilder = new StringBuilder();
         for (byte b : bytes) {
             stringBuilder.append(String.format("%02x", b));
         }

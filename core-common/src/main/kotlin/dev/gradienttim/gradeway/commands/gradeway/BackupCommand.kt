@@ -4,154 +4,141 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
+import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.*
+import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.commands.extensions.requestConfirmation
 import dev.gradienttim.gradeway.managers.BackupManager
-import dev.gradienttim.gradeway.managers.ConfirmationManager
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.kotlin.MutableCommandBuilder
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.parser.standard.BooleanParser.booleanParser
-import org.incendo.cloud.parser.standard.StringParser.stringParser
+import net.kyori.adventure.text.minimessage.translation.Argument
+import kotlin.io.path.name
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerBackupCommand(
+internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.backupCommand(
     rootLiteral: String,
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    commandContext: CommandContext<TCommandSource>,
 ) {
-    fun handleImport(audience: Audience, fileName: String, wipe: Boolean = true) {
-        gradeway.confirmations.request(
-            sender = audience,
-            handler = {
-                gradeway.backups.import(fileName, wipe)
-                    .onLeft { error ->
-                        if (error is BackupManager.ImportError.FileNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.backup.import.fileNotFound",
-                                    Component.text(fileName)
-                                )
-                            )
-                            return@request
-                        }
-                        if (error is BackupManager.ImportError.CorruptArchive) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.backup.import.corruptArchive",
-                                    Component.text(fileName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@request
-                        }
-                        if (error is BackupManager.ImportError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.backup.import.unexpectedError",
-                                    Component.text(fileName),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@request
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
+    fun handleImport(source: TCommandSource, fileName: String, wipe: Boolean = true) {
+        requestConfirmation(source, commandContext, gradeway, rootLiteral) {
+            gradeway.backups.import(fileName, wipe)
+                .onLeft { error ->
+                    if (error is BackupManager.ImportError.FileNotFound) {
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.command.backup.import.success",
-                                Component.text(fileName)
+                                "gradeway.command.backup.import.fileNotFound",
+                                Argument.string("file", fileName)
                             )
                         )
+                        return@requestConfirmation
                     }
-            },
-            onTimeout = { jobId ->
-                audience.sendMessage(
-                    Component.translatable(
-                        "gradeway.confirmation.timeout",
-                        Component.text(jobId)
+                    if (error is BackupManager.ImportError.CorruptArchive) {
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.backup.import.corruptArchive",
+                                Argument.string("file", fileName),
+                                Argument.string("error", error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@requestConfirmation
+                    }
+                    if (error is BackupManager.ImportError.UnsupportedFormatVersion) {
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.backup.import.unsupportedFormatVersion",
+                                Argument.string("file", fileName),
+                                Argument.string("version", error.version.toString()),
+                                Argument.string("supported", error.supportedVersion.toString())
+                            )
+                        )
+                        return@requestConfirmation
+                    }
+                    if (error is BackupManager.ImportError.Unexpected) {
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.backup.import.unexpectedError",
+                                Argument.string("file", fileName),
+                                Argument.string("error", error.throwable.message ?: "Unknown")
+                            )
+                        )
+                        return@requestConfirmation
+                    }
+                }
+                .onRight {
+                    commandContext.sendTranslatedMessage(
+                        source,
+                        Component.translatable(
+                            "gradeway.command.backup.import.success",
+                            Argument.string("file", fileName)
+                        )
                     )
-                )
-            }
-        ).onLeft { error ->
-            if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
-                audience.sendMessage(
-                    Component.translatable("gradeway.confirmation.request.failedToRegister")
-                )
-                return
-            }
-            if (error is ConfirmationManager.RequestJobError.Unexpected) {
-                audience.sendMessage(
-                    Component.translatable(
-                        "gradeway.confirmation.request.unexpectedError",
-                        Component.text(error.throwable.message ?: "Unknown")
-                    )
-                )
-                return
-            }
-        }.onRight { jobId ->
-            audience.sendMessage(
-                Component.translatable(
-                    "gradeway.confirmation.request.success",
-                    Component.text(rootLiteral),
-                    Component.text(jobId)
-                )
-            )
+                }
         }
     }
 
-    registerCopy("backup") {
-        permission("gradeway.backup")
+    literal("backup") {
+        requires { commandContext.hasPermission(it, "gradeway.backup") }
 
-        registerCopy("export") {
-            permission("gradeway.backup.export")
+        literal("export") {
+            requires { commandContext.hasPermission(it, "gradeway.backup.export") }
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
-
+            execute {
                 gradeway.backups.export()
                     .onLeft { error ->
                         if (error is BackupManager.ExportError.FileAlreadyExists) {
-                            audience.sendMessage(
+                            commandContext.sendTranslatedMessage(
+                                source,
                                 Component.translatable(
                                     "gradeway.command.backup.export.fileAlreadyExists"
                                 )
                             )
-                            return@handler
+                            return@execute
                         }
                         if (error is BackupManager.ExportError.Unexpected) {
-                            audience.sendMessage(
+                            commandContext.sendTranslatedMessage(
+                                source,
                                 Component.translatable(
                                     "gradeway.command.backup.export.unexpectedError",
-                                    Component.text(error.throwable.message ?: "Unknown")
+                                    Argument.string("error", error.throwable.message ?: "Unknown")
                                 )
                             )
-                            return@handler
+                            return@execute
                         }
                     }
                     .onRight { file ->
-                        audience.sendMessage(
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
                                 "gradeway.command.backup.export.success",
-                                Component.text(file.name)
+                                Argument.string("file", file.name)
                             )
                         )
                     }
             }
         }
 
-        registerCopy("import") {
-            permission("gradeway.backup.import")
+        literal("import") {
+            requires { commandContext.hasPermission(it, "gradeway.backup.import") }
 
-            required("file", stringParser())
-            optional("wipe", booleanParser())
+            string("file") {
+                execute {
+                    val file = stringParam("file")
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+                    handleImport(source, file)
+                }
 
-                val file = context.get<String>("file")
-                val wipe = context.getOrDefault("wipe", true)
+                boolean("wipe") {
+                    execute {
+                        val file = stringParam("file")
+                        val wipe = param("wipe", Boolean::class)
 
-                handleImport(audience, file, wipe)
+                        handleImport(source, file, wipe)
+                    }
+                }
             }
         }
     }

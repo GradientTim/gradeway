@@ -4,6 +4,7 @@ plugins {
     id("gradeway-base")
     id("gradeway-shadow")
     id("gradeway-release")
+    id("gradeway-artifact-metadata")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("de.eldoria.plugin-yml.paper") version "0.9.0"
 }
@@ -16,8 +17,7 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    implementation("org.incendo:cloud-paper:2.0.1")
-    compileOnly("io.papermc.paper:paper-api:26.2.build.129-stable")
+    compileOnly("io.papermc.paper:paper-api:26.3.build.9-alpha")
 }
 
 tasks {
@@ -27,7 +27,6 @@ tasks {
             "dev/gradienttim/gradeway/**",
             "_GRADEWAY/**",
             "languages/**",
-            "paper-libraries.json",
             "paper-plugin.yml"
         )
     }

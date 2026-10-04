@@ -9,12 +9,14 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
+import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.messaging.payloads.*
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 class CommonRoleServiceTest {
     private val gradeway: CommonGradeway<TestPlatformConfig> = createTestGradeway()
@@ -188,5 +190,147 @@ class CommonRoleServiceTest {
         gradeway.groups.addRoleToGroup(highGroup, role).getOrElse { error(it.toString()) }
 
         assertEquals(gradeway.roles.getEffectiveWeight(role.id.value), 8)
+    }
+
+    @Test
+    fun `setDefault makes the role the only default role`() {
+        val first = createRole()
+        val second = createRole()
+
+        gradeway.roles.setDefault(first).getOrElse { error(it.toString()) }
+        gradeway.roles.setDefault(second.id.value.toString()).getOrElse { error(it.toString()) }
+
+        assertEquals(second.id.value, gradeway.roles.getDefaultRole()?.id?.value)
+        assertFalse(gradeway.roles.findById(first.id.value)?.isDefault ?: error("expected role"))
+        assertTrue(gradeway.roles.findById(second.id.value)?.isDefault ?: error("expected role"))
+    }
+
+    @Test
+    fun `setDefault rejects a role that is already the default or does not exist`() {
+        val role = createRole()
+        gradeway.roles.setDefault(role).getOrElse { error(it.toString()) }
+
+        assertEquals(RoleService.SetDefaultError.AlreadyDefault, gradeway.roles.setDefault(role).leftOrNull())
+        assertEquals(
+            RoleService.SetDefaultError.EntityNotFound,
+            gradeway.roles.setDefault(UUID.randomUUID().toString()).leftOrNull()
+        )
+    }
+
+    @Test
+    fun `clearDefault removes the default role and fails when there is none`() {
+        val role = createRole()
+        gradeway.roles.setDefault(role).getOrElse { error(it.toString()) }
+
+        gradeway.roles.clearDefault().getOrElse { error(it.toString()) }
+
+        assertNull(gradeway.roles.getDefaultRole())
+        assertEquals(RoleService.ClearDefaultError.NoDefaultRole, gradeway.roles.clearDefault().leftOrNull())
+    }
+
+    @Test
+    fun `deleting the default role leaves no default role`() {
+        val role = createRole()
+        gradeway.roles.setDefault(role).getOrElse { error(it.toString()) }
+
+        gradeway.roles.delete(role.id.value).getOrElse { error(it.toString()) }
+
+        assertNull(gradeway.roles.getDefaultRole())
+    }
+
+    private fun flagAsDefault(vararg roles: RoleEntity) {
+        transaction(gradeway.database) {
+            roles.forEach { role ->
+                RolesTable.update({ RolesTable.id eq role.id.value }) { it[isDefault] = true }
+            }
+        }
+    }
+
+    @Test
+    fun `getDefaultRole picks the highest weight when several roles are flagged`() {
+        val low = createRole()
+        val high = createRole()
+        gradeway.roles.setWeight(low, 1).getOrElse { error(it.toString()) }
+        gradeway.roles.setWeight(high, 5).getOrElse { error(it.toString()) }
+        flagAsDefault(low, high)
+
+        assertEquals(high.id.value, gradeway.roles.getDefaultRole()?.id?.value)
+    }
+
+    @Test
+    fun `setDefault leaves exactly one default role when several were flagged`() {
+        val first = createRole()
+        val second = createRole()
+        flagAsDefault(first, second)
+
+        gradeway.roles.setDefault(first).getOrElse { error(it.toString()) }
+
+        assertTrue(gradeway.roles.findById(first.id.value)?.isDefault ?: error("expected role"))
+        assertFalse(gradeway.roles.findById(second.id.value)?.isDefault ?: error("expected role"))
+    }
+
+    @Test
+    fun `new roles are not the default role`() {
+        assertFalse(createRole().isDefault)
+        assertNull(gradeway.roles.getDefaultRole())
+    }
+
+    @Test
+    fun `setDefaultFlag marks a role without unmarking the other default roles`() {
+        val low = createRole()
+        val high = createRole()
+        gradeway.roles.setWeight(low, 1).getOrElse { error(it.toString()) }
+        gradeway.roles.setWeight(high, 5).getOrElse { error(it.toString()) }
+
+        gradeway.roles.setDefaultFlag(low, true).getOrElse { error(it.toString()) }
+        gradeway.roles.setDefaultFlag(high.name, true).getOrElse { error(it.toString()) }
+
+        assertEquals(listOf(high.id.value, low.id.value), gradeway.roles.getDefaultRoles().map { it.id.value })
+        assertEquals(high.id.value, gradeway.roles.getDefaultRole()?.id?.value)
+    }
+
+    @Test
+    fun `setDefaultFlag unmarks a role and rejects an unchanged flag or unknown role`() {
+        val role = createRole()
+        gradeway.roles.setDefaultFlag(role, true).getOrElse { error(it.toString()) }
+
+        assertEquals(
+            RoleService.SetDefaultFlagError.FlagAlreadySet,
+            gradeway.roles.setDefaultFlag(role, true).leftOrNull()
+        )
+        gradeway.roles.setDefaultFlag(role, false).getOrElse { error(it.toString()) }
+        assertTrue(gradeway.roles.getDefaultRoles().isEmpty())
+        assertEquals(
+            RoleService.SetDefaultFlagError.FlagAlreadySet,
+            gradeway.roles.setDefaultFlag(role, false).leftOrNull()
+        )
+        assertEquals(
+            RoleService.SetDefaultFlagError.EntityNotFound,
+            gradeway.roles.setDefaultFlag(UUID.randomUUID().toString(), true).leftOrNull()
+        )
+    }
+
+    @Test
+    fun `setName renames the role so it resolves by its new name`() {
+        val role = createRole()
+        val newName = uniqueName("renamed")
+
+        gradeway.roles.setName(role.name, newName).getOrElse { error(it.toString()) }
+
+        assertEquals(role.id.value, gradeway.roles.findByName(newName)?.id?.value)
+    }
+
+    @Test
+    fun `setName rejects an invalid, unchanged or already used name and an unknown role`() {
+        val role = createRole()
+        val other = createRole()
+
+        assertEquals(RoleService.SetNameError.InvalidName, gradeway.roles.setName(role, "").leftOrNull())
+        assertEquals(RoleService.SetNameError.NameAlreadySet, gradeway.roles.setName(role, role.name).leftOrNull())
+        assertEquals(RoleService.SetNameError.NameAlreadyExists, gradeway.roles.setName(role, other.name).leftOrNull())
+        assertEquals(
+            RoleService.SetNameError.EntityNotFound,
+            gradeway.roles.setName(UUID.randomUUID().toString(), uniqueName("role")).leftOrNull()
+        )
     }
 }

@@ -8,20 +8,22 @@ import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.TestScheduler
-import dev.gradienttim.gradeway.config.GradewayConfig
+import dev.gradienttim.gradeway.configs.GradewayConfig
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.platform.CommonLogger
-import java.io.File
 import java.nio.file.Files
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class CommonConfigManagerTest {
     private fun createGradeway(): CommonGradeway<TestPlatformConfig> = CommonGradeway(
-        logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+        logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
         scheduler = TestScheduler(),
-        directory = Files.createTempDirectory("config-manager-test").toFile(),
+        directory = Files.createTempDirectory("config-manager-test"),
         defaultPlatformConfig = TestPlatformConfig(),
         platformConfigSerializer = TestPlatformConfig.serializer(),
     )
@@ -33,23 +35,38 @@ class CommonConfigManagerTest {
 
         manager.load().getOrElse { error(it.toString()) }
 
-        val configFile = File(gradeway.directory, "config.toml")
+        val configFile = gradeway.directory.resolve("config.toml")
         assertTrue(configFile.exists())
-        assertEquals(GradewayConfig.LATEST_VERSION, manager.config.version)
-        assertEquals("gradeway_", manager.config.database.prefix)
+        assertEquals(GradewayConfig.LATEST_VERSION, manager.gradewayEntry.config.version)
+        assertEquals("gradeway_", manager.driversEntry.config.database.prefix)
     }
 
     @Test
     fun `load bumps an older config version and rewrites the file`() {
         val gradeway = createGradeway()
-        val configFile = File(gradeway.directory, "config.toml")
-        configFile.writeText("version = 0\n\n[platform]\n")
+        val configFile = gradeway.directory.resolve("config.toml")
+        configFile.writeText("version = 0\n")
 
         val manager = CommonConfigManager(gradeway)
         manager.load().getOrElse { error(it.toString()) }
 
-        assertEquals(GradewayConfig.LATEST_VERSION, manager.config.version)
-        assertTrue(configFile.readText().contains("version = ${GradewayConfig.LATEST_VERSION}"))
+        assertEquals(GradewayConfig.LATEST_VERSION, manager.gradewayEntry.config.version)
+        val versionPattern = Regex("""version\s*=\s*${GradewayConfig.LATEST_VERSION}\b""")
+        assertTrue(versionPattern.containsMatchIn(configFile.readText()))
+    }
+
+    @Test
+    fun `load fills in the default role section for a config written before it existed`() {
+        val gradeway = createGradeway()
+        val configFile = gradeway.directory.resolve("config.toml")
+        configFile.writeText("version = 1\nprimaryColor = \"#123456\"\n")
+
+        val manager = CommonConfigManager(gradeway)
+        manager.load().getOrElse { error(it.toString()) }
+
+        assertEquals("#123456", manager.gradewayEntry.config.primaryColor)
+        assertEquals(GradewayConfig.DefaultRoleConfig(), manager.gradewayEntry.config.defaultRole)
+        assertTrue(configFile.readText().contains("assignWhenNoPrimaryRole"))
     }
 
     @Test
@@ -57,8 +74,8 @@ class CommonConfigManagerTest {
         val originalPrefix = TableConstants.TABLE_PREFIX
         try {
             val gradeway = createGradeway()
-            val configFile = File(gradeway.directory, "config.toml")
-            configFile.writeText("[database]\nprefix = \"custom_\"\n\n[platform]\n")
+            val driversFile = gradeway.directory.resolve("drivers.toml")
+            driversFile.writeText("[database]\nprefix = \"custom_\"\n")
 
             val manager = CommonConfigManager(gradeway)
             manager.load().getOrElse { error(it.toString()) }

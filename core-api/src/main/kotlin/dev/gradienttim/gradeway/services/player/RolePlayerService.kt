@@ -504,6 +504,51 @@ interface RolePlayerService {
     fun setPrimaryRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
+     * Clears the primary role of the player identified by the given unique identifier.
+     *
+     * The role itself stays assigned to the player; only its primary marker is removed.
+     *
+     * @param playerId The unique identifier of the player whose primary role should be cleared.
+     * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
+     */
+    fun clearPrimaryRole(playerId: UUID): Either<PlayerService.ClearPrimaryRoleError, Unit>
+
+    /**
+     * Clears the primary role of the given player.
+     *
+     * The role itself stays assigned to the player; only its primary marker is removed.
+     *
+     * @param player The player entity whose primary role should be cleared.
+     * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
+     */
+    fun clearPrimaryRole(player: PlayerEntity): Either<PlayerService.ClearPrimaryRoleError, Unit>
+
+    /**
+     * Clears the primary role of the player identified by their ID or name.
+     *
+     * The role itself stays assigned to the player; only its primary marker is removed.
+     *
+     * @param playerIdOrName A string representing the player's unique ID or name.
+     * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
+     */
+    fun clearPrimaryRole(playerIdOrName: String): Either<PlayerService.ClearPrimaryRoleError, Unit>
+
+    /**
+     * Assigns the default role to the player identified by the given unique identifier when the
+     * `defaultRole` configuration requires it, and makes it their primary role.
+     *
+     * The role is assigned when [firstJoin] is `true` and `assignOnFirstJoin` is enabled, or when
+     * the player has no primary role and `assignWhenNoPrimaryRole` is enabled. Nothing happens
+     * when no default role is set.
+     *
+     * @param playerId The unique identifier of the player.
+     * @param firstJoin Whether the player has just been created because they joined for the first time.
+     * @return Either an error of type PlayerService.ApplyDefaultRoleError if the operation fails, or the
+     *         assigned default role, or `null` if no role had to be assigned.
+     */
+    fun applyDefaultRole(playerId: UUID, firstJoin: Boolean): Either<PlayerService.ApplyDefaultRoleError, RoleEntity?>
+
+    /**
      * Removes every role assigned to the player identified by the given unique identifier that has
      * expired (its `untilAt` has passed) and is not currently paused.
      *

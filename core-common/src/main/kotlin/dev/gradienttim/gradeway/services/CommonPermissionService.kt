@@ -30,6 +30,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.messaging.payloads.*
@@ -42,8 +43,8 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPermissionService<TPlatformConfig>(
-    val gradeway: CommonGradeway<TPlatformConfig>
+class CommonPermissionService(
+    val gradeway: CommonGradeway<*>
 ) : PermissionService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateFor(payload) }
@@ -53,10 +54,6 @@ class CommonPermissionService<TPlatformConfig>(
         value: String,
         type: PermissionEntity.Type
     ): Either<PermissionService.CreatePermissionError, PermissionEntity> = either {
-        if (findPermissionByValue(value) != null) {
-            raise(PermissionService.CreatePermissionError.AlreadyExists)
-        }
-
         try {
             transaction(gradeway.database) {
                 DatabasePermissionEntity.new {
@@ -65,6 +62,9 @@ class CommonPermissionService<TPlatformConfig>(
                 }
             }
         } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PermissionService.CreatePermissionError.AlreadyExists)
+            }
             raise(PermissionService.CreatePermissionError.Unexpected(throwable))
         }
     }
@@ -454,19 +454,18 @@ class CommonPermissionService<TPlatformConfig>(
         template: PermissionTemplateEntity,
         permission: PermissionEntity
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity> = either {
-        transaction(gradeway.database) {
-            if (template.permissions.any { it.permissionId == permission.id }) {
-                raise(PermissionService.AddPermissionToTemplateError.PermissionAlreadyExists)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabasePermissionTemplatePermissionEntity.new {
                     this.templateId = template.id
                     this.permissionId = permission.id
                 }
-            } catch (throwable: Throwable) {
-                raise(PermissionService.AddPermissionToTemplateError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PermissionService.AddPermissionToTemplateError.PermissionAlreadyExists)
+            }
+            raise(PermissionService.AddPermissionToTemplateError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(
@@ -682,24 +681,18 @@ class CommonPermissionService<TPlatformConfig>(
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
 
-        transaction(gradeway.database) {
-            val templateEntitiesCount = DatabaseRolePermissionTemplateEntity.find {
-                (RolePermissionTemplatesTable.roleId eq role.id) and
-                        (RolePermissionTemplatesTable.permissionTemplateId eq template.id)
-            }.limit(1).count()
-
-            if (templateEntitiesCount != 0L) {
-                raise(PermissionService.LinkTemplateError.AlreadyLinked)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabaseRolePermissionTemplateEntity.new {
                     this.roleId = role.id
                     this.permissionTemplateId = template.id
                 }
-            } catch (throwable: Throwable) {
-                raise(PermissionService.LinkTemplateError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PermissionService.LinkTemplateError.AlreadyLinked)
+            }
+            raise(PermissionService.LinkTemplateError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(
@@ -1093,24 +1086,18 @@ class CommonPermissionService<TPlatformConfig>(
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
 
-        transaction(gradeway.database) {
-            val templateEntitiesCount = DatabasePlayerPermissionTemplateEntity.find {
-                (PlayerPermissionTemplatesTable.playerId eq player.id) and
-                        (PlayerPermissionTemplatesTable.permissionTemplateId eq template.id)
-            }.limit(1).count()
-
-            if (templateEntitiesCount != 0L) {
-                raise(PermissionService.LinkTemplateError.AlreadyLinked)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabasePlayerPermissionTemplateEntity.new {
                     this.playerId = player.id
                     this.permissionTemplateId = template.id
                 }
-            } catch (throwable: Throwable) {
-                raise(PermissionService.LinkTemplateError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PermissionService.LinkTemplateError.AlreadyLinked)
+            }
+            raise(PermissionService.LinkTemplateError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(
@@ -1497,24 +1484,18 @@ class CommonPermissionService<TPlatformConfig>(
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
 
-        transaction(gradeway.database) {
-            val templateEntitiesCount = DatabaseGroupPermissionTemplateEntity.find {
-                (GroupPermissionTemplatesTable.groupId eq group.id) and
-                        (GroupPermissionTemplatesTable.permissionTemplateId eq template.id)
-            }.limit(1).count()
-
-            if (templateEntitiesCount != 0L) {
-                raise(PermissionService.LinkTemplateError.AlreadyLinked)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabaseGroupPermissionTemplateEntity.new {
                     this.groupId = group.id
                     this.permissionTemplateId = template.id
                 }
-            } catch (throwable: Throwable) {
-                raise(PermissionService.LinkTemplateError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PermissionService.LinkTemplateError.AlreadyLinked)
+            }
+            raise(PermissionService.LinkTemplateError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(
@@ -2499,6 +2480,8 @@ class CommonPermissionService<TPlatformConfig>(
             is PermissionTemplateGroupLinkChangedPayload,
             is PermissionTemplatePlayerLinkChangedPayload,
             is CacheFlushPayload -> gradeway.caches.invalidateEntityEffectivePermissions()
+
+            is TrackChangedPayload, is TrackStageChangedPayload -> Unit
         }
     }
 

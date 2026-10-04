@@ -12,7 +12,6 @@ import net.md_5.bungee.api.plugin.Plugin;
 import java.lang.reflect.InaccessibleObjectException;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
-import java.util.logging.Level;
 
 public class GradewayPlugin extends Plugin {
     private GradewayBungeeCordInstance gradewayInstance = null;
@@ -24,14 +23,14 @@ public class GradewayPlugin extends Plugin {
             return;
         }
 
-        var metadata = ArtifactMetadata.load();
+        ArtifactMetadata metadata = ArtifactMetadata.load();
         if (metadata == null) {
             getLogger().warning("Failed to load metadata");
             return;
         }
 
         try {
-            var resolver = CommonArtifactResolver.builder()
+            CommonArtifactResolver resolver = CommonArtifactResolver.builder()
                     .logInfo(message -> getLogger().info(message))
                     .logWarn(message -> getLogger().warning(message))
                     .logError(message -> getLogger().severe(message))
@@ -42,7 +41,7 @@ public class GradewayPlugin extends Plugin {
                     .build();
 
             resolver.resolve(success -> {
-                gradewayInstance = new GradewayBungeeCordInstance(this, getLogger(), getDataFolder());
+                gradewayInstance = new GradewayBungeeCordInstance(this, getLogger(), getDataFolder().toPath());
                 gradewayInstance.initialize();
             }, Throwable::printStackTrace);
         } catch (Exception exception) {

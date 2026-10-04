@@ -58,11 +58,11 @@ class CommonMessagingBroker(
     }
 
     init {
-        val messagingEncryptionEnabled = gradeway.messagingEnvironment.booleanDefault(
+        val messagingEncryptionEnabled = gradeway.environment.booleanDefault(
             names = arrayOf(MessagingConstants.ENV_ENCRYPTION_ENABLED),
             default = false
         )
-        val messagingSigningEnabled = gradeway.messagingEnvironment.booleanDefault(
+        val messagingSigningEnabled = gradeway.environment.booleanDefault(
             names = arrayOf(MessagingConstants.ENV_SIGNING_ENABLED),
             default = false
         )
@@ -78,14 +78,14 @@ class CommonMessagingBroker(
         }
 
         if (messagingEncryptionEnabled) {
-            val messagingEncryptionKey = gradeway.messagingEnvironment.stringRequired(
+            val messagingEncryptionKey = gradeway.environment.stringRequired(
                 names = arrayOf(MessagingConstants.ENV_ENCRYPTION_KEY)
             )
             crypto = Crypto(messagingEncryptionKey)
         }
 
         if (messagingSigningEnabled) {
-            val messagingSigningKey = gradeway.messagingEnvironment.stringRequired(
+            val messagingSigningKey = gradeway.environment.stringRequired(
                 names = arrayOf(MessagingConstants.ENV_SIGNING_KEY)
             )
             signer = Signer(messagingSigningKey)

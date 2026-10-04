@@ -4,95 +4,72 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands
 
-import dev.gradienttim.gradeway.BuildInfo
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.EnvironmentMeta
+import dev.gradienttim.gradeway.GitMeta
+import dev.gradienttim.gradeway.ProjectMeta
+import dev.gradienttim.gradeway.command.command
+import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.command.execute
+import dev.gradienttim.gradeway.command.literal
 import dev.gradienttim.gradeway.commands.gradeway.*
 import dev.gradienttim.gradeway.extensions.formatUTC
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.CommandManager
-import org.incendo.cloud.kotlin.extension.buildAndRegister
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.suggestion.SuggestionProcessor
+import net.kyori.adventure.text.minimessage.translation.Argument
 import java.time.Instant
 
-fun <C : Any> createGradewayCommand(
+fun <TCommandSource> createGradewayCommand(
     literal: String,
-    aliases: Array<String>,
     gradeway: CommonGradeway<*>,
-    commandManager: CommandManager<C>,
-    audienceProvider: AudienceProvider<C>
-) {
-    // Every dynamic argument in this plugin filters its own suggestions against the typed input
-    // (see CloudCommandSuggestions.kt). Cloud's default FilteringSuggestionProcessor would
-    // additionally require the suggestion *text* itself to contain that input, which breaks id
-    // suggestions whose text is a UUID rather than the name the user is typing.
-    commandManager.suggestionProcessor(SuggestionProcessor.passThrough())
+    commandContext: CommandContext<TCommandSource>,
+): LiteralArgumentBuilder<TCommandSource> {
+    return command(literal) {
+        roleCommand(literal, gradeway, commandContext)
+        groupCommand(literal, gradeway, commandContext)
+        trackCommand(literal, gradeway, commandContext)
+        cacheCommand(gradeway, commandContext)
+        playerCommand(literal, gradeway, commandContext)
+        backupCommand(literal, gradeway, commandContext)
+        migrationCommand(literal, gradeway, commandContext)
+        permissionCommand(literal, gradeway, commandContext)
+        confirmationCommand(gradeway, commandContext)
 
-//     MinecraftHelp is currently binary-incompatible with Paper builds on Adventure 5.x
-//     (cloud-minecraft-extras 2.0.0-beta.17 was compiled against adventure-api 4.15.0) and
-//     throws a NoSuchMethodError from its pagination/header rendering. Re-enable once cloud
-//     publishes a release built against Adventure 5.x.
-//     val help = MinecraftHelp.create("/$literal help", commandManager, audienceProvider)
+        literal("reload") {
+            requires { commandContext.hasPermission(it, "gradeway.reload") }
 
-    commandManager.buildAndRegister(literal, aliases = aliases) {
-        registerRoleCommand(literal, gradeway, audienceProvider)
-        registerGroupCommand(literal, gradeway, audienceProvider)
-        registerCacheCommand(gradeway, audienceProvider)
-        registerPlayerCommand(literal, gradeway, audienceProvider)
-        registerBackupCommand(literal, gradeway, audienceProvider)
-        registerMigrationCommand(literal, gradeway, audienceProvider)
-        registerPermissionCommand(literal, gradeway, audienceProvider)
-        registerConfirmationCommand(gradeway, audienceProvider)
-
-        registerCopy("reload") {
-            permission("gradeway.reload")
-
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
-
+            execute {
                 gradeway.reload()
                     .onLeft { throwable ->
-                        audience.sendMessage(
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
                                 "gradeway.command.reload.failed",
-                                Component.text(throwable.message ?: "Unknown")
+                                Argument.string("error", throwable.message ?: "Unknown")
                             )
                         )
                     }
                     .onRight {
-                        audience.sendMessage(Component.translatable("gradeway.command.reload.success"))
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable("gradeway.command.reload.success")
+                        )
                     }
             }
         }
 
-//         See the MinecraftHelp comment above - re-enable once cloud publishes a release
-//         built against Adventure 5.x.
-//         registerCopy("help") {
-//             optional("query", StringParser.greedyStringParser())
-//
-//             handler { context ->
-//                 help.queryCommands(context.getOrDefault("query", ""), context.sender())
-//             }
-//         }
-
-        handler { context ->
-            val audience = audienceProvider.apply(context.sender())
-
-            var commitHash = BuildInfo.GIT_COMMIT_HASH
-            if (BuildInfo.GIT_IS_DIRTY) {
+        execute {
+            var commitHash = GitMeta.COMMIT_HASH_SHORT
+            if (GitMeta.IS_DIRTY) {
                 commitHash += "-dirty"
             }
 
-            val buildTimestamp = Instant
-                .parse(BuildInfo.BUILD_TIMESTAMP)
-                .formatUTC()
-
-            audience.sendMessage(
-                Component.translatable(
+            commandContext.sendTranslatedMessage(
+                source, Component.translatable(
                     "gradeway.command.about.info",
-                    Component.text(BuildInfo.VERSION),
-                    Component.text(commitHash),
-                    Component.text(buildTimestamp)
+                    Argument.string("version", ProjectMeta.VERSION),
+                    Argument.string("commit", commitHash),
+                    Argument.string("built", Instant.ofEpochSecond(EnvironmentMeta.BUILD_TIMESTAMP).formatUTC())
                 )
             )
         }

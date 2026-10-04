@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway
 
+import dev.gradienttim.gradeway.configs.PlatformConfig
 import dev.gradienttim.gradeway.services.*
 import org.koin.mp.KoinPlatform
 
@@ -11,7 +12,7 @@ import org.koin.mp.KoinPlatform
  * Core interface representing the Gradeway system, which provides services for managing roles
  * and players. This serves as the main access point for interacting with the Gradeway infrastructure.
  */
-interface Gradeway<TPlatformConfig> {
+interface Gradeway<TPlatformConfig : PlatformConfig> {
     /**
      * Represents the default configuration for the platform within the Gradeway system.
      *
@@ -81,6 +82,16 @@ interface Gradeway<TPlatformConfig> {
      * as performs query operations such as finding or listing existing groups.
      */
     val groups: GroupService
+
+    /**
+     * Manages and provides access to the track management service within the application.
+     *
+     * This service is responsible for handling operations related to tracks,
+     * such as creating, modifying, or retrieving track-related information. Tracks
+     * are typically used to define hierarchical progressions or organizational structures
+     * for entities such as users, roles, or groups within the system.
+     */
+    val tracks: TrackService
 
     /**
      * Provides access to role-related operations within the system.

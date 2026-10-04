@@ -61,7 +61,7 @@ opening a PR:
 
 Additional checks depending on what you touched:
 
-- **Any new `.kt` file** needs the MIT license header from `.assets/LICENSE_HEADER`
+- **Any new `.kt` file** needs the MIT license header from `.data/assets`
   (`spotlessApply` adds it automatically; `spotlessCheck` verifies it).
 - **Any command builder change** (`core-common/.../commands/**`) - run the
   `sync-translation-keys` check/skill to reconcile `Component.translatable(...)` keys against
@@ -76,7 +76,7 @@ Additional checks depending on what you touched:
 - `warningsAsErrors` is enabled for the Kotlin compiler at the root build - new code must be warning-free rather than
   suppressing warnings.
 - Formatting/license headers are enforced by Spotless; run `./gradlew spotlessApply` rather than hand-formatting.
-- Static analysis is enforced by detekt (`.config/detekt.yml`).
+- Static analysis is enforced by detekt (`.data/configs/detekt.yml`).
 
 ## Commit / PR expectations
 

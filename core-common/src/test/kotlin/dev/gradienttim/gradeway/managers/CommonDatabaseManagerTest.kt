@@ -31,9 +31,9 @@ class CommonDatabaseManagerTest {
 
     private fun createLoadedGradeway(): CommonGradeway<TestPlatformConfig> {
         val instance = CommonGradeway(
-            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
             scheduler = TestScheduler(),
-            directory = Files.createTempDirectory("database-manager-test").toFile(),
+            directory = Files.createTempDirectory("database-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
         )
@@ -51,7 +51,7 @@ class CommonDatabaseManagerTest {
     @Test
     fun `enable fails with a blank driver id`() {
         val gradeway = createLoadedGradeway()
-        gradeway.configs.config.database.driver = ""
+        gradeway.configs.driversEntry.config.database.driver = ""
 
         val result = gradeway.databases.enable()
 
@@ -61,7 +61,7 @@ class CommonDatabaseManagerTest {
     @Test
     fun `enable fails when the driver is not registered`() {
         val gradeway = createLoadedGradeway()
-        gradeway.configs.config.database.driver = "does-not-exist"
+        gradeway.configs.driversEntry.config.database.driver = "does-not-exist"
 
         val result = gradeway.databases.enable()
 
@@ -76,7 +76,7 @@ class CommonDatabaseManagerTest {
             type = DriverType.DATABASE,
             driver = NotADatabaseDriver()
         )
-        gradeway.configs.config.database.driver = "not-a-db-adapter"
+        gradeway.configs.driversEntry.config.database.driver = "not-a-db-adapter"
 
         val result = gradeway.databases.enable()
 
@@ -87,7 +87,7 @@ class CommonDatabaseManagerTest {
     fun `enable with a valid driver creates the expected tables`() {
         val gradeway = createLoadedGradeway()
         gradeway.drivers.registerDriver(id = "test", type = DriverType.DATABASE, driver = TestDatabaseDriver())
-        gradeway.configs.config.database.driver = "test"
+        gradeway.configs.driversEntry.config.database.driver = "test"
 
         gradeway.databases.enable().getOrElse { error(it.toString()) }
 
@@ -98,7 +98,7 @@ class CommonDatabaseManagerTest {
     fun `disable is idempotent`() {
         val gradeway = createLoadedGradeway()
         gradeway.drivers.registerDriver(id = "test", type = DriverType.DATABASE, driver = TestDatabaseDriver())
-        gradeway.configs.config.database.driver = "test"
+        gradeway.configs.driversEntry.config.database.driver = "test"
         gradeway.databases.enable().getOrElse { error(it.toString()) }
 
         gradeway.databases.disable().getOrElse { error(it.toString()) }

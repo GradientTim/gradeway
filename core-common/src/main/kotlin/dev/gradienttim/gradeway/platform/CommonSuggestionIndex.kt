@@ -15,7 +15,12 @@ import dev.gradienttim.gradeway.database.models.player.DatabasePlayerEntity
 import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
+import dev.gradienttim.gradeway.database.models.track.DatabaseTrackEntity
+import dev.gradienttim.gradeway.database.models.track.DatabaseTrackStageEntity
+import dev.gradienttim.gradeway.database.models.track.TrackStagesTable
+import dev.gradienttim.gradeway.database.models.track.TracksTable
 import dev.gradienttim.gradeway.messaging.payloads.*
+import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
@@ -34,6 +39,8 @@ class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : Suggestio
     override val groups = ConcurrentHashMap<UUID, String>()
     override val permissions = ConcurrentHashMap<UUID, String>()
     override val permissionTemplates = ConcurrentHashMap<UUID, String>()
+    override val tracks = ConcurrentHashMap<UUID, String>()
+    override val trackStages = ConcurrentHashMap<UUID, String>()
 
     init {
         gradeway.messaging.subscribe { payload -> handle(payload) }
@@ -52,6 +59,15 @@ class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : Suggestio
             val permissionTemplateRows = PermissionTemplatesTable
                 .select(PermissionTemplatesTable.id, PermissionTemplatesTable.name)
                 .associate { row -> row[PermissionTemplatesTable.id].value to row[PermissionTemplatesTable.name] }
+            val trackRows = TracksTable.select(TracksTable.id, TracksTable.slug)
+                .associate { row -> row[TracksTable.id].value to row[TracksTable.slug] }
+            val trackStageRows = TrackStagesTable
+                .innerJoin(TracksTable, { trackId }, { id })
+                .innerJoin(RolesTable, { TrackStagesTable.roleId }, { id })
+                .select(TrackStagesTable.id, TracksTable.slug, RolesTable.name)
+                .associate { row ->
+                    row[TrackStagesTable.id].value to "${row[TracksTable.slug]}/${row[RolesTable.name]}"
+                }
 
             players.clear()
             players.putAll(playerRows)
@@ -63,6 +79,10 @@ class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : Suggestio
             permissions.putAll(permissionRows)
             permissionTemplates.clear()
             permissionTemplates.putAll(permissionTemplateRows)
+            tracks.clear()
+            tracks.putAll(trackRows)
+            trackStages.clear()
+            trackStages.putAll(trackStageRows)
         }
     }
 
@@ -72,6 +92,8 @@ class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : Suggestio
         groups.clear()
         permissions.clear()
         permissionTemplates.clear()
+        tracks.clear()
+        trackStages.clear()
     }
 
     private fun handle(payload: MessagingPayload) {
@@ -97,6 +119,14 @@ class CommonSuggestionIndex(private val gradeway: CommonGradeway<*>) : Suggestio
                 payload.templateId,
                 payload.action
             ) { DatabasePermissionTemplateEntity.findById(it)?.name }
+
+            is TrackChangedPayload -> update(tracks, payload.trackId, payload.action) {
+                DatabaseTrackEntity.findById(it)?.slug
+            }
+
+            is TrackStageChangedPayload -> update(trackStages, payload.stageId, payload.action) {
+                DatabaseTrackStageEntity.findById(it)?.let { stage -> "${stage.track.slug}/${stage.role.name}" }
+            }
 
             is CacheFlushPayload -> initialize()
             else -> Unit

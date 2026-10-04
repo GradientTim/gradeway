@@ -4,406 +4,463 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
+import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.*
+import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.commands.extensions.*
+import dev.gradienttim.gradeway.database.models.group.GroupPermissionTemplatesTable
 import dev.gradienttim.gradeway.database.models.group.GroupPermissionsTable
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
+import dev.gradienttim.gradeway.database.models.role.RoleGroupsTable
+import dev.gradienttim.gradeway.database.models.role.RolesTable
+import dev.gradienttim.gradeway.extensions.eqId
+import dev.gradienttim.gradeway.extensions.formatUTC
 import dev.gradienttim.gradeway.extensions.likeAsStr
-import dev.gradienttim.gradeway.managers.ConfirmationManager
+import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.GroupService
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.kotlin.MutableCommandBuilder
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.parser.standard.IntegerParser.integerParser
-import org.incendo.cloud.parser.standard.StringParser.stringParser
+import net.kyori.adventure.text.minimessage.translation.Argument
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.innerJoin
 import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
+internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
     rootLiteral: String,
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    commandContext: CommandContext<TCommandContext>,
 ) {
-    fun handleCreateGroup(audience: Audience, name: String, defaultWeight: Int = -1) {
+    fun handleCreateGroup(source: TCommandContext, name: String, defaultWeight: Int = -1) {
         gradeway.groups.create(name) {
             this.defaultWeight = defaultWeight
         }.onLeft { error ->
             if (error is GroupService.CreateGroupError.InvalidName) {
-                audience.sendMessage(
+                commandContext.sendTranslatedMessage(
+                    source,
                     Component.translatable(
                         "gradeway.command.group.create.invalidName",
-                        Component.text(name)
+                        Argument.string("group", name)
                     )
                 )
                 return
             }
             if (error is GroupService.CreateGroupError.Unexpected) {
-                audience.sendMessage(
+                commandContext.sendTranslatedMessage(
+                    source,
                     Component.translatable(
                         "gradeway.command.group.create.unexpectedError",
-                        Component.text(name),
-                        Component.text(error.throwable.message ?: "Unknown")
+                        Argument.string("group", name),
+                        Argument.string("error", error.throwable.message ?: "Unknown")
                     )
                 )
                 return
             }
         }.onRight {
-            audience.sendMessage(
+            commandContext.sendTranslatedMessage(
+                source,
                 Component.translatable(
                     "gradeway.command.group.create.success",
-                    Component.text(name),
-                    Component.text(defaultWeight)
+                    Argument.string("group", name),
+                    Argument.numeric("weight", defaultWeight)
                 )
             )
         }
     }
 
-    registerCopy("group") {
-        permission("gradeway.group")
+    literal("group") {
+        requires { commandContext.hasPermission(it, "gradeway.group") }
 
-        registerCopy("create") {
-            permission("gradeway.group.create")
+        literal("create") {
+            requires { commandContext.hasPermission(it, "gradeway.group.create") }
 
-            required("name", stringParser())
-            optional("defaultWeight", integerParser())
+            string("name") {
+                execute {
+                    val name = stringParam("name")
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+                    handleCreateGroup(source, name)
+                }
 
-                val name = context.get<String>("name")
-                val defaultWeight = context.getOrDefault("defaultWeight", -1)
+                integer("defaultWeight") {
+                    execute {
+                        val name = stringParam("name")
+                        val defaultWeight = intParam("defaultWeight")
 
-                handleCreateGroup(audience, name, defaultWeight)
+                        handleCreateGroup(source, name, defaultWeight)
+                    }
+                }
             }
         }
 
-        registerCopy("delete") {
-            permission("gradeway.group.delete")
+        literal("delete") {
+            requires { commandContext.hasPermission(it, "gradeway.group.delete") }
 
-            required("idOrName", stringParser()) {
-                suggests { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
-            }
+            string("idOrName") {
+                suggestGroups(gradeway)
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+                execute {
+                    val idOrName = stringParam("idOrName")
 
-                val idOrName = context.get<String>("idOrName")
-
-                gradeway.confirmations.request(
-                    sender = audience,
-                    handler = {
+                    requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.groups.delete(idOrName)
                             .onLeft { error ->
                                 if (error is GroupService.DeleteGroupError.EntityNotFound) {
-                                    audience.sendMessage(
+                                    commandContext.sendTranslatedMessage(
+                                        source,
                                         Component.translatable(
                                             "gradeway.command.group.delete.entityNotFound",
-                                            Component.text(idOrName)
+                                            Argument.string("group", idOrName)
                                         )
                                     )
-                                    return@request
+                                    return@requestConfirmation
                                 }
                                 if (error is GroupService.DeleteGroupError.Unexpected) {
-                                    audience.sendMessage(
+                                    commandContext.sendTranslatedMessage(
+                                        source,
                                         Component.translatable(
                                             "gradeway.command.group.delete.unexpectedError",
-                                            Component.text(idOrName),
-                                            Component.text(error.throwable.message ?: "Unknown")
+                                            Argument.string("group", idOrName),
+                                            Argument.string("error", error.throwable.message ?: "Unknown")
                                         )
                                     )
-                                    return@request
+                                    return@requestConfirmation
                                 }
                             }
                             .onRight {
-                                audience.sendMessage(
+                                commandContext.sendTranslatedMessage(
+                                    source,
                                     Component.translatable(
                                         "gradeway.command.group.delete.success",
-                                        Component.text(idOrName)
+                                        Argument.string("group", idOrName)
                                     )
                                 )
+                            }
+                    }
+                }
+            }
+        }
+
+        literal("info") {
+            requires { commandContext.hasPermission(it, "gradeway.group.info") }
+
+            string("idOrName") {
+                suggestGroups(gradeway)
+
+                execute {
+                    val idOrName = stringParam("idOrName")
+
+                    val group = gradeway.groups.findByIdOrName(idOrName)
+                    if (group == null) {
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.group.info.entityNotFound",
+                                Argument.string("group", idOrName)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    val groupId = group.id.value
+
+                    val details = transaction(gradeway.database) {
+                        object {
+                            val roles = RoleGroupsTable
+                                .innerJoin(RolesTable, { roleId }, { id })
+                                .select(RolesTable.name)
+                                .where { RoleGroupsTable.groupId eqId groupId }
+                                .orderBy(RolesTable.weight to SortOrder.DESC)
+                                .map { Component.text(it[RolesTable.name]) }
+                            val permissions = GroupPermissionsTable
+                                .selectAll()
+                                .where { GroupPermissionsTable.groupId eqId groupId }
+                                .count()
+                            val templates = GroupPermissionTemplatesTable
+                                .selectAll()
+                                .where { GroupPermissionTemplatesTable.groupId eqId groupId }
+                                .count()
+                        }
+                    }
+
+                    commandContext.sendTranslatedMessage(
+                        source,
+                        Component.translatable(
+                            "gradeway.command.group.info",
+                            groupId.toIdArgument(),
+                            Argument.string("name", group.name),
+                            Argument.numeric("weight", group.defaultWeight),
+                            *infoListArguments("roles", details.roles),
+                            Argument.numeric("permissions", details.permissions),
+                            Argument.numeric("templates", details.templates),
+                            Argument.string("created", group.createdAt.formatUTC()),
+                            Argument.string("updated", group.updatedAt.formatUTC())
+                        )
+                    )
+                }
+            }
+        }
+
+        literal("modify") {
+            string("idOrName") {
+                suggestGroups(gradeway)
+
+                literal("setName") {
+                    requires { commandContext.hasPermission(it, "gradeway.group.setName") }
+
+                    string("name") {
+                        execute {
+                            val idOrName = stringParam("idOrName")
+                            val name = stringParam("name")
+
+                            gradeway.groups.setName(idOrName, name)
+                                .onLeft { error ->
+                                    if (error is GroupService.SetNameError.EntityNotFound) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setName.entityNotFound",
+                                                Argument.string("group", idOrName)
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is GroupService.SetNameError.InvalidName) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setName.invalidName",
+                                                Argument.string("group", idOrName),
+                                                Argument.string("name", name)
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is GroupService.SetNameError.NameAlreadySet) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setName.nameAlreadySet",
+                                                Argument.string("group", idOrName),
+                                                Argument.string("name", name)
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is GroupService.SetNameError.Unexpected) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setName.unexpectedError",
+                                                Argument.string("group", idOrName),
+                                                Argument.string("error", error.throwable.message ?: "Unknown")
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                }
+                                .onRight {
+                                    commandContext.sendTranslatedMessage(
+                                        source,
+                                        Component.translatable(
+                                            "gradeway.command.group.setName.success",
+                                            Argument.string("group", idOrName),
+                                            Argument.string("name", name)
+                                        )
+                                    )
+                                }
+                        }
+                    }
+                }
+
+                literal("setDefaultWeight") {
+                    requires { commandContext.hasPermission(it, "gradeway.group.setDefaltWeight") }
+
+                    integer("defaultWeight") {
+                        execute {
+                            val idOrName = stringParam("idOrName")
+                            val defaultWeight = intParam("defaultWeight")
+
+                            gradeway.groups.setDefaultWeight(idOrName, defaultWeight)
+                                .onLeft { error ->
+                                    if (error is GroupService.SetDefaultWeightError.EntityNotFound) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setDefaultWeight.entityNotFound",
+                                                Argument.string("group", idOrName)
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is GroupService.SetDefaultWeightError.WeightAlreadySet) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setDefaultWeight.weightAlreadySet",
+                                                Argument.string("group", idOrName),
+                                                Argument.numeric("weight", defaultWeight)
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                    if (error is GroupService.SetDefaultWeightError.Unexpected) {
+                                        commandContext.sendTranslatedMessage(
+                                            source,
+                                            Component.translatable(
+                                                "gradeway.command.group.setDefaultWeight.unexpectedError",
+                                                Argument.string("group", idOrName),
+                                                Argument.string("error", error.throwable.message ?: "Unknown")
+                                            )
+                                        )
+                                        return@execute
+                                    }
+                                }
+                                .onRight {
+                                    commandContext.sendTranslatedMessage(
+                                        source,
+                                        Component.translatable(
+                                            "gradeway.command.group.setDefaultWeight.success",
+                                            Argument.string("group", idOrName),
+                                            Argument.numeric("weight", defaultWeight)
+                                        )
+                                    )
+                                }
+                        }
+                    }
+                }
+
+                registerGroupRolesCommand(gradeway, commandContext)
+
+                registerEntityPermissionCommands(
+                    rootLiteral = rootLiteral,
+                    gradeway = gradeway,
+                    entityType = "group",
+                    context = commandContext,
+                    handleSetPermission = { idOrName, permission, status ->
+                        gradeway.groups.setPermission(idOrName, permission, status)
+                    },
+                    handleUnsetPermission = { idOrName, permission ->
+                        gradeway.groups.unsetPermission(
+                            idOrName,
+                            permission
+                        )
+                    },
+                    handleClearPermissions = { idOrName -> gradeway.groups.clearPermissions(idOrName) },
+                    handleLinkTemplate = { idOrName, templateIdOrName ->
+                        gradeway.permissions.linkTemplateToGroup(templateIdOrName, idOrName)
+                    },
+                    handleUnlinkTemplate = { idOrName, templateIdOrName ->
+                        gradeway.permissions.unlinkTemplateFromGroup(templateIdOrName, idOrName)
+                    },
+                    handleApplyTemplate = { idOrName, templateIdOrName ->
+                        gradeway.permissions.applyTemplateToGroup(templateIdOrName, idOrName)
+                    },
+                    handleRevokeTemplate = { idOrName, templateIdOrName ->
+                        gradeway.permissions.revokeTemplateFromGroup(templateIdOrName, idOrName)
+                    },
+                    handleListQuery = { scope, page, limit ->
+                        GroupPermissionsTable
+                            .innerJoin(GroupsTable, { groupId }, { id })
+                            .innerJoin(PermissionsTable, { GroupPermissionsTable.permissionId }, { id })
+                            .select(PermissionsTable.value, PermissionsTable.type, GroupPermissionsTable.isEnabled)
+                            .where {
+                                (GroupsTable.id likeAsStr "$scope%") or
+                                        (GroupsTable.name.lowerCase() like "${scope.lowercase()}%")
+                            }
+                            .limit(limit)
+                            .offset((page - 1).toLong())
+                            .map { row ->
+                                object {
+                                    val value = row[PermissionsTable.value]
+                                    val type = row[PermissionsTable.type]
+                                    val isEnabled = row[GroupPermissionsTable.isEnabled]
+                                }
                             }
                     },
-                    onTimeout = { jobId ->
-                        audience.sendMessage(
+                    handleListRender = { source, page, limit, result ->
+                        if (result.isEmpty()) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable("gradeway.command.group.listPermissions.empty")
+                            )
+                            return@registerEntityPermissionCommands
+                        }
+
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.confirmation.timeout",
-                                Component.text(jobId)
+                                "gradeway.command.group.listPermissions.header",
+                                Argument.numeric("page", page),
+                                Argument.numeric("limit", limit)
                             )
                         )
-                    }
-                ).onLeft { error ->
-                    if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
-                        audience.sendMessage(
-                            Component.translatable("gradeway.confirmation.request.failedToRegister")
-                        )
-                        return@handler
-                    }
-                    if (error is ConfirmationManager.RequestJobError.Unexpected) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.confirmation.request.unexpectedError",
-                                Component.text(error.throwable.message ?: "Unknown")
+
+                        result.forEach { permissionEntity ->
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.group.listPermissions.entry",
+                                    Argument.string("permission", permissionEntity.value),
+                                    Argument.string("type", permissionEntity.type.name),
+                                    Argument.bool("enabled", permissionEntity.isEnabled)
+                                )
                             )
-                        )
-                        return@handler
+                        }
                     }
-                }.onRight { jobId ->
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.confirmation.request.success",
-                            Component.text(rootLiteral),
-                            Component.text(jobId)
-                        )
-                    )
-                }
+                )
             }
         }
 
-        registerCopy("modify") {
-            required("idOrName", stringParser()) {
-                suggests { remaining -> suggestGroups(gradeway, remaining.lowercase()) }
-            }
-
-            registerCopy("setName") {
-                permission("gradeway.group.setName")
-
-                required("name", stringParser())
-
-                handler { context ->
-                    val audience = audienceProvider.apply(context.sender())
-
-                    val idOrName = context.get<String>("idOrName")
-                    val name = context.get<String>("name")
-
-                    gradeway.groups.setName(idOrName, name)
-                        .onLeft { error ->
-                            if (error is GroupService.SetNameError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setName.entityNotFound",
-                                        Component.text(idOrName)
-                                    )
-                                )
-                                return@handler
-                            }
-                            if (error is GroupService.SetNameError.InvalidName) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setName.invalidName",
-                                        Component.text(idOrName),
-                                        Component.text(name)
-                                    )
-                                )
-                                return@handler
-                            }
-                            if (error is GroupService.SetNameError.NameAlreadySet) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setName.nameAlreadySet",
-                                        Component.text(idOrName),
-                                        Component.text(name)
-                                    )
-                                )
-                                return@handler
-                            }
-                            if (error is GroupService.SetNameError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setName.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    )
-                                )
-                                return@handler
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.setName.success",
-                                    Component.text(idOrName),
-                                    Component.text(name)
-                                )
-                            )
-                        }
-                }
-            }
-
-            registerCopy("setDefaultWeight") {
-                permission("gradeway.group.setDefaltWeight")
-
-                required("defaultWeight", integerParser())
-
-                handler { context ->
-                    val audience = audienceProvider.apply(context.sender())
-
-                    val idOrName = context.get<String>("idOrName")
-                    val defaultWeight = context.get<Int>("defaultWeight")
-
-                    gradeway.groups.setDefaultWeight(idOrName, defaultWeight)
-                        .onLeft { error ->
-                            if (error is GroupService.SetDefaultWeightError.EntityNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setDefaultWeight.entityNotFound",
-                                        Component.text(idOrName)
-                                    )
-                                )
-                                return@handler
-                            }
-                            if (error is GroupService.SetDefaultWeightError.WeightAlreadySet) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setDefaultWeight.weightAlreadySet",
-                                        Component.text(idOrName),
-                                        Component.text(defaultWeight)
-                                    )
-                                )
-                                return@handler
-                            }
-                            if (error is GroupService.SetDefaultWeightError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.group.setDefaultWeight.unexpectedError",
-                                        Component.text(idOrName),
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    )
-                                )
-                                return@handler
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.setDefaultWeight.success",
-                                    Component.text(idOrName),
-                                    Component.text(defaultWeight)
-                                )
-                            )
-                        }
-                }
-            }
-
-            registerGroupRolesCommand(gradeway, audienceProvider)
-
-            registerEntityPermissionCommands(
-                rootLiteral = rootLiteral,
-                gradeway = gradeway,
-                entityType = "group",
-                audienceProvider = audienceProvider,
-                handleSetPermission = { idOrName, permission, status ->
-                    gradeway.groups.setPermission(idOrName, permission, status)
-                },
-                handleUnsetPermission = { idOrName, permission ->
-                    gradeway.groups.unsetPermission(
-                        idOrName,
-                        permission
-                    )
-                },
-                handleClearPermissions = { idOrName -> gradeway.groups.clearPermissions(idOrName) },
-                handleLinkTemplate = { idOrName, templateIdOrName ->
-                    gradeway.permissions.linkTemplateToGroup(templateIdOrName, idOrName)
-                },
-                handleUnlinkTemplate = { idOrName, templateIdOrName ->
-                    gradeway.permissions.unlinkTemplateFromGroup(templateIdOrName, idOrName)
-                },
-                handleApplyTemplate = { idOrName, templateIdOrName ->
-                    gradeway.permissions.applyTemplateToGroup(templateIdOrName, idOrName)
-                },
-                handleRevokeTemplate = { idOrName, templateIdOrName ->
-                    gradeway.permissions.revokeTemplateFromGroup(templateIdOrName, idOrName)
-                },
-                handleListQuery = { scope, page, limit ->
-                    GroupPermissionsTable
-                        .innerJoin(GroupsTable, { groupId }, { id })
-                        .innerJoin(PermissionsTable, { GroupPermissionsTable.permissionId }, { id })
-                        .select(PermissionsTable.value, PermissionsTable.type, GroupPermissionsTable.isEnabled)
-                        .where {
-                            (GroupsTable.id likeAsStr "$scope%") or
-                                    (GroupsTable.name.lowerCase() like "${scope.lowercase()}%")
-                        }
-                        .limit(limit)
-                        .offset((page - 1).toLong())
-                        .map { row ->
-                            object {
-                                val value = row[PermissionsTable.value]
-                                val type = row[PermissionsTable.type]
-                                val isEnabled = row[GroupPermissionsTable.isEnabled]
-                            }
-                        }
-                },
-                handleListRender = { audience, page, limit, result ->
-                    if (result.isEmpty()) {
-                        audience.sendMessage(
-                            Component.translatable("gradeway.command.group.listPermissions.empty")
-                        )
-                        return@registerEntityPermissionCommands
-                    }
-
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.group.listPermissions.header",
-                            Component.text(page),
-                            Component.text(limit)
-                        )
-                    )
-
-                    result.forEach { permissionEntity ->
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.group.listPermissions.entry",
-                                Component.text(permissionEntity.value),
-                                Component.text(permissionEntity.type.name),
-                                Component.text(permissionEntity.isEnabled)
-                            )
-                        )
-                    }
-                }
-            )
-        }
-
-        registerGlobalListCommand(
+        registerWeightedListCommand(
+            context = commandContext,
             gradeway = gradeway,
             permission = "gradeway.group.list",
-            audienceProvider = audienceProvider,
-            query = { page, limit ->
+            query = { page, limit, order ->
                 GroupsTable
-                    .select(GroupsTable.id, GroupsTable.name)
+                    .select(GroupsTable.id, GroupsTable.name, GroupsTable.defaultWeight)
+                    .orderBy(GroupsTable.defaultWeight to order, GroupsTable.name to SortOrder.ASC)
                     .limit(limit)
-                    .offset((page - 1).toLong())
+                    .offset(((page - 1) * limit).toLong())
                     .map { row ->
                         object {
                             val id = row[GroupsTable.id].value
                             val name = row[GroupsTable.name]
+                            val weight = row[GroupsTable.defaultWeight]
                         }
                     }
             },
-            render = { audience, page, limit, result ->
+            render = { source, page, limit, result ->
                 if (result.isEmpty()) {
-                    audience.sendMessage(Component.translatable("gradeway.command.group.list.empty"))
-                    return@registerGlobalListCommand
+                    commandContext.sendTranslatedMessage(
+                        source,
+                        Component.translatable("gradeway.command.group.list.empty")
+                    )
+                    return@registerWeightedListCommand
                 }
 
-                audience.sendMessage(
+                commandContext.sendTranslatedMessage(
+                    source,
                     Component.translatable(
                         "gradeway.command.group.list.header",
-                        Component.text(page),
-                        Component.text(limit)
+                        Argument.numeric("page", page),
+                        Argument.numeric("limit", limit)
                     )
                 )
 
                 result.forEach { group ->
-                    audience.sendMessage(
+                    commandContext.sendTranslatedMessage(
+                        source,
                         Component.translatable(
                             "gradeway.command.group.list.entry",
-                            Component.text(group.id.toString()),
-                            Component.text(group.name)
+                            group.id.toIdArgument(),
+                            Argument.string("name", group.name),
+                            Argument.numeric("weight", group.weight)
                         )
                     )
                 }
@@ -412,173 +469,257 @@ internal fun <C : Any> MutableCommandBuilder<C>.registerGroupCommand(
     }
 }
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerGroupRolesCommand(
+internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRolesCommand(
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    context: CommandContext<TCommandSource>,
 ) {
-    registerCopy("roles") {
-        registerCopy("add") {
-            permission("gradeway.group.roles.add")
+    literal("roles") {
+        literal("add") {
+            requires { context.hasPermission(it, "gradeway.group.roles.add") }
 
-            required("roleId", stringParser()) {
-                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
-            }
+            string("role") {
+                suggestRoles(gradeway)
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+                execute {
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("role")
 
-                val idOrName = context.get<String>("idOrName")
-                val roleId = context.get<String>("roleId")
+                    val roleUniqueId = gradeway.roles.findByIdOrName(roleId)?.id?.value
 
-                val roleUniqueId = runCatching { UUID.fromString(roleId) }.getOrNull()
-
-                if (roleUniqueId == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.group.addRole.invalidUuid",
-                            Component.text(idOrName),
-                            Component.text(roleId)
-                        )
-                    )
-                    return@handler
-                }
-
-                gradeway.groups.addRoleToGroup(idOrName, roleUniqueId)
-                    .onLeft { error ->
-                        if (error is GroupService.AddTargetError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.addRole.entityNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.AddTargetError.TargetNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.addRole.targetNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.AddTargetError.AlreadyInGroup) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.addRole.alreadyInGroup",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.AddTargetError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.addRole.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(roleId),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
+                    if (roleUniqueId == null) {
+                        context.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.command.group.addRole.success",
-                                Component.text(idOrName),
-                                Component.text(roleId)
+                                "gradeway.command.group.addRole.targetNotFound",
+                                Argument.string("group", idOrName),
+                                Argument.string("role", roleId)
                             )
                         )
+                        return@execute
                     }
+
+                    gradeway.groups.addRoleToGroup(idOrName, roleUniqueId)
+                        .onLeft { error ->
+                            if (error is GroupService.AddTargetError.EntityNotFound) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.addRole.entityNotFound",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.AddTargetError.TargetNotFound) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.addRole.targetNotFound",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.AddTargetError.AlreadyInGroup) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.addRole.alreadyInGroup",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.AddTargetError.Unexpected) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.addRole.unexpectedError",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId),
+                                        Argument.string("error", error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.group.addRole.success",
+                                    Argument.string("group", idOrName),
+                                    Argument.string("role", roleId)
+                                )
+                            )
+                        }
+                }
             }
         }
 
-        registerCopy("remove") {
-            permission("gradeway.group.roles.remove")
+        literal("remove") {
+            requires { context.hasPermission(it, "gradeway.group.roles.remove") }
 
-            required("roleId", stringParser()) {
-                suggests { remaining -> suggestRoles(gradeway, remaining.lowercase()) }
-            }
+            string("role") {
+                suggestRoles(gradeway)
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+                execute {
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("role")
 
-                val idOrName = context.get<String>("idOrName")
-                val roleId = context.get<String>("roleId")
+                    val roleUniqueId = gradeway.roles.findByIdOrName(roleId)?.id?.value
 
-                val roleUniqueId = runCatching { UUID.fromString(roleId) }.getOrNull()
-
-                if (roleUniqueId == null) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.group.removeRole.invalidUuid",
-                            Component.text(idOrName),
-                            Component.text(roleId)
-                        )
-                    )
-                    return@handler
-                }
-
-                gradeway.groups.removeRoleFromGroup(idOrName, roleUniqueId)
-                    .onLeft { error ->
-                        if (error is GroupService.RemoveTargetError.EntityNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.removeRole.entityNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.RemoveTargetError.TargetNotFound) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.removeRole.targetNotFound",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.RemoveTargetError.NotInGroup) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.removeRole.notInGroup",
-                                    Component.text(idOrName),
-                                    Component.text(roleId)
-                                )
-                            )
-                            return@handler
-                        }
-                        if (error is GroupService.RemoveTargetError.Unexpected) {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.group.removeRole.unexpectedError",
-                                    Component.text(idOrName),
-                                    Component.text(roleId),
-                                    Component.text(error.throwable.message ?: "Unknown")
-                                )
-                            )
-                            return@handler
-                        }
-                    }
-                    .onRight {
-                        audience.sendMessage(
+                    if (roleUniqueId == null) {
+                        context.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.command.group.removeRole.success",
-                                Component.text(idOrName),
-                                Component.text(roleId)
+                                "gradeway.command.group.removeRole.targetNotFound",
+                                Argument.string("group", idOrName),
+                                Argument.string("role", roleId)
                             )
                         )
+                        return@execute
                     }
+
+                    gradeway.groups.removeRoleFromGroup(idOrName, roleUniqueId)
+                        .onLeft { error ->
+                            if (error is GroupService.RemoveTargetError.EntityNotFound) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.removeRole.entityNotFound",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.RemoveTargetError.TargetNotFound) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.removeRole.targetNotFound",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.RemoveTargetError.NotInGroup) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.removeRole.notInGroup",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId)
+                                    )
+                                )
+                                return@execute
+                            }
+                            if (error is GroupService.RemoveTargetError.Unexpected) {
+                                context.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.group.removeRole.unexpectedError",
+                                        Argument.string("group", idOrName),
+                                        Argument.string("role", roleId),
+                                        Argument.string("error", error.throwable.message ?: "Unknown")
+                                    )
+                                )
+                                return@execute
+                            }
+                        }
+                        .onRight {
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.group.removeRole.success",
+                                    Argument.string("group", idOrName),
+                                    Argument.string("role", roleId)
+                                )
+                            )
+                        }
+                }
             }
         }
+
+        registerScopedListCommand(
+            gradeway = gradeway,
+            permission = "gradeway.group.roles.list",
+            scopeKey = "idOrName",
+            context = context,
+            query = { idOrName, page, limit ->
+                val group = gradeway.groups.findByIdOrName(idOrName)
+                object {
+                    val requested = idOrName
+                    val groupName = group?.name
+                    val roles = group?.let {
+                        RoleGroupsTable
+                            .innerJoin(RolesTable, { roleId }, { id })
+                            .select(RolesTable.id, RolesTable.name, RolesTable.weight)
+                            .where { RoleGroupsTable.groupId eqId it.id.value }
+                            .orderBy(RolesTable.weight to SortOrder.DESC, RolesTable.name to SortOrder.ASC)
+                            .limit(limit)
+                            .offset(((page - 1) * limit).toLong())
+                            .map { row ->
+                                object {
+                                    val id = row[RolesTable.id].value
+                                    val name = row[RolesTable.name]
+                                    val weight = row[RolesTable.weight]
+                                }
+                            }
+                    }.orEmpty()
+                }
+            },
+            render = { source, page, limit, result ->
+                val groupName = result.groupName
+                if (groupName == null) {
+                    context.sendTranslatedMessage(
+                        source,
+                        Component.translatable(
+                            "gradeway.command.group.listRoles.entityNotFound",
+                            Argument.string("group", result.requested)
+                        )
+                    )
+                    return@registerScopedListCommand
+                }
+
+                if (result.roles.isEmpty()) {
+                    context.sendTranslatedMessage(
+                        source,
+                        Component.translatable(
+                            "gradeway.command.group.listRoles.empty",
+                            Argument.string("group", groupName)
+                        )
+                    )
+                    return@registerScopedListCommand
+                }
+
+                context.sendTranslatedMessage(
+                    source,
+                    Component.translatable(
+                        "gradeway.command.group.listRoles.header",
+                        Argument.string("group", groupName),
+                        Argument.numeric("page", page),
+                        Argument.numeric("limit", limit)
+                    )
+                )
+
+                result.roles.forEach { role ->
+                    context.sendTranslatedMessage(
+                        source,
+                        Component.translatable(
+                            "gradeway.command.group.listRoles.entry",
+                            role.id.toIdArgument(),
+                            Argument.string("name", role.name),
+                            Argument.numeric("weight", role.weight)
+                        )
+                    )
+                }
+            }
+        )
     }
 }

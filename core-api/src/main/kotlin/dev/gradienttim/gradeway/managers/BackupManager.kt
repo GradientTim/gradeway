@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import arrow.core.Either
-import java.io.File
+import java.nio.file.Path
 
 /**
  * Interface for managing backup-related operations, including exporting and importing backup data.
@@ -15,9 +15,9 @@ interface BackupManager {
      * Exports backup data.
      *
      * @return An Either containing an ExportError if the export operation fails,
-     *         or a File representing the exported backup on success.
+     *         or a Path representing the exported backup on success.
      */
-    fun export(): Either<ExportError, File>
+    fun export(): Either<ExportError, Path>
 
     /**
      * Imports backup data from the specified file.
@@ -36,6 +36,7 @@ interface BackupManager {
     sealed interface ImportError {
         object FileNotFound : ImportError
         data class CorruptArchive(val throwable: Throwable) : ImportError
+        data class UnsupportedFormatVersion(val version: Int, val supportedVersion: Int) : ImportError
         data class Unexpected(val throwable: Throwable) : ImportError
     }
 }

@@ -168,6 +168,8 @@ interface SuggestionIndex {
     val groups: Map<UUID, String>
     val permissions: Map<UUID, String>
     val permissionTemplates: Map<UUID, String>
+    val tracks: Map<UUID, String>
+    val trackStages: Map<UUID, String>
 
     /**
      * Fully (re)populates every map from the database. Must only be called once the database

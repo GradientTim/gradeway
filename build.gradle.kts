@@ -37,24 +37,7 @@ tasks {
                 ),
             )
 
-            rootProject.extra["bumpedVersion"] = newVersion
             logger.lifecycle("Bumped project.version: ${rootProject.version} -> $newVersion")
         }
-    }
-
-    register<Exec>("generateChangelog") {
-        group = "release"
-        description =
-            "Regenerates CHANGELOG.md via git-cliff, tagged with the current (or just-bumped) project.version."
-
-        doFirst {
-            val version = rootProject.extra.takeIf { it.has("bumpedVersion") }?.get("bumpedVersion") as String?
-                ?: rootProject.version.toString()
-            commandLine("git-cliff", "--tag", "v$version", "-o", "CHANGELOG.md")
-        }
-    }
-
-    named("bumpVersion") {
-        finalizedBy("generateChangelog")
     }
 }

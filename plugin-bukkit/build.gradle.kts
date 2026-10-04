@@ -13,8 +13,7 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    implementation("org.incendo:cloud-paper:2.0.1")
-    implementation("net.kyori:adventure-platform-bukkit:4.4.1")
+    implementation("net.kyori:adventure-text-serializer-legacy:5.2.0")
 
     compileOnly("org.spigotmc:spigot-api:26.2-R0.1-SNAPSHOT")
 }
@@ -54,4 +53,11 @@ bukkit {
     website = "https://github.com/GradientTim/Gradeway"
 
     authors = listOf("GradientTim")
+
+    commands {
+        register("gradeway") {
+            description = "A Minecraft permission gateway."
+            aliases = listOf("gw", "gradewayb", "gwbukkit", "gwb")
+        }
+    }
 }

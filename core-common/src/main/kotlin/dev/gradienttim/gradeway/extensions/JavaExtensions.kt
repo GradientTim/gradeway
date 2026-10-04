@@ -4,13 +4,16 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.extensions
 
-import java.io.File
+import dev.gradienttim.gradeway.internal.SizeLimitedInputStream
 import java.io.IOException
 import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.util.Properties
+import java.util.*
+import kotlin.io.path.pathString
 
 internal val UUID_REGEX = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
@@ -28,19 +31,19 @@ fun Instant.formatUTC(): String = DateTimeFormatter
  * This is intended for use whenever a file name originates from an untrusted source, such as a
  * Brigadier command argument supplied by a player. A naive `File(directory, fileName)` join does
  * not protect against path traversal: if `fileName` contains `..` segments or is itself an
- * absolute path, the resulting `File` can point anywhere on the file system rather than staying
+ * absolute path, the resulting `Path` can point anywhere on the file system rather than staying
  * within the intended directory. This function guards against that by normalizing both the
  * directory and the resolved candidate path and verifying that the candidate still resides
  * underneath the directory before returning it.
  *
  * @param fileName the untrusted, caller-supplied file name to resolve against this directory.
- * @return the resolved [File] within this directory, or `null` if [fileName] would resolve outside it.
+ * @return the resolved [Path] within this directory, or `null` if [fileName] would resolve outside it.
  */
-fun File.resolveWithinDirectory(fileName: String): File? {
-    val normalizedDirectory = toPath().normalize()
+fun Path.resolveWithinDirectory(fileName: String): Path? {
+    val normalizedDirectory = normalize()
     val candidate = normalizedDirectory.resolve(fileName).normalize()
 
-    return if (candidate.startsWith(normalizedDirectory)) candidate.toFile() else null
+    return if (candidate.startsWith(normalizedDirectory)) candidate else null
 }
 
 /**
@@ -54,27 +57,27 @@ fun File.resolveWithinDirectory(fileName: String): File? {
  * @throws IllegalStateException If the directory could not be created, if it exists but is a file,
  * or if the required read or write permissions are not met.
  */
-fun File.createDirectoryIfNotExists(
+fun Path.createDirectoryIfNotExists(
     name: String,
     requiresRead: Boolean = false,
     requiresWrite: Boolean = false
-): File {
-    val directory = File(this, name)
+): Path {
+    val directory = resolve(name)
 
-    if (!directory.exists() && !directory.mkdirs()) {
-        error("Failed to create directory '${directory.absolutePath}'.")
+    if (!Files.exists(directory)) {
+        Files.createDirectory(directory)
     }
 
-    if (directory.isFile) {
-        error("Expected '${directory.absolutePath}' to be a directory, but it is a file.")
+    if (!Files.isDirectory(directory)) {
+        error("Expected '${directory.pathString}' to be a directory, but it is a file.")
     }
 
-    if (requiresRead && !directory.canRead()) {
-        error("Unable to read data from '${directory.absolutePath}'.")
+    if (requiresRead && !Files.isReadable(directory)) {
+        error("Unable to read data from '${directory.pathString}'.")
     }
 
-    if (requiresWrite && !directory.canWrite()) {
-        error("Unable to write data in '${directory.absolutePath}'.")
+    if (requiresWrite && !Files.isWritable(directory)) {
+        error("Unable to write data in '${directory.pathString}'.")
     }
 
     return directory
@@ -97,6 +100,20 @@ fun Properties.fillMissingKeys(origin: Properties): Int {
     return missingKeys.size
 }
 
+fun Properties.replacePositionalArguments(origin: Properties): Int {
+    val outdatedKeys = keys.filter { key ->
+        val value = this[key]?.toString() ?: return@filter false
+        val originValue = origin[key]?.toString() ?: return@filter false
+        POSITIONAL_ARGUMENT in value && POSITIONAL_ARGUMENT !in originValue
+    }
+    outdatedKeys.forEach { outdatedKey ->
+        this[outdatedKey] = origin[outdatedKey]
+    }
+    return outdatedKeys.size
+}
+
+private const val POSITIONAL_ARGUMENT = "<arg:"
+
 /**
  * Wraps this stream so that reading more than [maxBytes] from it throws an [IOException].
  *
@@ -113,35 +130,3 @@ fun Properties.fillMissingKeys(origin: Properties): Int {
  * @return an [InputStream] delegating to this stream that enforces the [maxBytes] limit.
  */
 fun InputStream.limitedTo(maxBytes: Long): InputStream = SizeLimitedInputStream(this, maxBytes)
-
-private class SizeLimitedInputStream(
-    private val delegate: InputStream,
-    private val maxBytes: Long,
-) : InputStream() {
-    private var bytesRead = 0L
-
-    override fun read(): Int {
-        val byte = delegate.read()
-        if (byte != -1) {
-            accumulate(1)
-        }
-        return byte
-    }
-
-    override fun read(b: ByteArray, off: Int, len: Int): Int {
-        val count = delegate.read(b, off, len)
-        if (count > 0) {
-            accumulate(count.toLong())
-        }
-        return count
-    }
-
-    override fun close() = delegate.close()
-
-    private fun accumulate(count: Long) {
-        bytesRead += count
-        if (bytesRead > maxBytes) {
-            throw IOException("Decompressed stream exceeds the maximum allowed size of $maxBytes bytes.")
-        }
-    }
-}

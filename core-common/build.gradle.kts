@@ -1,94 +1,54 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.time.Instant
+import dev.gradienttim.buildmeta.helpers.registerEnvironmentMeta
+import dev.gradienttim.buildmeta.helpers.registerGitMeta
+import dev.gradienttim.buildmeta.helpers.registerProjectMeta
 
 plugins {
     id("gradeway-base")
     id("gradeway-dokka")
     id("gradeway-publish")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("dev.gradienttim.buildmeta") version "0.1.1"
 }
 
 dependencies {
     api(project(":core-api"))
 
-    implementation(libs.apache.commons.compress)
+    api(libs.koin.core)
+    api(libs.arrow.core)
+    api(libs.mojang.brigadier)
+    api(libs.akuleshov7.ktoml.core)
 
+    api(libs.bundles.exposed)
+    api(libs.bundles.adventure)
+
+    implementation(libs.cdimascio.dotenv)
+    implementation(libs.apache.commons.compress)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.serialization.protobuf)
-
-    implementation("io.github.cdimascio:dotenv-java:3.2.0")
-
-    api(libs.koin.core)
-    api(libs.bundles.exposed)
     implementation(libs.bundles.exposed.migration)
-    api(libs.bundles.cloud)
-    api("com.mojang:brigadier:1.3.10")
-    api(libs.bundles.ktoml)
-    api(libs.bundles.adventure)
-    api(libs.bundles.arrow)
 
     testImplementation(kotlin("test"))
     testImplementation("com.h2database:h2:2.5.252")
 }
 
-val generatedSourceDir = layout.buildDirectory.dir("generated/sources/build-info/kotlin")
+buildMeta {
+    fallbackPackageName = "dev.gradienttim.gradeway"
 
-kotlin {
-    sourceSets {
-        main {
-            kotlin.srcDir(generatedSourceDir)
-        }
-    }
+    registerGitMeta()
+    registerProjectMeta(
+        useRootProjectFallback = true,
+    )
+    registerEnvironmentMeta(
+        includeTimestamp = true,
+    )
 }
 
 tasks {
-    val generateBuildInfo = register("generateBuildInfo") {
-        description = "Generate a Kotlin file with project information in it."
-
-        outputs.dir(generatedSourceDir)
-
-        val packageName = "dev.gradienttim.gradeway"
-
-        doLast {
-            val projectVersion = rootProject.version.toString()
-
-            val gitCommitHash = providers.exec {
-                commandLine("git", "rev-parse", "--short", "HEAD")
-            }.standardOutput.asText.map { it.trim() }.orElse("unknown")
-
-            val gitDirty = providers.exec {
-                commandLine("git", "status", "--porcelain")
-            }.standardOutput.asText.map { it.isNotBlank() }.orElse(false)
-
-            val buildTimestamp = Instant.now().toString()
-
-            val packageDir = generatedSourceDir.get().asFile.resolve(packageName)
-            packageDir.mkdirs()
-
-            packageDir.resolve("BuildInfo.kt").writeText(
-                """
-            package $packageName
-
-            object BuildInfo {
-                const val VERSION: String = "$projectVersion"
-                const val GIT_IS_DIRTY: Boolean = ${gitDirty.get()}
-                const val GIT_COMMIT_HASH: String = "${gitCommitHash.get()}"
-                const val BUILD_TIMESTAMP: String = "$buildTimestamp"
-            }
-        """.trimIndent()
-            )
-        }
-    }
-
-    withType<KotlinCompile>().configureEach {
-        dependsOn(generateBuildInfo)
-    }
-
-    withType<org.gradle.jvm.tasks.Jar>().configureEach {
-        dependsOn(generateBuildInfo)
-    }
-
     test {
         useJUnitPlatform()
+
+        testLogging {
+            showStandardStreams = true
+        }
     }
 }

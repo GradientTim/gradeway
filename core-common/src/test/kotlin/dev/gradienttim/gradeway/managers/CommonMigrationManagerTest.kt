@@ -15,6 +15,8 @@ import dev.gradienttim.gradeway.strategy.MigrationStrategy
 import java.io.File
 import java.nio.file.Files
 import java.util.*
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -28,15 +30,15 @@ private class FakeMigrationStrategy(override val type: String) : MigrationStrate
 }
 
 class CommonMigrationManagerTest {
-    private fun createManager(): Pair<CommonGradeway<TestPlatformConfig>, CommonMigrationManager<TestPlatformConfig>> {
+    private fun createManager(): Pair<CommonGradeway<TestPlatformConfig>, CommonMigrationManager> {
         val gradeway = CommonGradeway(
-            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
             scheduler = TestScheduler(),
-            directory = Files.createTempDirectory("migration-manager-test").toFile(),
+            directory = Files.createTempDirectory("migration-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
         )
-        return gradeway to CommonMigrationManager<TestPlatformConfig>(gradeway)
+        return gradeway to CommonMigrationManager(gradeway)
     }
 
     @Test
@@ -45,12 +47,12 @@ class CommonMigrationManagerTest {
         val type = "fake-${UUID.randomUUID()}"
         val strategy = FakeMigrationStrategy(type)
         MigrationStrategyRegistry.register(strategy)
-        val file = File(gradeway.directory, "migrations").apply { mkdirs() }.resolve("data.tar.gz")
+        val file = gradeway.directory.resolve("migrations").createDirectories().resolve("data.tar.gz")
         file.writeText("data")
 
         manager.migrate(type, "data.tar.gz").getOrElse { error(it.toString()) }
 
-        assertEquals(file, strategy.migratedFile)
+        assertEquals(file.toFile(), strategy.migratedFile)
     }
 
     @Test

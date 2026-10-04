@@ -7,7 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import dev.gradienttim.gradeway.platform.Scheduler
 import dev.gradienttim.gradeway.utilities.lifecycle.Disableable
-import net.kyori.adventure.audience.Audience
+import java.util.*
 
 /**
  * Interface for managing confirmation operations, including scheduling tasks for confirmation
@@ -26,7 +26,7 @@ interface ConfirmationManager : Disableable {
      * @return An Either containing a [RequestJobError] if the task scheduling fails,
      *         or a String representing the unique identifier of the scheduled task if successful.
      */
-    fun request(sender: Audience, handler: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String>
+    fun request(sender: UUID, handler: () -> Unit, onTimeout: (id: String) -> Unit): Either<RequestJobError, String>
 
     /**
      * Confirms a scheduled task identified by its unique identifier.
@@ -36,7 +36,7 @@ interface ConfirmationManager : Disableable {
      * @return An [Either] containing a [ConfirmJobError] if the confirmation fails,
      *         or [Unit] if the confirmation is successful.
      */
-    fun confirm(sender: Audience, id: String): Either<ConfirmJobError, Unit>
+    fun confirm(sender: UUID, id: String): Either<ConfirmJobError, Unit>
 
     /**
      * Cancels a scheduled confirmation task identified by its unique identifier.
@@ -46,7 +46,7 @@ interface ConfirmationManager : Disableable {
      * @return An [Either] containing a [CancelJobError] if the cancellation fails,
      *         or [Unit] if the task is successfully canceled.
      */
-    fun cancel(sender: Audience, id: String): Either<CancelJobError, Unit>
+    fun cancel(sender: UUID, id: String): Either<CancelJobError, Unit>
 
     /**
      * Finds a scheduled confirmation task by its unique identifier.
@@ -60,7 +60,7 @@ interface ConfirmationManager : Disableable {
         val id: String,
         val task: Scheduler.Task,
         val handler: () -> Unit,
-        val sender: Audience
+        val sender: UUID
     ) {
         fun cancel(): Boolean {
             return task.cancel()

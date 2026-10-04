@@ -7,6 +7,8 @@ package dev.gradienttim.gradeway
 import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.either
+import dev.gradienttim.gradeway.configs.PlatformConfig
+import dev.gradienttim.gradeway.constants.ScheduleConstants
 import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.platform.*
 import dev.gradienttim.gradeway.services.*
@@ -20,24 +22,30 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.module.Module
 import org.koin.dsl.module
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
+import java.util.concurrent.TimeUnit
 
-class CommonGradeway<TPlatformConfig>(
+class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val logger: Logger,
     override val scheduler: Scheduler,
-    override val directory: File,
+    override val directory: Path,
     override val defaultPlatformConfig: TPlatformConfig,
-    val platformConfigSerializer: KSerializer<TPlatformConfig>,
+    override val platformConfigSerializer: KSerializer<TPlatformConfig>,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
+    override var state: GradewayState = GradewayState.UNLOADED
     override val caches: Caches by inject()
+    override val environment by lazy { CommonEnvironment(this) }
 
     override val permissions: PermissionService by inject()
     override val attributes: AttributeService by inject()
     override val players: PlayerService by inject()
     override val groups: GroupService by inject()
+    override val tracks: TrackService by inject()
     override val roles: RoleService by inject()
 
     override val confirmations: ConfirmationManager by inject()
@@ -49,11 +57,6 @@ class CommonGradeway<TPlatformConfig>(
     override val configs: ConfigManager<TPlatformConfig> by inject()
     override val backups: BackupManager by inject()
 
-    override val databaseEnvironment by lazy { CommonEnvironment(this, Environment.Type.DATABASE) }
-    override val messagingEnvironment by lazy { CommonEnvironment(this, Environment.Type.MESSAGING) }
-
-    override var state: GradewayState = GradewayState.UNLOADED
-
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
 
@@ -63,50 +66,22 @@ class CommonGradeway<TPlatformConfig>(
         if (!state.allowLoad) raise(GradewayAlreadyLoadedThrowable())
         state = GradewayState.PROCESSING
 
-        val serviceModule = module {
-            single<PermissionService> { CommonPermissionService(this@CommonGradeway) }
-            single<AttributeService> { CommonAttributeService(this@CommonGradeway) }
-            single<PlayerService> { CommonPlayerService(this@CommonGradeway) }
-            single<GroupService> { CommonGroupService(this@CommonGradeway) }
-            single<RoleService> { CommonRoleService(this@CommonGradeway) }
+        if (!Files.exists(directory)) {
+            Files.createDirectory(directory)
         }
 
-        val managerModule = module {
-            single<ConfirmationManager> { CommonConfirmationManager(this@CommonGradeway) }
-            // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,
-            // before ever touching gradeway.migrations, so the registrations CommonMigrationManager's init
-            // block performs must already have happened - a lazily created single would run them too late.
-            single<MigrationManager>(createdAtStart = true) { CommonMigrationManager(this@CommonGradeway) }
-            single<MessagingManager> { CommonMessagingManager(this@CommonGradeway) }
-            single<DatabaseManager> { CommonDatabaseManager(this@CommonGradeway) }
-            single<LanguageManager> { CommonLanguageManager(this@CommonGradeway) }
-            single<DriverManager> { CommonDriverManager(this@CommonGradeway) }
-            single<ConfigManager<TPlatformConfig>> { CommonConfigManager(this@CommonGradeway) }
-            single<BackupManager> { CommonBackupManager(this@CommonGradeway) }
-        }
-
-        val commonModule = module {
-            single<Caches> { CommonCaches(this@CommonGradeway) }
-            single<Gradeway<TPlatformConfig>> { this@CommonGradeway }
-        }
-
-        if (!directory.exists()) {
-            directory.mkdirs()
-        }
-
-        // GlobalContext is fine here: each platform plugin gets its own ClassLoader, so this shaded,
-        // non-relocated Koin copy has private static state, isolated from other plugins on the server.
         startKoin {
-            modules(serviceModule, managerModule, commonModule)
+            modules(koinModules(this@CommonGradeway))
         }
 
-        configs.load().onLeft { raise(it) }
-        drivers.load().onLeft { raise(it) }
-        languages.load().onLeft { raise(it) }
-        messaging.load().onLeft { raise(it) }
+        configs.load().bind()
+        drivers.load().bind()
+        languages.load().bind()
+        messaging.load().bind()
 
         state = GradewayState.LOADED
-    }.onLeft {
+    }.onLeft { throwable ->
+        logger.panic(throwable)
         state = GradewayState.UNLOADED
     }
 
@@ -116,41 +91,46 @@ class CommonGradeway<TPlatformConfig>(
 
         caches.invalidateAll()
 
-        messaging.unload().onLeft { raise(it) }
-        languages.unload().onLeft { raise(it) }
-        drivers.unload().onLeft { raise(it) }
+        messaging.unload().bind()
+        languages.unload().bind()
+        drivers.unload().bind()
 
         stopKoin()
 
         state = GradewayState.UNLOADED
-    }.onLeft {
+    }.onLeft { throwable ->
+        logger.panic(throwable)
         state = GradewayState.LOADED
     }
 
     override fun reload(): Either<Throwable, Unit> = either {
         checkIsLoaded()
 
-        configs.load().onLeft { raise(it) }
-        messaging.reload().onLeft { raise(it) }
-        languages.reload().onLeft { raise(it) }
+        configs.load().bind()
+        messaging.reload().bind()
+        languages.reload().bind()
+    }.onLeft { throwable ->
+        logger.panic(throwable)
     }
 
     override fun enable(): Either<Throwable, Unit> = either {
         checkIsLoaded()
 
-        databases.enable().onLeft { raise(it) }
-        messaging.enable().onLeft { raise(it) }
+        databases.enable().bind()
+        messaging.enable().bind()
 
         caches.suggestions.initialize()
 
-        val expireRolesJobIntervalSeconds =
-            maxOf(configs.config.sweep.expiredRoleSweepIntervalSeconds, MIN_EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS)
-
-        expiredRoleSweepTask = scheduler.runTaskTimer(interval = expireRolesJobIntervalSeconds) {
+        expiredRoleSweepTask = scheduler.runTaskTimer(
+            interval = ScheduleConstants.EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS,
+            intervalUnit = TimeUnit.SECONDS
+        ) {
             players.removeExpiredRoles().onLeft {
                 logger.warn("Failed to sweep expired player roles: $it")
             }
         }
+    }.onLeft { throwable ->
+        logger.panic(throwable)
     }
 
     override fun disable(): Either<Throwable, Unit> = either {
@@ -159,9 +139,11 @@ class CommonGradeway<TPlatformConfig>(
         expiredRoleSweepTask?.cancel()
         expiredRoleSweepTask = null
 
-        databases.disable().onLeft { raise(it) }
-        messaging.disable().onLeft { raise(it) }
-        confirmations.disable().onLeft { raise(it) }
+        databases.disable().bind()
+        messaging.disable().bind()
+        confirmations.disable().bind()
+    }.onLeft { throwable ->
+        logger.panic(throwable)
     }
 
     private fun Raise<Throwable>.checkIsLoaded() {
@@ -170,7 +152,35 @@ class CommonGradeway<TPlatformConfig>(
         }
     }
 
-    companion object {
-        private const val MIN_EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS: Long = 60
+    private fun koinModules(gradeway: CommonGradeway<TPlatformConfig>): List<Module> {
+        return listOf(
+            module {
+                single<PermissionService> { CommonPermissionService(gradeway) }
+                single<AttributeService> { CommonAttributeService(gradeway) }
+                single<PlayerService> { CommonPlayerService(gradeway) }
+                single<GroupService> { CommonGroupService(gradeway) }
+                single<RoleService> { CommonRoleService(gradeway) }
+                single<TrackService> { CommonTrackService(gradeway) }
+            },
+
+            module {
+                single<ConfirmationManager> { CommonConfirmationManager(gradeway) }
+                // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,
+                // before ever touching gradeway.migrations, so the registrations CommonMigrationManager's init
+                // block performs must already have happened - a lazily created single would run them too late.
+                single<MigrationManager>(createdAtStart = true) { CommonMigrationManager(gradeway) }
+                single<MessagingManager> { CommonMessagingManager(gradeway) }
+                single<DatabaseManager> { CommonDatabaseManager(gradeway) }
+                single<LanguageManager> { CommonLanguageManager(gradeway) }
+                single<DriverManager> { CommonDriverManager(gradeway) }
+                single<ConfigManager<TPlatformConfig>> { CommonConfigManager(gradeway) }
+                single<BackupManager> { CommonBackupManager(gradeway) }
+            },
+
+            module {
+                single<Caches> { CommonCaches(gradeway) }
+                single<Gradeway<TPlatformConfig>> { gradeway }
+            }
+        )
     }
 }

@@ -24,11 +24,11 @@ private class FakeDriver : Driver() {
 }
 
 class CommonDriverManagerTest {
-    private fun createManager(): CommonDriverManager<TestPlatformConfig> {
+    private fun createManager(): CommonDriverManager {
         val gradeway = CommonGradeway(
-            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
             scheduler = TestScheduler(),
-            directory = Files.createTempDirectory("driver-manager-test").toFile(),
+            directory = Files.createTempDirectory("driver-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
         )

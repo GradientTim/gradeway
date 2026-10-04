@@ -14,10 +14,14 @@ class ConnectionListener(val gradeway: GradewayLifecycle<*>) {
     @Subscribe(order = PostOrder.EARLY, priority = Short.MAX_VALUE)
     fun onLogin(event: LoginEvent) {
         val player = event.player
-        gradeway.players.create(player.uniqueId, player.username)
+        val firstJoin = gradeway.players.create(player.uniqueId, player.username).isRight()
 
         gradeway.players.removeExpiredRoles(player.uniqueId)
             .onLeft { error -> gradeway.logger.error("Failed to remove expired roles for ${player.username}: $error") }
+        gradeway.players.applyDefaultRole(player.uniqueId, firstJoin)
+            .onLeft { error ->
+                gradeway.logger.error("Failed to apply the default role for ${player.username}: $error")
+            }
     }
 
     @Subscribe(order = PostOrder.LATE, priority = Short.MIN_VALUE)

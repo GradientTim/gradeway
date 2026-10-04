@@ -10,9 +10,11 @@ import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
+import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.services.TrackService
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
 import kotlinx.serialization.json.*
 import net.kyori.adventure.key.Key
@@ -39,8 +41,8 @@ object PlayersTable : UUIDTable(name = TableConstants.PLAYERS_TABLE_NAME) {
         onDelete = ReferenceOption.CASCADE
     )
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
 
     init {
         uniqueIndex(id)
@@ -79,6 +81,7 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
         }
     }
 
+    internal val trackService: TrackService by inject()
     internal val playerService: PlayerService by inject()
     internal val attributeService: AttributeService by inject()
     internal val permissionService: PermissionService by inject()
@@ -148,6 +151,24 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
     override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromPlayer(id, this)
     override fun revokeTemplate(entity: PermissionTemplateEntity) =
         permissionService.revokeTemplateFromPlayer(entity, this)
+
+    override fun promote(trackId: UUID) = trackService.promotePlayer(this, trackId)
+    override fun promote(track: TrackEntity) = trackService.promotePlayer(this, track)
+
+    override fun demote(trackId: UUID) = trackService.demotePlayer(this, trackId)
+    override fun demote(track: TrackEntity) = trackService.demotePlayer(this, track)
+
+    override fun findCurrentStage(trackId: UUID) = trackService.findPlayersCurrentStage(this, trackId)
+    override fun findCurrentStage(track: TrackEntity) = trackService.findPlayersCurrentStage(this, track)
+
+    override fun findNextStage(trackId: UUID) = trackService.findPlayersNextStage(this, trackId)
+    override fun findNextStage(track: TrackEntity) = trackService.findPlayersNextStage(this, track)
+
+    override fun findPreviousStage(trackId: UUID) = trackService.findPlayersPreviousStage(this, trackId)
+    override fun findPreviousStage(track: TrackEntity) = trackService.findPlayersPreviousStage(this, track)
+
+    override fun isOnTrack(trackId: UUID) = trackService.isPlayerOnTrack(this, trackId)
+    override fun isOnTrack(track: TrackEntity) = trackService.isPlayerOnTrack(this, track)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()

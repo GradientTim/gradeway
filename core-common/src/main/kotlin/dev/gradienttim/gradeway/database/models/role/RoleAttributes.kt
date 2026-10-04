@@ -32,8 +32,12 @@ object RoleAttributesTable : UUIDTable(name = TableConstants.ROLE_ATTRIBUTES_TAB
     val key = adventureKey("key")
     val value = text("value")
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
+
+    init {
+        uniqueIndex(roleId, key)
+    }
 }
 
 class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttributeEntity {

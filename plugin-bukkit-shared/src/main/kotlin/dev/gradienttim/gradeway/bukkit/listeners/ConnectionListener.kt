@@ -29,10 +29,14 @@ class ConnectionListener(
     fun onPlayerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
-        gradeway.players.create(player.uniqueId, player.name)
+        val firstJoin = gradeway.players.create(player.uniqueId, player.name).isRight()
         gradeway.players.removeExpiredRoles(player.uniqueId)
             .onLeft { error ->
                 gradeway.logger.error("Failed to remove expired roles for ${player.name}: $error")
+            }
+        gradeway.players.applyDefaultRole(player.uniqueId, firstJoin)
+            .onLeft { error ->
+                gradeway.logger.error("Failed to apply the default role for ${player.name}: $error")
             }
 
         try {
@@ -91,7 +95,9 @@ class ConnectionListener(
             is CacheFlushPayload -> refreshAllCommands()
 
             is RoleAttributeChangedPayload,
-            is RoleAttributesClearedPayload -> Unit
+            is RoleAttributesClearedPayload,
+            is TrackStageChangedPayload,
+            is TrackChangedPayload -> Unit
         }
     }
 

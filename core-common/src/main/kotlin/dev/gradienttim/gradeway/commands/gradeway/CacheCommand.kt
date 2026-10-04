@@ -4,48 +4,64 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
+import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.command.execute
+import dev.gradienttim.gradeway.command.literal
+import dev.gradienttim.gradeway.command.param
+import dev.gradienttim.gradeway.command.string
+import dev.gradienttim.gradeway.commands.extensions.suggestStrings
 import dev.gradienttim.gradeway.platform.Caches
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.kotlin.MutableCommandBuilder
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.parser.standard.EnumParser.enumParser
+import net.kyori.adventure.text.minimessage.translation.Argument
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerCacheCommand(
+internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.cacheCommand(
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    commandContext: CommandContext<TCommandSource>,
 ) {
-    registerCopy("cache") {
-        permission("gradeway.cache")
+    fun flush(source: TCommandSource, type: Caches.Type) {
+        type.run(gradeway.caches)
+            .onLeft { throwable ->
+                commandContext.sendTranslatedMessage(
+                    source,
+                    Component.translatable(
+                        "gradeway.cache.flush.failed",
+                        Argument.string("cache", type.name),
+                        Argument.string("error", throwable.message ?: throwable::class.java.simpleName)
+                    )
+                )
+            }
+            .onRight {
+                commandContext.sendTranslatedMessage(
+                    source,
+                    Component.translatable(
+                        "gradeway.cache.flush.success",
+                        Argument.string("cache", type.name)
+                    )
+                )
+            }
+    }
 
-        registerCopy("flush") {
-            permission("gradeway.cache.flush")
+    literal("cache") {
+        requires { commandContext.hasPermission(it, "gradeway.cache") }
 
-            optional("type", enumParser(Caches.Type::class.java))
+        literal("flush") {
+            requires { commandContext.hasPermission(it, "gradeway.cache.flush") }
 
-            handler { context ->
-                val audience = audienceProvider.apply(context.sender())
+            execute {
+                flush(source, Caches.Type.ALL)
+            }
 
-                val type = context.getOrDefault("type", Caches.Type.ALL)
+            string("type") {
+                suggestStrings { Caches.Type.entries.map { it.name } }
 
-                type.run(gradeway.caches)
-                    .onLeft { throwable ->
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.cache.flush.failed",
-                                Component.text(type.name),
-                                Component.text(throwable.message ?: throwable::class.java.simpleName)
-                            )
-                        )
-                    }
-                    .onRight {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.cache.flush.success",
-                                Component.text(type.name)
-                            )
-                        )
-                    }
+                execute {
+                    val rawType = param("type", String::class).uppercase()
+                    val type = Caches.Type.entries.find { it.name == rawType } ?: Caches.Type.ALL
+
+                    flush(source, type)
+                }
             }
         }
     }

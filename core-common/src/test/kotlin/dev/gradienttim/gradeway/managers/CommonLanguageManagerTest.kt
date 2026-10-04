@@ -9,22 +9,22 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.TestScheduler
 import dev.gradienttim.gradeway.platform.CommonLogger
-import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.*
 import kotlin.test.AfterTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class CommonLanguageManagerTest {
-    private lateinit var directory: File
+    private lateinit var directory: Path
     private lateinit var gradeway: CommonGradeway<TestPlatformConfig>
 
     private fun createGradeway() {
-        directory = Files.createTempDirectory("gradeway-language-test").toFile()
+        directory = Files.createTempDirectory("gradeway-language-test")
         gradeway = CommonGradeway(
-            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}),
+            logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
             scheduler = TestScheduler(),
             directory = directory,
             defaultPlatformConfig = TestPlatformConfig(),
@@ -33,6 +33,7 @@ class CommonLanguageManagerTest {
     }
 
     @AfterTest
+    @OptIn(ExperimentalPathApi::class)
     fun tearDown() {
         if (::gradeway.isInitialized) {
             gradeway.unload()
@@ -48,13 +49,13 @@ class CommonLanguageManagerTest {
      * update-existing-file path (`updateTranslationFile`) instead of the copy-fresh-file path.
      */
     private fun seedExistingTranslationFile(content: String) {
-        val languagesDirectory = File(directory, "languages").apply { mkdirs() }
-        File(languagesDirectory, "en.properties").writeText(content)
+        val languagesDirectory = directory.resolve("languages").createDirectories()
+        languagesDirectory.resolve("en.properties").writeText(content)
     }
 
     private fun loadedTranslationFileContents(): String {
         gradeway.load().getOrElse { error("Failed to load Gradeway: $it") }
-        return File(directory, "languages/en.properties").readText()
+        return directory.resolve("languages/en.properties").readText()
     }
 
     @Test

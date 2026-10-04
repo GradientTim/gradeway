@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
 
@@ -33,24 +34,24 @@ public final class ArtifactMetadata {
 
     @Nullable
     public static ArtifactMetadata load() {
-        var loadedDependencies = loadDependencies();
-        var loadedRepositories = loadRepositories();
+        List<String> loadedDependencies = loadDependencies();
+        Map<String, String> loadedRepositories = loadRepositories();
 
-        var dependencies = new ArrayList<ArtifactDependency>(loadedDependencies.size());
-        var repositories = new ArrayList<ArtifactRepository>(loadedRepositories.size());
+        ArrayList<ArtifactDependency> dependencies = new ArrayList<>(loadedDependencies.size());
+        ArrayList<ArtifactRepository> repositories = new ArrayList<>(loadedRepositories.size());
 
-        for (var loadedDependency : loadedDependencies) {
-            var coordinate = loadedDependency.split(":", 3);
+        for (String loadedDependency : loadedDependencies) {
+            String[] coordinate = loadedDependency.split(":", 3);
             if (coordinate.length != 3) {
                 continue;
             }
 
-            var dependency = new ArtifactDependency(coordinate[0], coordinate[1], coordinate[2]);
+            ArtifactDependency dependency = new ArtifactDependency(coordinate[0], coordinate[1], coordinate[2]);
             dependencies.add(dependency);
         }
 
-        for (var entry : loadedRepositories.entrySet()) {
-            var repository = new ArtifactRepository(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, String> entry : loadedRepositories.entrySet()) {
+            ArtifactRepository repository = new ArtifactRepository(entry.getKey(), entry.getValue());
             repositories.add(repository);
         }
 
@@ -66,10 +67,10 @@ public final class ArtifactMetadata {
     }
 
     private static Map<String, String> loadRepositories() {
-        var repos = new HashMap<String, String>();
-        var lines = loadLines(REPOSITORIES_PATH);
+        HashMap<String, String> repos = new HashMap<>();
+        List<String> lines = loadLines(REPOSITORIES_PATH);
 
-        for (var line : lines) {
+        for (String line : lines) {
             int equalsIndex = line.indexOf('=');
             if (equalsIndex != -1) {
                 String id = line.substring(0, equalsIndex).trim();
@@ -84,13 +85,13 @@ public final class ArtifactMetadata {
     }
 
     private static List<String> loadLines(String resourcePath) {
-        var lines = new ArrayList<String>();
-        try (var resource = ArtifactMetadata.class.getResourceAsStream(resourcePath)) {
+        ArrayList<String> lines = new ArrayList<>();
+        try (InputStream resource = ArtifactMetadata.class.getResourceAsStream(resourcePath)) {
             if (resource == null) {
                 return lines;
             }
 
-            var reader = new BufferedReader(new InputStreamReader(resource));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(resource));
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimmed = line.trim();

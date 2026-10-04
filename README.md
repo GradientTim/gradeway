@@ -3,7 +3,7 @@
 A Minecraft permission gateway.
 
 <!-- modrinth_exclude.start -->
-[Changelog](https://github.com/GradientTim/gradeway/blob/main/CHANGELOG.md) – [Security Policy](https://github.com/GradientTim/gradeway/blob/main/SECURITY.md) – [Code of Conduct](https://github.com/GradientTim/gradeway/blob/main/CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
+[Changelog](https://github.com/GradientTim/gradeway/releases) – [Security Policy](https://github.com/GradientTim/gradeway/blob/main/SECURITY.md) – [Code of Conduct](https://github.com/GradientTim/gradeway/blob/main/CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
 
 <a href="https://modrinth.com/project/gradeway" target="_blank">
 <img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">
@@ -44,7 +44,7 @@ plugin.
 
 Platforms: `Bukkit`, `Paper`, `BungeeCord`, and `Velocity`.  
 Drivers: `Postgres`, `MySQL`, `MariaDB`, `SQLite`, `SQL Server`, `Oracle`, `H2`, and `Redis` as pluggable backends.  
-See [COMPATIBILITY.md](https://github.com/GradientTim/gradeway/blob/main/COMPATIBILITY.md) for the full overview.
+See the [compatibility documentation](https://docs.gradienttim.dev/gradeway/compatibility) for the full overview.
 
 ## Architecture
 
@@ -54,7 +54,7 @@ coming from LuckPerms, where "group" means something different.
 
 ## Database Schema
 
-See [DATABASE.md](https://github.com/GradientTim/gradeway/blob/main/DATABASE.md) for an interactive diagram of the
+See the [database documentation](https://docs.gradienttim.dev/gradeway/database) for an interactive diagram of the
 schema.
 
 ## Building from Source

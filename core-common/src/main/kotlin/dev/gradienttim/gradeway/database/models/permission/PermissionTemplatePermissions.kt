@@ -35,6 +35,8 @@ object PermissionTemplatePermissionsTable :
         onDelete = ReferenceOption.CASCADE
     )
 
+    override val primaryKey = PrimaryKey(templateId, permissionId)
+
     init {
         addIdColumn(templateId)
         addIdColumn(permissionId)

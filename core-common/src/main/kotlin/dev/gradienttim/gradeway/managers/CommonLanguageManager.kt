@@ -10,17 +10,17 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.extensions.cleanUnusedKeys
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.extensions.fillMissingKeys
+import dev.gradienttim.gradeway.extensions.replacePositionalArguments
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
 import net.kyori.adventure.translation.GlobalTranslator
-import java.io.File
 import java.io.InputStreamReader
 import java.nio.file.FileSystems
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.*
 
-class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : LanguageManager {
+class CommonLanguageManager(val gradeway: CommonGradeway<*>) : LanguageManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "languages",
         requiresRead = true,
@@ -35,8 +35,8 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
             translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
 
             val availableLocales = Locale.availableLocales().toList()
-            directory.listFiles { it.extension == "properties" }?.forEach { file ->
-                val name = file.name.removeSuffix(".properties")
+            directory.listDirectoryEntries("*.properties").forEach { filePath ->
+                val name = filePath.name.removeSuffix(".properties")
                 val locale = Locale.of(name)
 
                 if (!availableLocales.contains(locale)) {
@@ -45,7 +45,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
                 }
 
                 val properties = Properties()
-                file.inputStream().use { properties.load(it) }
+                filePath.inputStream().use { properties.load(it) }
 
                 val entries = properties.entries
                     .associate { (key, value) -> key.toString() to value.toString() }
@@ -77,7 +77,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
         unload()
             .onLeft { raise(it) }
             .onRight {
-                load().onLeft { raise(it) }
+                load().bind()
             }
     }
 
@@ -96,7 +96,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
 
     private fun copyResourceLanguages(languagesPath: Path) {
         languagesPath.listDirectoryEntries().filter { it.extension == "properties" }.forEach { path ->
-            val translationFile = File(directory, path.name)
+            val translationFile = directory.resolve(path.name)
             if (translationFile.exists()) {
                 updateTranslationFile(path, translationFile)
                 return@forEach
@@ -105,7 +105,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
         }
     }
 
-    private fun saveResourceTranslationFile(source: Path, destination: File) {
+    private fun saveResourceTranslationFile(source: Path, destination: Path) {
         source.inputStream().use { inputStream ->
             destination.outputStream().use { outputStream ->
                 inputStream.transferTo(outputStream)
@@ -113,7 +113,7 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
         }
     }
 
-    private fun updateTranslationFile(source: Path, destination: File) {
+    private fun updateTranslationFile(source: Path, destination: Path) {
         val templateProperties = Properties()
         val destinationProperties = Properties()
 
@@ -122,14 +122,16 @@ class CommonLanguageManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
 
         val unusedKeysCount = destinationProperties.cleanUnusedKeys(templateProperties)
         val missingKeysCount = destinationProperties.fillMissingKeys(templateProperties)
+        val outdatedKeysCount = destinationProperties.replacePositionalArguments(templateProperties)
 
-        if (unusedKeysCount > 0 || missingKeysCount > 0) {
+        if (unusedKeysCount > 0 || missingKeysCount > 0 || outdatedKeysCount > 0) {
             gradeway.logger.info(
                 "Updated translation file: ${destination.name}. " +
-                        "Unused keys: $unusedKeysCount, missing keys: $missingKeysCount"
+                        "Unused keys: $unusedKeysCount, missing keys: $missingKeysCount, " +
+                        "outdated keys: $outdatedKeysCount"
             )
 
-            destination.outputStream().use { destinationProperties.store(it, "Updated unused/missing keys") }
+            destination.outputStream().use { destinationProperties.store(it, "Updated unused/missing/outdated keys") }
         }
     }
 }

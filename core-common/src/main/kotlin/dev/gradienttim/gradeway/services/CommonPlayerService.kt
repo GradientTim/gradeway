@@ -17,6 +17,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.platform.CommonCaches
@@ -28,8 +29,8 @@ import java.time.Instant
 import java.util.*
 
 @Suppress("LargeClass", "TooManyFunctions")
-class CommonPlayerService<TPlatformConfig>(
-    val gradeway: CommonGradeway<TPlatformConfig>
+class CommonPlayerService(
+    val gradeway: CommonGradeway<*>
 ) : PlayerService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
@@ -42,9 +43,6 @@ class CommonPlayerService<TPlatformConfig>(
         if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.CreatePlayerError.InvalidName)
         }
-        if (existsById(id)) {
-            raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
-        }
         try {
             transaction(gradeway.database) {
                 DatabasePlayerEntity.new(id) {
@@ -52,6 +50,9 @@ class CommonPlayerService<TPlatformConfig>(
                 }
             }
         } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PlayerService.CreatePlayerError.EntityAlreadyExists)
+            }
             raise(PlayerService.CreatePlayerError.Unexpected(throwable))
         }
     }
@@ -187,12 +188,27 @@ class CommonPlayerService<TPlatformConfig>(
         }
     }
 
+    @Deprecated(
+        "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("findById(id) != null"),
+        level = DeprecationLevel.ERROR
+    )
     override fun existsById(id: UUID): Boolean =
         findById(id) != null
 
+    @Deprecated(
+        "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("findByName(name) != null"),
+        level = DeprecationLevel.ERROR
+    )
     override fun existsByName(name: String): Boolean =
         findByName(name) != null
 
+    @Deprecated(
+        "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("existsByIdOrName(value) != null"),
+        level = DeprecationLevel.ERROR
+    )
     override fun existsByIdOrName(value: String): Boolean =
         findByIdOrName(value) != null
 
@@ -243,20 +259,19 @@ class CommonPlayerService<TPlatformConfig>(
             raise(PlayerService.AddRoleError.UntilInPast)
         }
 
-        transaction(gradeway.database) {
-            if (player.roles.any { it.roleId == role.id }) {
-                raise(PlayerService.AddRoleError.AlreadyExists)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabasePlayerRoleEntity.new {
                     this.roleId = role.id
                     this.playerId = player.id
                     this.untilAt = until
                 }
-            } catch (throwable: Throwable) {
-                raise(PlayerService.AddRoleError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(PlayerService.AddRoleError.AlreadyExists)
+            }
+            raise(PlayerService.AddRoleError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(
@@ -697,13 +712,13 @@ class CommonPlayerService<TPlatformConfig>(
             raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
         }
 
-        transaction(gradeway.database) {
-            try {
+        try {
+            transaction(gradeway.database) {
                 player.primaryRoleId = role.id
                 player.flush()
-            } catch (throwable: Throwable) {
-                raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
         }
     }
 
@@ -721,6 +736,70 @@ class CommonPlayerService<TPlatformConfig>(
     ): Either<PlayerService.SetPrimaryRoleError, Unit> = either {
         val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.SetPrimaryRoleError.EntityNotFound)
         return setPrimaryRole(player, role)
+    }
+
+    override fun clearPrimaryRole(playerId: UUID): Either<PlayerService.ClearPrimaryRoleError, Unit> = either {
+        val player = findById(playerId) ?: raise(PlayerService.ClearPrimaryRoleError.EntityNotFound)
+        return clearPrimaryRole(player)
+    }
+
+    override fun clearPrimaryRole(player: PlayerEntity): Either<PlayerService.ClearPrimaryRoleError, Unit> = either {
+        if (player.primaryRoleId == null) {
+            raise(PlayerService.ClearPrimaryRoleError.NoPrimaryRole)
+        }
+
+        if (player !is DatabasePlayerEntity) {
+            val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
+            raise(PlayerService.ClearPrimaryRoleError.Unexpected(throwable))
+        }
+
+        try {
+            transaction(gradeway.database) {
+                player.primaryRoleId = null
+                player.flush()
+            }
+        } catch (throwable: Throwable) {
+            raise(PlayerService.ClearPrimaryRoleError.Unexpected(throwable))
+        }
+    }
+
+    override fun applyDefaultRole(
+        playerId: UUID,
+        firstJoin: Boolean
+    ): Either<PlayerService.ApplyDefaultRoleError, RoleEntity?> = either {
+        val config = gradeway.configs.gradewayEntry.config.defaultRole
+        val player = findById(playerId) ?: raise(PlayerService.ApplyDefaultRoleError.EntityNotFound)
+
+        val shouldAssign = (firstJoin && config.assignOnFirstJoin) ||
+                (config.assignWhenNoPrimaryRole && player.primaryRoleId == null)
+        if (!shouldAssign) {
+            return@either null
+        }
+
+        val role = gradeway.roles.getDefaultRole() ?: return@either null
+
+        addRole(player, role).onLeft { error ->
+            if (error !is PlayerService.AddRoleError.AlreadyExists) {
+                raise(PlayerService.ApplyDefaultRoleError.Unexpected(defaultRoleFailure("add", role, error)))
+            }
+        }
+        setPrimaryRole(player, role).onLeft { error ->
+            if (error !is PlayerService.SetPrimaryRoleError.AlreadyPrimary) {
+                raise(PlayerService.ApplyDefaultRoleError.Unexpected(defaultRoleFailure("set primary", role, error)))
+            }
+        }
+
+        role
+    }
+
+    private fun defaultRoleFailure(action: String, role: RoleEntity, error: Any): Throwable =
+        (error as? PlayerService.AddRoleError.Unexpected)?.throwable
+            ?: (error as? PlayerService.SetPrimaryRoleError.Unexpected)?.throwable
+            ?: IllegalStateException("Failed to $action default role ${role.id.value}: ${error::class.simpleName}")
+
+    override fun clearPrimaryRole(playerIdOrName: String): Either<PlayerService.ClearPrimaryRoleError, Unit> = either {
+        val player = findByIdOrName(playerIdOrName) ?: raise(PlayerService.ClearPrimaryRoleError.EntityNotFound)
+        return clearPrimaryRole(player)
     }
 
     /**

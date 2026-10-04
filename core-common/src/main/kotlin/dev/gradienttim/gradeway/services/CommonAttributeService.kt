@@ -16,6 +16,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
@@ -24,8 +25,8 @@ import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
-class CommonAttributeService<TPlatformConfig>(
-    val gradeway: CommonGradeway<TPlatformConfig>
+class CommonAttributeService(
+    val gradeway: CommonGradeway<*>
 ) : AttributeService {
     override fun <TValue : Any> addRoleAttribute(
         id: UUID,
@@ -312,15 +313,15 @@ class CommonAttributeService<TPlatformConfig>(
         attribute: Attribute<TValue>,
         createEntityAttribute: () -> TAttributeEntity
     ): Either<AttributeService.AddAttributeError, TAttributeEntity> = either {
-        transaction(gradeway.database) {
-            if (entity.attributes.find { it.key == attribute.key } != null) {
+        try {
+            transaction(gradeway.database) {
+                createEntityAttribute()
+            }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
                 raise(AttributeService.AddAttributeError.AttributeAlreadyExists)
             }
-            try {
-                createEntityAttribute()
-            } catch (throwable: Throwable) {
-                raise(AttributeService.AddAttributeError.Unexpected(throwable))
-            }
+            raise(AttributeService.AddAttributeError.Unexpected(throwable))
         }
     }.onRight { publishAttributeChanged(entity, attribute.key, MessagingAction.CREATED) }
 

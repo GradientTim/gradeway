@@ -7,11 +7,11 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
 
 detekt {
-    config.setFrom(rootProject.file(".config/detekt.yml"))
+    config.setFrom(rootProject.file(".data/configs/detekt.yml"))
     source.setFrom(files(projectDir))
 }
 
@@ -19,7 +19,7 @@ spotless {
     kotlin {
         target("**/*.kt")
         targetExclude("**/build/**/*.kt")
-        licenseHeaderFile(rootProject.file(".assets/LICENSE_HEADER"))
+        licenseHeaderFile(rootProject.file(".data/assets/LICENSE_HEADER"))
     }
 }
 

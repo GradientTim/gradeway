@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import arrow.core.raise.catch
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
@@ -15,16 +16,21 @@ import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import net.kyori.adventure.key.Key
+import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
 
-class CommonRoleService<TPlatformConfig>(
-    val gradeway: CommonGradeway<TPlatformConfig>
+@Suppress("TooManyFunctions")
+class CommonRoleService(
+    val gradeway: CommonGradeway<*>
 ) : RoleService {
     init {
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
@@ -34,9 +40,6 @@ class CommonRoleService<TPlatformConfig>(
         if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
-        if (existsByName(name)) {
-            raise(RoleService.CreateRoleError.EntityAlreadyExists)
-        }
         try {
             transaction(gradeway.database) {
                 DatabaseRoleEntity.new {
@@ -44,6 +47,9 @@ class CommonRoleService<TPlatformConfig>(
                 }
             }
         } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(RoleService.CreateRoleError.EntityAlreadyExists)
+            }
             raise(RoleService.CreateRoleError.Unexpected(throwable))
         }
     }
@@ -68,6 +74,9 @@ class CommonRoleService<TPlatformConfig>(
         if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.SetNameError.InvalidName)
         }
+        if (entity.name == name) {
+            raise(RoleService.SetNameError.NameAlreadySet)
+        }
         if (entity !is DatabaseRoleEntity) {
             val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
             raise(RoleService.SetNameError.Unexpected(throwable))
@@ -78,8 +87,16 @@ class CommonRoleService<TPlatformConfig>(
                 entity.flush()
             }
         } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(RoleService.SetNameError.NameAlreadyExists)
+            }
             raise(RoleService.SetNameError.Unexpected(throwable))
         }
+    }
+
+    override fun setName(idOrName: String, name: String): Either<RoleService.SetNameError, Boolean> = either {
+        val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetNameError.EntityNotFound)
+        return setName(entity, name)
     }
 
     override fun setWeight(id: UUID, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
@@ -183,6 +200,94 @@ class CommonRoleService<TPlatformConfig>(
     override fun existsByIdOrName(value: String): Boolean =
         findByIdOrName(value) != null
 
+    override fun getDefaultRole(): DatabaseRoleEntity? {
+        return transaction(gradeway.database) {
+            DatabaseRoleEntity.find { RolesTable.isDefault eq true }
+                .orderBy(RolesTable.weight to SortOrder.DESC, RolesTable.name to SortOrder.ASC)
+                .limit(1)
+                .firstOrNull()
+        }
+    }
+
+    override fun getDefaultRoles(): List<DatabaseRoleEntity> {
+        return transaction(gradeway.database) {
+            DatabaseRoleEntity.find { RolesTable.isDefault eq true }
+                .orderBy(RolesTable.weight to SortOrder.DESC, RolesTable.name to SortOrder.ASC)
+                .toList()
+        }
+    }
+
+    override fun setDefaultFlag(
+        role: RoleEntity,
+        isDefault: Boolean
+    ): Either<RoleService.SetDefaultFlagError, Unit> = either {
+        catch({
+            transaction(gradeway.database) {
+                val current = RolesTable
+                    .select(RolesTable.isDefault)
+                    .where { RolesTable.id eq role.id.value }
+                    .firstOrNull()
+                    ?.get(RolesTable.isDefault)
+                    ?: raise(RoleService.SetDefaultFlagError.EntityNotFound)
+                if (current == isDefault) {
+                    raise(RoleService.SetDefaultFlagError.FlagAlreadySet)
+                }
+
+                RolesTable.update({ RolesTable.id eq role.id.value }) { it[this.isDefault] = isDefault }
+            }
+        }) { throwable ->
+            raise(RoleService.SetDefaultFlagError.Unexpected(throwable))
+        }
+    }
+
+    override fun setDefaultFlag(
+        idOrName: String,
+        isDefault: Boolean
+    ): Either<RoleService.SetDefaultFlagError, Unit> = either {
+        val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetDefaultFlagError.EntityNotFound)
+        return setDefaultFlag(entity, isDefault)
+    }
+
+    override fun setDefault(role: RoleEntity): Either<RoleService.SetDefaultError, Unit> = either {
+        catch({
+            transaction(gradeway.database) {
+                val defaultRoleIds = RolesTable
+                    .select(RolesTable.id)
+                    .where { RolesTable.isDefault eq true }
+                    .map { it[RolesTable.id].value }
+                if (defaultRoleIds == listOf(role.id.value)) {
+                    raise(RoleService.SetDefaultError.AlreadyDefault)
+                }
+
+                RolesTable.update({ RolesTable.isDefault eq true }) { it[isDefault] = false }
+                val updated = RolesTable.update({ RolesTable.id eq role.id.value }) { it[isDefault] = true }
+                if (updated == 0) {
+                    raise(RoleService.SetDefaultError.EntityNotFound)
+                }
+            }
+        }) { throwable ->
+            raise(RoleService.SetDefaultError.Unexpected(throwable))
+        }
+    }
+
+    override fun setDefault(idOrName: String): Either<RoleService.SetDefaultError, Unit> = either {
+        val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetDefaultError.EntityNotFound)
+        return setDefault(entity)
+    }
+
+    override fun clearDefault(): Either<RoleService.ClearDefaultError, Unit> = either {
+        catch({
+            transaction(gradeway.database) {
+                val cleared = RolesTable.update({ RolesTable.isDefault eq true }) { it[isDefault] = false }
+                if (cleared == 0) {
+                    raise(RoleService.ClearDefaultError.NoDefaultRole)
+                }
+            }
+        }) { throwable ->
+            raise(RoleService.ClearDefaultError.Unexpected(throwable))
+        }
+    }
+
     /**
      * Returns whether [candidateAncestor] is reachable by walking [role]'s parent chain transitively,
      * i.e., whether [candidateAncestor] is (directly or indirectly) a parent of [role].
@@ -217,23 +322,22 @@ class CommonRoleService<TPlatformConfig>(
             raise(RoleService.AddParentError.SelfReference)
         }
 
-        transaction(gradeway.database) {
-            if (role.parents.any { it.parentId == parent.id }) {
-                raise(RoleService.AddParentError.AlreadyParent)
-            }
+        catch({
+            transaction(gradeway.database) {
+                if (isAncestorOf(role, parent)) {
+                    raise(RoleService.AddParentError.CyclicRelation)
+                }
 
-            if (isAncestorOf(role, parent)) {
-                raise(RoleService.AddParentError.CyclicRelation)
-            }
-
-            try {
                 DatabaseRoleParentEntity.new {
                     this.parentId = parent.id
                     this.childId = role.id
                 }
-            } catch (throwable: Throwable) {
-                raise(RoleService.AddParentError.Unexpected(throwable))
             }
+        }) { throwable ->
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(RoleService.AddParentError.AlreadyParent)
+            }
+            raise(RoleService.AddParentError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(

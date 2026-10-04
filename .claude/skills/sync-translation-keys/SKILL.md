@@ -32,19 +32,19 @@ block body), it prints a warning to stderr rather than silently misreporting.
 **REMOVE**: just delete those lines, no replacement needed.
 
 **ADD**: for each missing key, don't invent wording from scratch - read the call site
-in the `.kt` file to see exactly which `Component.text(...)` args are passed and in
-what order (that's your `<arg:N>` count), then find the closest analogous *existing*
+in the `.kt` file to see exactly which named `Argument.string/numeric/bool("name", ...)` args are
+passed (each name is a `<name>` placeholder), then find the closest analogous *existing*
 key in `en.properties` (same suffix - e.g. `clearPermissions.success` for a new
 `clearAttributes.success`, `permission.add.invalidType` for a new
 `*.attributeTypeNotRegistered`) and copy its exact tag structure
 (`<prefix>`, `<red>`/`<gray>`/`<green>`, `<primary>`/`<secondary>`), only swapping the
-noun/arg indices. Insert the new line at the position matching the code's declaration
+noun/placeholder names. Insert the new line at the position matching the code's declaration
 order within its command group, not at the end of the file.
 
 Watch for two recurring patterns in this codebase:
 
 - A key's args don't always map 1:1 to its name - e.g. some `invalidUuid`/`invalidName`
-  keys only reference `<arg:1>` and leave `<arg:0>` (the `idOrName`) unused in the
+  keys only reference the second placeholder and leave the first one (the `idOrName`) unused in the
   message text. Match what the call site actually passes, not what seems intuitive.
 - The generic-helper keys (`setPermission`, `clearAttributes`, etc.) are shared across
   `group`/`player`/`role` - when one is missing for one entity type, check whether

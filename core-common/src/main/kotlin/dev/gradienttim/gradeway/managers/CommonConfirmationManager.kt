@@ -8,7 +8,7 @@ import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.managers.ConfirmationManager.*
-import net.kyori.adventure.audience.Audience
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 class CommonConfirmationManager(val gradeway: CommonGradeway<*>) : ConfirmationManager {
@@ -24,7 +24,7 @@ class CommonConfirmationManager(val gradeway: CommonGradeway<*>) : ConfirmationM
     }
 
     override fun request(
-        sender: Audience,
+        sender: UUID,
         handler: () -> Unit,
         onTimeout: (id: String) -> Unit
     ): Either<RequestJobError, String> = either {
@@ -50,7 +50,7 @@ class CommonConfirmationManager(val gradeway: CommonGradeway<*>) : ConfirmationM
         }
     }
 
-    override fun confirm(sender: Audience, id: String): Either<ConfirmJobError, Unit> = either {
+    override fun confirm(sender: UUID, id: String): Either<ConfirmJobError, Unit> = either {
         val job = find(id) ?: raise(ConfirmJobError.NotRegistered)
 
         if (job.sender != sender) {
@@ -66,7 +66,7 @@ class CommonConfirmationManager(val gradeway: CommonGradeway<*>) : ConfirmationM
         }
     }
 
-    override fun cancel(sender: Audience, id: String): Either<CancelJobError, Unit> = either {
+    override fun cancel(sender: UUID, id: String): Either<CancelJobError, Unit> = either {
         val job = find(id) ?: raise(CancelJobError.NotRegistered)
 
         if (job.sender != sender) {

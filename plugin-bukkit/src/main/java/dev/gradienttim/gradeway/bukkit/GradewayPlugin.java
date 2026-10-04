@@ -23,14 +23,14 @@ public class GradewayPlugin extends JavaPlugin {
             return;
         }
 
-        var metadata = ArtifactMetadata.load();
+        ArtifactMetadata metadata = ArtifactMetadata.load();
         if (metadata == null) {
             getLogger().warning("Failed to load metadata");
             return;
         }
 
         try {
-            var resolver = CommonArtifactResolver.builder()
+            CommonArtifactResolver resolver = CommonArtifactResolver.builder()
                     .logInfo(message -> getLogger().info(message))
                     .logWarn(message -> getLogger().warning(message))
                     .logError(message -> getLogger().severe(message))
@@ -41,7 +41,7 @@ public class GradewayPlugin extends JavaPlugin {
                     .build();
 
             resolver.resolve(success -> {
-                gradewayInstance = new GradewayBukkitInstance(this, getLogger(), getDataFolder());
+                gradewayInstance = new GradewayBukkitInstance(this, getLogger(), getDataFolder().toPath());
                 gradewayInstance.initialize();
             }, Throwable::printStackTrace);
         } catch (Exception exception) {

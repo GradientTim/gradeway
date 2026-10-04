@@ -18,8 +18,10 @@ import kotlinx.serialization.json.decodeFromStream
 import java.io.File
 import java.net.URLClassLoader
 import java.util.zip.ZipFile
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.pathString
 
-class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : DriverManager {
+class CommonDriverManager(val gradeway: CommonGradeway<*>) : DriverManager {
     private val drivers = mutableSetOf<Driver>()
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "drivers",
@@ -29,14 +31,14 @@ class CommonDriverManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatfor
 
     override fun load(): Either<Throwable, Unit> = either {
         try {
-            val files = directory.listFiles { it.extension == "jar" }
+            val files = directory.listDirectoryEntries("*.jar")
             if (files.isEmpty()) {
-                gradeway.logger.info("No driver jars found in '${directory.path}'.")
+                gradeway.logger.info("No driver jars found in '${directory.pathString}'.")
             } else {
-                gradeway.logger.info("Found ${files.size} driver jar(s) in '${directory.path}'.")
+                gradeway.logger.info("Found ${files.size} driver jar(s) in '${directory.pathString}'.")
             }
-            files.forEach { file ->
-                loadDriver(file)
+            files.forEach { filePath ->
+                loadDriver(filePath.toFile())
             }
         } catch (throwable: Throwable) {
             raise(throwable)

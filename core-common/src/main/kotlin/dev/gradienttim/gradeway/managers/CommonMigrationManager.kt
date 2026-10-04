@@ -12,8 +12,9 @@ import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import dev.gradienttim.gradeway.strategies.LuckPermsMigrationStrategy
 import dev.gradienttim.gradeway.strategy.MigrationStrategy
+import java.nio.file.Files
 
-class CommonMigrationManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : MigrationManager {
+class CommonMigrationManager(val gradeway: CommonGradeway<*>) : MigrationManager {
     private val directory = gradeway.directory.createDirectoryIfNotExists(
         name = "migrations",
         requiresRead = true,
@@ -35,11 +36,11 @@ class CommonMigrationManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         fileName: String
     ): Either<MigrationManager.MigrateError, Unit> = either {
         val file = directory.resolveWithinDirectory(fileName)
-        if (file == null || !file.exists()) {
+        if (file == null || !Files.exists(file)) {
             raise(MigrationManager.MigrateError.FileNotFound)
         }
 
-        strategy.migrate(file)
+        strategy.migrate(file.toFile())
             .onLeft { raise(MigrationManager.MigrateError.Unexpected(it)) }
     }
 

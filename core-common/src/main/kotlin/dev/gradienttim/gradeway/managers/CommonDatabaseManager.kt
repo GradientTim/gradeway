@@ -15,6 +15,8 @@ import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTa
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
+import dev.gradienttim.gradeway.database.models.track.TrackStagesTable
+import dev.gradienttim.gradeway.database.models.track.TracksTable
 import dev.gradienttim.gradeway.driver.adapters.DatabaseAdapter
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.throwables.driver.DriverBlankIdentifierThrowable
@@ -26,10 +28,10 @@ import org.jetbrains.exposed.v1.jdbc.exists
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 
-class CommonDatabaseManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : DatabaseManager {
+class CommonDatabaseManager(val gradeway: CommonGradeway<*>) : DatabaseManager {
     @Suppress("LongMethod")
     override fun enable(): Either<Throwable, Unit> = either {
-        val driverId = gradeway.configs.config.database.driver
+        val driverId = gradeway.configs.driversEntry.config.database.driver
         if (driverId.isBlank()) {
             raise(DriverBlankIdentifierThrowable())
         }
@@ -42,7 +44,7 @@ class CommonDatabaseManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
         }
 
         try {
-            val dataSource = databaseDriver.createDataSource(gradeway.databaseEnvironment)
+            val dataSource = databaseDriver.createDataSource(gradeway.environment)
             gradeway.database = Database.connect(dataSource)
 
             transaction(gradeway.database) {
@@ -63,7 +65,9 @@ class CommonDatabaseManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatf
                     RoleParentsTable,
                     RoleAttributesTable,
                     RolePermissionsTable,
-                    RolePermissionTemplatesTable
+                    RolePermissionTemplatesTable,
+                    TracksTable,
+                    TrackStagesTable,
                 )
 
                 val tableStates = tables.map { it to it.exists() }

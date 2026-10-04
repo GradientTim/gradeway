@@ -12,7 +12,8 @@ val supportedMinecraftVersions = arrayOf(
     "26.1",
     "26.1.1",
     "26.1.2",
-    "26.2"
+    "26.2",
+    "26.3",
 )
 
 val hangarApiKey = findProperty("gradeway.hangar.apiKey") as? String
@@ -70,13 +71,12 @@ if (hangarSupported) {
                     }
                 }
 
-                // fix the MB file size.
-//                if (project.name == "plugin-velocity") {
-//                    velocity {
-//                        jar = tasks.shadowJar.flatMap { it.archiveFile }
-//                        platformVersions.addAll(*supportedMinecraftVersions)
-//                    }
-//                }
+                if (project.name == "plugin-velocity") {
+                    velocity {
+                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        platformVersions.addAll(*supportedMinecraftVersions)
+                    }
+                }
             }
         }
     }

@@ -5,7 +5,7 @@ similar plugin before, the naming here is a common source of confusion – in pa
 different concept as a LuckPerms "group"**. This document explains what each entity actually is, how they relate, and
 how permissions and weight are resolved.
 
-For the underlying table layout, see [DATABASE.md](./DATABASE.md).
+For the underlying table layout, see the [database documentation](https://docs.gradienttim.dev/gradeway/database).
 
 ## TL;DR for LuckPerms users
 

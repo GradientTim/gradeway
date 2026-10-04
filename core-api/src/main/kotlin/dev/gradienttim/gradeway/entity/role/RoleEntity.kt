@@ -48,6 +48,14 @@ interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionRefere
     val weight: Int
 
     /**
+     * Whether this role is the default role that new players receive.
+     *
+     * `RoleService.setDefault` keeps at most one role flagged. Should several roles still be flagged,
+     * `RoleService.getDefaultRole` picks the one with the highest weight, then by name.
+     */
+    val isDefault: Boolean
+
+    /**
      * The timestamp representing when the role entity was created.
      *
      * This property holds the point in time at which the `RoleEntity` instance

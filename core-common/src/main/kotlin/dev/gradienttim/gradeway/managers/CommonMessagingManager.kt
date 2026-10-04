@@ -32,7 +32,7 @@ import org.jetbrains.exposed.v1.dao.EntityHook
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
-class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlatformConfig>) : MessagingManager {
+class CommonMessagingManager(val gradeway: CommonGradeway<*>) : MessagingManager {
     private val serverId: String = UUID.randomUUID().toString()
     private val listeners = CopyOnWriteArrayList<(MessagingPayload) -> Unit>()
 
@@ -63,7 +63,7 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
     }
 
     override fun enable(): Either<Throwable, Unit> = either {
-        val config = gradeway.configs.config.messaging
+        val config = gradeway.configs.driversEntry.config.messaging
         if (!config.enabled) {
             return@either
         }
@@ -81,9 +81,9 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         }
 
         try {
-            val newBroker = messagingDriver.createMessagingBroker(gradeway.messagingEnvironment)
+            val newBroker = messagingDriver.createMessagingBroker(gradeway.environment)
             broker = CommonMessagingBroker(gradeway, newBroker)
-            broker!!.open().onLeft { raise(it) }
+            broker!!.open().bind()
 
             if (!broker!!.subscribe(MessagingConstants.SYNC_CHANNEL) { bytes -> handleIncoming(bytes) }) {
                 gradeway.logger.warn(
@@ -97,7 +97,7 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
 
     override fun disable(): Either<Throwable, Unit> = either {
         try {
-            broker?.close()?.onLeft { raise(it) }
+            broker?.close()?.bind()
             broker = null
         } catch (throwable: Throwable) {
             raise(throwable)
@@ -108,7 +108,7 @@ class CommonMessagingManager<TPlatformConfig>(val gradeway: CommonGradeway<TPlat
         disable()
             .onLeft { raise(it) }
             .onRight {
-                enable().onLeft { raise(it) }
+                enable().bind()
             }
     }
 

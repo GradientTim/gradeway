@@ -15,6 +15,7 @@ import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
 import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
@@ -26,8 +27,8 @@ import org.jetbrains.exposed.v1.jdbc.emptySized
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
-class CommonGroupService<TPlatformConfig>(
-    val gradeway: CommonGradeway<TPlatformConfig>
+class CommonGroupService(
+    val gradeway: CommonGradeway<*>
 ) : GroupService {
     override fun create(
         name: String,
@@ -61,12 +62,12 @@ class CommonGroupService<TPlatformConfig>(
             raise(DeleteGroupError.Unexpected(throwable))
         }
 
-        transaction(gradeway.database) {
-            try {
+        try {
+            transaction(gradeway.database) {
                 entity.delete()
-            } catch (throwable: Throwable) {
-                raise(DeleteGroupError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            raise(DeleteGroupError.Unexpected(throwable))
         }
     }
 
@@ -94,13 +95,13 @@ class CommonGroupService<TPlatformConfig>(
             raise(SetNameError.Unexpected(throwable))
         }
 
-        transaction(gradeway.database) {
-            try {
+        try {
+            transaction(gradeway.database) {
                 entity.name = name
                 entity.flush()
-            } catch (throwable: Throwable) {
-                raise(SetNameError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            raise(SetNameError.Unexpected(throwable))
         }
     }
 
@@ -127,13 +128,13 @@ class CommonGroupService<TPlatformConfig>(
             raise(SetDefaultWeightError.Unexpected(throwable))
         }
 
-        transaction(gradeway.database) {
-            try {
+        try {
+            transaction(gradeway.database) {
                 entity.defaultWeight = defaultWeight
                 entity.flush()
-            } catch (throwable: Throwable) {
-                raise(SetDefaultWeightError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            raise(SetDefaultWeightError.Unexpected(throwable))
         }
     }
 
@@ -226,19 +227,18 @@ class CommonGroupService<TPlatformConfig>(
         group: GroupEntity,
         role: RoleEntity
     ): Either<AddTargetError, RoleGroupEntity> = either {
-        transaction(gradeway.database) {
-            if (role.groups.any { it.groupId.value == group.id.value }) {
-                raise(AddTargetError.AlreadyInGroup)
-            }
-
-            try {
+        try {
+            transaction(gradeway.database) {
                 DatabaseRoleGroupEntity.new {
                     this.roleId = role.id
                     this.groupId = group.id
                 }
-            } catch (throwable: Throwable) {
-                raise(AddTargetError.Unexpected(throwable))
             }
+        } catch (throwable: Throwable) {
+            if (throwable.isIntegrityConstraintViolation()) {
+                raise(AddTargetError.AlreadyInGroup)
+            }
+            raise(AddTargetError.Unexpected(throwable))
         }
     }.onRight {
         gradeway.messaging.publish(

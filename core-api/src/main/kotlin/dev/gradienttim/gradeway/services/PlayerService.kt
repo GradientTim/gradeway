@@ -119,6 +119,11 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * @param id The unique identifier of the entity to check for existence.
      * @return `true` if an entity with the specified identifier exists, `false` otherwise.
      */
+    @Deprecated(
+        message = "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("findById(id) != null"),
+        level = DeprecationLevel.ERROR
+    )
     fun existsById(id: UUID): Boolean
 
     /**
@@ -127,6 +132,11 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * @param name The name of the entity to check for existence.
      * @return `true` if an entity with the specified name exists, `false` otherwise.
      */
+    @Deprecated(
+        message = "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("findByName(name) != null"),
+        level = DeprecationLevel.ERROR
+    )
     fun existsByName(name: String): Boolean
 
     /**
@@ -135,6 +145,11 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * @param value The unique identifier or name of the entity to check for existence.
      * @return `true` if an entity with the specified identifier or name exists, `false` otherwise.
      */
+    @Deprecated(
+        message = "This function will be removed in near future to avoid \"useless\" function calls.",
+        replaceWith = ReplaceWith("existsByIdOrName(value) != null"),
+        level = DeprecationLevel.ERROR
+    )
     fun existsByIdOrName(value: String): Boolean
 
     /**
@@ -281,6 +296,17 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
         object TargetNotFound : SetPrimaryRoleError
         object AlreadyPrimary : SetPrimaryRoleError
         data class Unexpected(val throwable: Throwable) : SetPrimaryRoleError
+    }
+
+    sealed interface ApplyDefaultRoleError {
+        object EntityNotFound : ApplyDefaultRoleError
+        data class Unexpected(val throwable: Throwable) : ApplyDefaultRoleError
+    }
+
+    sealed interface ClearPrimaryRoleError {
+        object EntityNotFound : ClearPrimaryRoleError
+        object NoPrimaryRole : ClearPrimaryRoleError
+        data class Unexpected(val throwable: Throwable) : ClearPrimaryRoleError
     }
 
     sealed interface RemoveExpiredRolesError {

@@ -7,13 +7,16 @@ package dev.gradienttim.gradeway.services
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.configs.GradewayConfig
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerRoleEntity
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.managers.CommonConfigManager
 import dev.gradienttim.gradeway.messaging.payloads.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import java.nio.file.Files
 import java.time.Duration
 import java.time.Instant
 import java.util.*
@@ -206,6 +209,128 @@ class CommonPlayerServiceTest {
         gradeway.players.setPrimaryRole(player, role).getOrElse { error(it.toString()) }
 
         assertEquals(role.id.value, gradeway.players.getPrimaryRole(player.id.value)?.id?.value)
+    }
+
+    private fun configureDefaultRole(assignOnFirstJoin: Boolean, assignWhenNoPrimaryRole: Boolean) {
+        val entry = gradeway.configs.gradewayEntry
+        val config = entry.config.copy(
+            defaultRole = GradewayConfig.DefaultRoleConfig(assignOnFirstJoin, assignWhenNoPrimaryRole)
+        )
+        Files.writeString(
+            gradeway.directory.resolve("config.toml"),
+            CommonConfigManager.TOML.encodeToString(GradewayConfig.serializer(), config)
+        )
+        entry.load().getOrElse { error(it.toString()) }
+    }
+
+    private fun createDefaultRole(): RoleEntity =
+        createRole().also { role -> gradeway.roles.setDefault(role).getOrElse { error(it.toString()) } }
+
+    @Test
+    fun `applyDefaultRole assigns the default role as primary role on first join`() {
+        configureDefaultRole(assignOnFirstJoin = true, assignWhenNoPrimaryRole = false)
+        val role = createDefaultRole()
+        val player = createPlayer()
+
+        val assigned = gradeway.players.applyDefaultRole(player.id.value, firstJoin = true)
+            .getOrElse { error(it.toString()) }
+
+        assertEquals(role.id.value, assigned?.id?.value)
+        assertEquals(role.id.value, gradeway.players.getPrimaryRole(player.id.value)?.id?.value)
+        assertNotNull(playerRoleEntity(player, role))
+    }
+
+    @Test
+    fun `applyDefaultRole does nothing on a later join when only first join is enabled`() {
+        configureDefaultRole(assignOnFirstJoin = true, assignWhenNoPrimaryRole = false)
+        createDefaultRole()
+        val player = createPlayer()
+
+        val assigned = gradeway.players.applyDefaultRole(player.id.value, firstJoin = false)
+            .getOrElse { error(it.toString()) }
+
+        assertNull(assigned)
+        assertNull(gradeway.players.getPrimaryRole(player.id.value))
+    }
+
+    @Test
+    fun `applyDefaultRole assigns the default role to existing players without a primary role`() {
+        configureDefaultRole(assignOnFirstJoin = false, assignWhenNoPrimaryRole = true)
+        val role = createDefaultRole()
+        val player = createPlayer()
+        gradeway.players.addRole(player, role, null).getOrElse { error(it.toString()) }
+
+        gradeway.players.applyDefaultRole(player.id.value, firstJoin = false).getOrElse { error(it.toString()) }
+
+        assertEquals(role.id.value, gradeway.players.getPrimaryRole(player.id.value)?.id?.value)
+    }
+
+    @Test
+    fun `applyDefaultRole keeps an existing primary role`() {
+        configureDefaultRole(assignOnFirstJoin = false, assignWhenNoPrimaryRole = true)
+        createDefaultRole()
+        val primaryRole = createRole()
+        val player = createPlayer()
+        gradeway.players.addRole(player, primaryRole, null).getOrElse { error(it.toString()) }
+        gradeway.players.setPrimaryRole(player, primaryRole).getOrElse { error(it.toString()) }
+
+        val assigned = gradeway.players.applyDefaultRole(player.id.value, firstJoin = false)
+            .getOrElse { error(it.toString()) }
+
+        assertNull(assigned)
+        assertEquals(primaryRole.id.value, gradeway.players.getPrimaryRole(player.id.value)?.id?.value)
+    }
+
+    @Test
+    fun `applyDefaultRole does nothing without a default role or when disabled`() {
+        configureDefaultRole(assignOnFirstJoin = true, assignWhenNoPrimaryRole = true)
+        val player = createPlayer()
+        assertNull(
+            gradeway.players.applyDefaultRole(player.id.value, firstJoin = true).getOrElse { error(it.toString()) }
+        )
+
+        configureDefaultRole(assignOnFirstJoin = false, assignWhenNoPrimaryRole = false)
+        createDefaultRole()
+        assertNull(
+            gradeway.players.applyDefaultRole(player.id.value, firstJoin = true).getOrElse { error(it.toString()) }
+        )
+        assertNull(gradeway.players.getPrimaryRole(player.id.value))
+    }
+
+    @Test
+    fun `applyDefaultRole fails for an unknown player`() {
+        val result = gradeway.players.applyDefaultRole(UUID.randomUUID(), firstJoin = true)
+
+        assertEquals(PlayerService.ApplyDefaultRoleError.EntityNotFound, result.leftOrNull())
+    }
+
+    @Test
+    fun `clearPrimaryRole removes the primary role but keeps the role assigned`() {
+        val player = createPlayer()
+        val role = createRole()
+        gradeway.players.addRole(player, role, null).getOrElse { error(it.toString()) }
+        gradeway.players.setPrimaryRole(player, role).getOrElse { error(it.toString()) }
+
+        gradeway.players.clearPrimaryRole(player.id.value).getOrElse { error(it.toString()) }
+
+        assertNull(gradeway.players.getPrimaryRole(player.id.value))
+        assertNotNull(playerRoleEntity(player, role))
+    }
+
+    @Test
+    fun `clearPrimaryRole fails for a player without a primary role`() {
+        val player = createPlayer()
+
+        val result = gradeway.players.clearPrimaryRole(player)
+
+        assertEquals(PlayerService.ClearPrimaryRoleError.NoPrimaryRole, result.leftOrNull())
+    }
+
+    @Test
+    fun `clearPrimaryRole fails for an unknown player`() {
+        val result = gradeway.players.clearPrimaryRole(UUID.randomUUID())
+
+        assertEquals(PlayerService.ClearPrimaryRoleError.EntityNotFound, result.leftOrNull())
     }
 
     @Test

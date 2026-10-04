@@ -24,9 +24,12 @@ object TableConstants {
     val GROUPS_TABLE_NAME: String by lazy { "${TABLE_PREFIX}groups" }
     val GROUP_PERMISSIONS_TABLE_NAME: String by lazy { "${TABLE_PREFIX}group_permissions" }
     val GROUP_PERMISSION_TEMPLATES_TABLE_NAME: String by lazy { "${TABLE_PREFIX}group_permission_templates" }
+    val TRACKS_TABLE_NAME: String by lazy { "${TABLE_PREFIX}tracks" }
+    val TRACK_STAGES_TABLE_NAME: String by lazy { "${TABLE_PREFIX}track_stages" }
 
     const val ROLES_TABLE_MAX_NAME_LENGTH: Int = 30
     const val PLAYERS_TABLE_MAX_NAME_LENGTH: Int = 16
     const val PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH: Int = 20
     const val GROUPS_TABLE_MAX_NAME_LENGTH: Int = 20
+    const val TRACKS_TABLE_MAX_SLUG_LENGTH: Int = 20
 }

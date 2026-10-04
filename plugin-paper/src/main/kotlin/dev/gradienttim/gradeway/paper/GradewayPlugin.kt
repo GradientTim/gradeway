@@ -11,20 +11,20 @@ import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
-import dev.gradienttim.gradeway.paper.command.PaperAudienceProvider
+import dev.gradienttim.gradeway.paper.command.context.PaperCommandContext
 import dev.gradienttim.gradeway.paper.platform.FoliaScheduler
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.ServerBuildInfo
+import io.papermc.paper.command.brigadier.Commands
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.kyori.adventure.key.Key
 import org.bukkit.plugin.java.JavaPlugin
-import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.paper.PaperCommandManager
 
 class GradewayPlugin : JavaPlugin() {
     val gradeway = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
         scheduler = if (isFolia()) FoliaScheduler(this) else BukkitScheduler(this),
-        directory = dataFolder,
+        directory = dataFolder.toPath(),
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
     )
@@ -66,18 +66,26 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerCommands() {
-        val audienceProvider = PaperAudienceProvider()
-        val commandManager = PaperCommandManager.builder()
-            .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
-            .buildOnEnable(this)
+        val commandContext = PaperCommandContext()
 
-        createGradewayCommand(
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
+            val commands = it.registrar()
+
+            registerGradewayCommand(commands, commandContext)
+        }
+    }
+
+    private fun registerGradewayCommand(
+        commands: Commands,
+        commandContext: PaperCommandContext,
+    ) {
+        val gradewayCommand = createGradewayCommand(
             literal = "gradeway",
-            aliases = arrayOf("gw", "gradewayp", "gwpaper", "gwp"),
             gradeway = gradeway,
-            commandManager = commandManager,
-            audienceProvider = audienceProvider
+            commandContext = commandContext,
         )
+
+        commands.register(gradewayCommand.build(), listOf("gw", "gradewayp", "gwpaper", "gwp"))
     }
 
     // https://docs.papermc.io/paper/dev/folia-support/#checking-for-folia

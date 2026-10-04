@@ -48,18 +48,9 @@ jobs:
             -exec cp {} release-artifacts/ \;
           ls -la release-artifacts
 
-      - name: Generate release notes
-        uses: orhun/git-cliff-action@v4
-        id: changelog
-        with:
-          config: cliff.toml
-          args: --latest --strip all
-        env:
-          OUTPUT: release-notes.md
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.tag || github.ref_name }}
-          body_path: release-notes.md
+          generate_release_notes: true
           files: release-artifacts/*.jar

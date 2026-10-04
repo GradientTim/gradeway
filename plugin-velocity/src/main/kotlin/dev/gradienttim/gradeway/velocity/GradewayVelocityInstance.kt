@@ -4,24 +4,19 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.velocity
 
-import com.velocitypowered.api.command.CommandSource
+import com.velocitypowered.api.command.BrigadierCommand
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
-import dev.gradienttim.gradeway.velocity.command.VelocityAudienceProvider
+import dev.gradienttim.gradeway.velocity.command.VelocityCommandContext
 import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
-import org.incendo.cloud.SenderMapper
-import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.velocity.VelocityCommandManager
 import org.slf4j.Logger
 import java.nio.file.Path
-import kotlin.jvm.optionals.getOrNull
 
 class GradewayVelocityInstance(
     val plugin: GradewayPlugin,
@@ -36,7 +31,7 @@ class GradewayVelocityInstance(
         gradeway = CommonGradeway(
             logger = CommonLogger.fromSlf4jLogger(logger),
             scheduler = VelocityScheduler(plugin),
-            directory = directory.toFile(),
+            directory = directory,
             defaultPlatformConfig = VelocityPlatformConfig(),
             platformConfigSerializer = VelocityPlatformConfig.serializer(),
         )
@@ -80,30 +75,24 @@ class GradewayVelocityInstance(
     }
 
     private fun registerCommands() {
-        val pluginContainer = plugin.server.pluginManager.getPlugin("gradeway").getOrNull()
-            ?: error("Unable to get PluginContainer from Gradeway.")
+        val commandContext = VelocityCommandContext()
 
-        val audienceProvider = VelocityAudienceProvider()
-        val commandManager = VelocityCommandManager(
-            pluginContainer,
-            plugin.server,
-            ExecutionCoordinator.simpleCoordinator(),
-            SenderMapper.identity()
-        )
-
-        registerGradewayCommand(audienceProvider, commandManager)
+        registerGradewayCommand(commandContext)
     }
 
-    private fun registerGradewayCommand(
-        audienceProvider: AudienceProvider<CommandSource>,
-        commandManager: VelocityCommandManager<CommandSource>
-    ) {
-        createGradewayCommand(
+    private fun registerGradewayCommand(commandContext: VelocityCommandContext) {
+        val gradewayCommand = createGradewayCommand(
             literal = "gradewayvelocity",
-            aliases = arrayOf("gradewayv", "gwvelocity", "gwv"),
             gradeway = gradeway,
-            commandManager = commandManager,
-            audienceProvider = audienceProvider
+            commandContext = commandContext,
         )
+
+        val gradewayCommandMeta = plugin.server.commandManager
+            .metaBuilder("gradewayvelocity")
+            .aliases("gradewayv", "gwvelocity", "gwv")
+            .plugin(plugin)
+            .build()
+
+        plugin.server.commandManager.register(gradewayCommandMeta, BrigadierCommand(gradewayCommand))
     }
 }

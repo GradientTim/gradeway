@@ -4,117 +4,84 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
+import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.managers.ConfirmationManager
+import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.command.execute
+import dev.gradienttim.gradeway.command.literal
+import dev.gradienttim.gradeway.command.string
+import dev.gradienttim.gradeway.command.stringParam
+import dev.gradienttim.gradeway.commands.extensions.requestConfirmation
+import dev.gradienttim.gradeway.commands.extensions.suggestStrings
 import dev.gradienttim.gradeway.managers.MigrationManager
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.kotlin.MutableCommandBuilder
-import org.incendo.cloud.kotlin.extension.suggestionProvider
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.parser.standard.StringParser.stringParser
-import org.incendo.cloud.suggestion.SuggestionProvider
+import net.kyori.adventure.text.minimessage.translation.Argument
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerMigrationCommand(
+internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.migrationCommand(
     rootLiteral: String,
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    commandContext: CommandContext<TCommandSource>,
 ) {
-    registerCopy("migrate") {
-        permission("gradeway.migrate")
+    literal("migrate") {
+        requires { commandContext.hasPermission(it, "gradeway.migrate") }
 
-        required("type", stringParser()) {
-            suggestionProvider = SuggestionProvider.blockingStrings { _, _ ->
-                MigrationStrategyRegistry.items.map { migrationStrategy -> migrationStrategy.type }
-            }
-        }
-        required("file", stringParser())
+        string("type") {
+            suggestStrings { MigrationStrategyRegistry.items.map { migrationStrategy -> migrationStrategy.type } }
 
-        handler { context ->
-            val audience = audienceProvider.apply(context.sender())
+            string("file") {
+                execute {
+                    val type = stringParam("type")
+                    val file = stringParam("file")
 
-            val type = context.get<String>("type")
-            val file = context.get<String>("file")
-
-            val strategy = MigrationStrategyRegistry.find(type)
-            if (strategy == null) {
-                audience.sendMessage(
-                    Component.translatable(
-                        "gradeway.command.migrate.strategyNotRegistered",
-                        Component.text(type)
-                    )
-                )
-                return@handler
-            }
-
-            gradeway.confirmations.request(
-                sender = audience,
-                handler = {
-                    gradeway.migrations.migrate(strategy, file)
-                        .onLeft { error ->
-                            if (error is MigrationManager.MigrateError.FileNotFound) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.migrate.fileNotFound",
-                                        Component.text(file)
-                                    )
-                                )
-                                return@request
-                            }
-                            if (error is MigrationManager.MigrateError.Unexpected) {
-                                audience.sendMessage(
-                                    Component.translatable(
-                                        "gradeway.command.migrate.unexpectedError",
-                                        Component.text(error.throwable.message ?: "Unknown")
-                                    )
-                                )
-                                return@request
-                            }
-                        }
-                        .onRight {
-                            audience.sendMessage(
-                                Component.translatable(
-                                    "gradeway.command.migrate.success",
-                                    Component.text(type),
-                                    Component.text(file)
-                                )
+                    val strategy = MigrationStrategyRegistry.find(type)
+                    if (strategy == null) {
+                        commandContext.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.migrate.strategyNotRegistered",
+                                Argument.string("strategy", type)
                             )
-                        }
-                },
-                onTimeout = { id ->
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.confirmation.timeout",
-                            Component.text(id)
                         )
-                    )
+                        return@execute
+                    }
+
+                    requestConfirmation(source, commandContext, gradeway, rootLiteral) {
+                        gradeway.migrations.migrate(strategy, file)
+                            .onLeft { error ->
+                                if (error is MigrationManager.MigrateError.FileNotFound) {
+                                    commandContext.sendTranslatedMessage(
+                                        source,
+                                        Component.translatable(
+                                            "gradeway.command.migrate.fileNotFound",
+                                            Argument.string("file", file)
+                                        )
+                                    )
+                                    return@requestConfirmation
+                                }
+                                if (error is MigrationManager.MigrateError.Unexpected) {
+                                    commandContext.sendTranslatedMessage(
+                                        source,
+                                        Component.translatable(
+                                            "gradeway.command.migrate.unexpectedError",
+                                            Argument.string("error", error.throwable.message ?: "Unknown")
+                                        )
+                                    )
+                                    return@requestConfirmation
+                                }
+                            }
+                            .onRight {
+                                commandContext.sendTranslatedMessage(
+                                    source,
+                                    Component.translatable(
+                                        "gradeway.command.migrate.success",
+                                        Argument.string("strategy", type),
+                                        Argument.string("file", file)
+                                    )
+                                )
+                            }
+                    }
                 }
-            ).onLeft { error ->
-                if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.confirmation.request.failedToRegister"
-                        )
-                    )
-                    return@handler
-                }
-                if (error is ConfirmationManager.RequestJobError.Unexpected) {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.confirmation.request.unexpectedError",
-                            Component.text(error.throwable.message ?: "Unknown")
-                        )
-                    )
-                    return@handler
-                }
-            }.onRight { id ->
-                audience.sendMessage(
-                    Component.translatable(
-                        "gradeway.confirmation.request.success",
-                        Component.text(rootLiteral),
-                        Component.text(id)
-                    )
-                )
             }
         }
     }

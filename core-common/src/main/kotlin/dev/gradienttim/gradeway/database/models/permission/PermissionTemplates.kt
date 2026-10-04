@@ -24,8 +24,8 @@ object PermissionTemplatesTable : UUIDTable(name = TableConstants.PERMISSION_TEM
     val assignedTo =
         enumeration<PermissionTemplateEntity.AssignedTo>("assigned_to").default(PermissionTemplateEntity.AssignedTo.ALL)
 
-    val createdAt = timestamp("created_at").default(Instant.now())
-    val updatedAt = timestamp("updated_at").default(Instant.now())
+    val createdAt = timestamp("created_at").clientDefault { Instant.now() }
+    val updatedAt = timestamp("updated_at").clientDefault { Instant.now() }
 }
 
 class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionTemplateEntity, KoinComponent {

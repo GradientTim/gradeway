@@ -118,6 +118,16 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     fun setName(entity: RoleEntity, name: String): Either<SetNameError, Boolean>
 
     /**
+     * Updates the name of the role identified by its current ID or name.
+     *
+     * @param idOrName The identifier or current name of the role whose name is to be updated.
+     * @param name The new name to assign to the role.
+     * @return An instance of [Either] containing [SetNameError] if the update fails,
+     *         or `true` if the update succeeds.
+     */
+    fun setName(idOrName: String, name: String): Either<SetNameError, Boolean>
+
+    /**
      * Retrieves a role entity by its unique identifier.
      *
      * @param id The unique identifier of the role to be retrieved.
@@ -164,6 +174,68 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
      * @return `true` if a role entity with the specified identifier or name exists, `false` otherwise.
      */
     fun existsByIdOrName(value: String): Boolean
+
+    /**
+     * Retrieves the default role that new players receive.
+     *
+     * If several roles are flagged as default, the one with the highest weight is returned,
+     * with ties broken by name.
+     *
+     * @return The default [RoleEntity], or `null` if no default role is configured.
+     */
+    fun getDefaultRole(): RoleEntity?
+
+    /**
+     * Makes the specified role the default role, replacing any previous default role.
+     *
+     * @param role The role entity that should become the default role.
+     * @return Either a `SetDefaultError` if the operation fails, or `Unit` if successful.
+     */
+    fun setDefault(role: RoleEntity): Either<SetDefaultError, Unit>
+
+    /**
+     * Makes the role identified by its ID or name the default role, replacing any previous default role.
+     *
+     * @param idOrName The identifier or name of the role that should become the default role.
+     * @return Either a `SetDefaultError` if the operation fails, or `Unit` if successful.
+     */
+    fun setDefault(idOrName: String): Either<SetDefaultError, Unit>
+
+    /**
+     * Retrieves every role that is flagged as default, ordered by weight (highest first), then by name.
+     *
+     * Only the first role is given to new players; see [getDefaultRole].
+     *
+     * @return The roles flagged as default, or an empty list if there are none.
+     */
+    fun getDefaultRoles(): List<RoleEntity>
+
+    /**
+     * Flags or unflags the specified role as default without touching any other role.
+     *
+     * Unlike [setDefault], other default roles stay flagged, so several roles can be flagged at once.
+     *
+     * @param role The role entity whose default flag should be changed.
+     * @param isDefault Whether the role should be flagged as default.
+     * @return Either a `SetDefaultFlagError` if the operation fails, or `Unit` if successful.
+     */
+    fun setDefaultFlag(role: RoleEntity, isDefault: Boolean): Either<SetDefaultFlagError, Unit>
+
+    /**
+     * Flags or unflags the role identified by its ID or name as default without touching any other role.
+     *
+     * @param idOrName The identifier or name of the role whose default flag should be changed.
+     * @param isDefault Whether the role should be flagged as default.
+     * @return Either a `SetDefaultFlagError` if the operation fails, or `Unit` if successful.
+     */
+    fun setDefaultFlag(idOrName: String, isDefault: Boolean): Either<SetDefaultFlagError, Unit>
+
+    /**
+     * Clears the default role, so new players no longer receive a role automatically.
+     *
+     * @return Either a `ClearDefaultError` if the operation fails, or `Unit` if successful.
+     */
+    fun clearDefault(): Either<ClearDefaultError, Unit>
 
     /**
      * Adds an existing role as a parent of another role, so the child role inherits the parent's
@@ -280,12 +352,31 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     sealed interface SetNameError {
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
+        object NameAlreadySet : SetNameError
+        object NameAlreadyExists : SetNameError
         data class Unexpected(val throwable: Throwable) : SetNameError
     }
 
     sealed interface SetWeightError {
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
+    }
+
+    sealed interface SetDefaultError {
+        object EntityNotFound : SetDefaultError
+        object AlreadyDefault : SetDefaultError
+        data class Unexpected(val throwable: Throwable) : SetDefaultError
+    }
+
+    sealed interface SetDefaultFlagError {
+        object EntityNotFound : SetDefaultFlagError
+        object FlagAlreadySet : SetDefaultFlagError
+        data class Unexpected(val throwable: Throwable) : SetDefaultFlagError
+    }
+
+    sealed interface ClearDefaultError {
+        object NoDefaultRole : ClearDefaultError
+        data class Unexpected(val throwable: Throwable) : ClearDefaultError
     }
 
     sealed interface AddParentError {

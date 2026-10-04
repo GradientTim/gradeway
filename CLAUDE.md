@@ -28,7 +28,7 @@ mirror that sequence locally before considering work done.
 Tests use `kotlin.test` on JUnit Platform with backtick-quoted test names (`` fun `isUuid accepts valid uuids`() ``).
 New tests belong under `core-common/src/test`; other modules have no test sources yet.
 
-Spotless enforces the license header from `.assets/LICENSE_HEADER` on every `.kt` file - new files need it,
+Spotless enforces the license header from `.data/assets` on every `.kt` file - new files need it,
 `spotlessApply` will add it automatically.
 
 ## Module layout

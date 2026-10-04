@@ -4,118 +4,126 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.commands.gradeway
 
+import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.command.execute
+import dev.gradienttim.gradeway.command.literal
+import dev.gradienttim.gradeway.command.string
+import dev.gradienttim.gradeway.command.stringParam
 import dev.gradienttim.gradeway.managers.ConfirmationManager
 import net.kyori.adventure.text.Component
-import org.incendo.cloud.kotlin.MutableCommandBuilder
-import org.incendo.cloud.minecraft.extras.AudienceProvider
-import org.incendo.cloud.parser.standard.StringParser.stringParser
+import net.kyori.adventure.text.minimessage.translation.Argument
 
-internal fun <C : Any> MutableCommandBuilder<C>.registerConfirmationCommand(
+internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.confirmationCommand(
     gradeway: CommonGradeway<*>,
-    audienceProvider: AudienceProvider<C>,
+    commandContext: CommandContext<TCommandSource>,
 ) {
-    registerCopy("confirm") {
-        permission("gradeway.confirmJob")
+    literal("confirm") {
+        requires { commandContext.hasPermission(it, "gradeway.confirmJob") }
 
-        required("jobId", stringParser())
+        string("jobId") {
+            execute {
+                val jobId = stringParam("jobId")
 
-        handler { context ->
-            val audience = audienceProvider.apply(context.sender())
-
-            val jobId = context.get<String>("jobId")
-
-            gradeway.confirmations.confirm(audience, jobId)
-                .onLeft { error ->
-                    if (error is ConfirmationManager.ConfirmJobError.NotRegistered) {
-                        audience.sendMessage(
+                gradeway.confirmations.confirm(commandContext.sourceToUUID(source), jobId)
+                    .onLeft { error ->
+                        if (error is ConfirmationManager.ConfirmJobError.NotRegistered) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.confirmJob.notRegistered",
+                                    Argument.string("job", jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.ConfirmJobError.WrongSender) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.confirmJob.wrongSender",
+                                    Argument.string("job", jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.ConfirmJobError.Unexpected) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.confirmJob.unexpectedError",
+                                    Argument.string("job", jobId),
+                                    Argument.string("error", error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@execute
+                        }
+                    }
+                    .onRight {
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.command.confirmJob.notRegistered",
-                                Component.text(jobId)
+                                "gradeway.command.confirmJob.success",
+                                Argument.string("job", jobId)
                             )
                         )
-                        return@handler
                     }
-                    if (error is ConfirmationManager.ConfirmJobError.WrongSender) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.confirmJob.wrongSender",
-                                Component.text(jobId)
-                            )
-                        )
-                        return@handler
-                    }
-                    if (error is ConfirmationManager.ConfirmJobError.Unexpected) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.confirmJob.unexpectedError",
-                                Component.text(jobId),
-                                Component.text(error.throwable.message ?: "Unknown")
-                            )
-                        )
-                        return@handler
-                    }
-                }
-                .onRight {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.confirmJob.success",
-                            Component.text(jobId)
-                        )
-                    )
-                }
+            }
         }
     }
 
-    registerCopy("cancel") {
-        permission("gradeway.cancelJob")
+    literal("cancel") {
+        requires { commandContext.hasPermission(it, "gradeway.cancelJob") }
 
-        required("jobId", stringParser())
+        string("jobId") {
+            execute {
+                val jobId = stringParam("jobId")
 
-        handler { context ->
-            val audience = audienceProvider.apply(context.sender())
-
-            val jobId = context.get<String>("jobId")
-
-            gradeway.confirmations.cancel(audience, jobId)
-                .onLeft { error ->
-                    if (error is ConfirmationManager.CancelJobError.NotRegistered) {
-                        audience.sendMessage(
+                gradeway.confirmations.cancel(commandContext.sourceToUUID(source), jobId)
+                    .onLeft { error ->
+                        if (error is ConfirmationManager.CancelJobError.NotRegistered) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.cancelJob.notRegistered",
+                                    Argument.string("job", jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.CancelJobError.WrongSender) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.cancelJob.wrongSender",
+                                    Argument.string("job", jobId)
+                                )
+                            )
+                            return@execute
+                        }
+                        if (error is ConfirmationManager.CancelJobError.Unexpected) {
+                            commandContext.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.cancelJob.unexpectedError",
+                                    Argument.string("job", jobId),
+                                    Argument.string("error", error.throwable.message ?: "Unknown")
+                                )
+                            )
+                            return@execute
+                        }
+                    }
+                    .onRight {
+                        commandContext.sendTranslatedMessage(
+                            source,
                             Component.translatable(
-                                "gradeway.command.cancelJob.notRegistered",
-                                Component.text(jobId)
+                                "gradeway.command.cancelJob.success",
+                                Argument.string("job", jobId)
                             )
                         )
-                        return@handler
                     }
-                    if (error is ConfirmationManager.CancelJobError.WrongSender) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.cancelJob.wrongSender",
-                                Component.text(jobId)
-                            )
-                        )
-                        return@handler
-                    }
-                    if (error is ConfirmationManager.CancelJobError.Unexpected) {
-                        audience.sendMessage(
-                            Component.translatable(
-                                "gradeway.command.cancelJob.unexpectedError",
-                                Component.text(jobId),
-                                Component.text(error.throwable.message ?: "Unknown")
-                            )
-                        )
-                        return@handler
-                    }
-                }
-                .onRight {
-                    audience.sendMessage(
-                        Component.translatable(
-                            "gradeway.command.cancelJob.success",
-                            Component.text(jobId)
-                        )
-                    )
-                }
+            }
         }
     }
 }
