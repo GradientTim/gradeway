@@ -17,7 +17,7 @@ dependencies {
     api(project(":core-common"))
     implementation(project(":plugin-bukkit-shared"))
 
-    compileOnly("io.papermc.paper:paper-api:26.3.build.9-alpha")
+    compileOnly("io.papermc.paper:paper-api:26.3-rc-3.build.1-alpha")
 }
 
 tasks {
