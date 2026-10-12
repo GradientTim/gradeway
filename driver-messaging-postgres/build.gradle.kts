@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    shadow("org.postgresql:postgresql:42.7.13")
+    shadow("org.postgresql:postgresql:42.7.14")
 }
