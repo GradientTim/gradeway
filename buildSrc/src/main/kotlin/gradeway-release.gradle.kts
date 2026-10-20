@@ -71,12 +71,13 @@ if (hangarSupported) {
                     }
                 }
 
-                if (project.name == "plugin-velocity") {
-                    velocity {
-                        jar = tasks.shadowJar.flatMap { it.archiveFile }
-                        platformVersions.addAll(*supportedMinecraftVersions)
-                    }
-                }
+//                TODO: check which versions are accepted.
+//                if (project.name == "plugin-velocity") {
+//                    velocity {
+//                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+//                        platformVersions.addAll(*supportedMinecraftVersions)
+//                    }
+//                }
             }
         }
     }

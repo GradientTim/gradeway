@@ -3,6 +3,7 @@
 # core-api/core-common - hence the full module list below, not just the two that get published.
 *
 
+!.git/
 !gradlew
 !gradle.properties
 !settings.gradle.kts
