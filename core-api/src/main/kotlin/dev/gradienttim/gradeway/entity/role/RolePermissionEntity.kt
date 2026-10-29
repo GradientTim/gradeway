@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import dev.gradienttim.gradeway.entity.SharedPermissionEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -23,7 +24,7 @@ import java.util.*
  * This entity is used in role-based access control systems to define which permissions
  * are associated with specific roles, enabling fine-grained management of access rights.
  */
-interface RolePermissionEntity : SharedPermissionEntity {
+interface RolePermissionEntity : Auditable, SharedPermissionEntity {
     /**
      * Represents the unique identifier of a role associated with a permission.
      *

@@ -45,8 +45,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
             string("name") {
                 execute {
                     val name = stringParam("name")
+                    val actor = commandContext.sourceToActor(source)
 
-                    gradeway.roles.create(name)
+                    gradeway.roles.create(name, actor)
                         .onLeft { error ->
                             if (error is CreateRoleError.EntityAlreadyExists) {
                                 commandContext.sendTranslatedMessage(
@@ -101,6 +102,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                 execute {
                     val id = stringParam("idOrName")
+                    val actor = commandContext.sourceToActor(source)
 
                     val role = gradeway.roles.findByIdOrName(id)
                     if (role == null) {
@@ -115,7 +117,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     }
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.roles.delete(role.id.value)
+                        gradeway.roles.delete(role.id.value, actor)
                             .onLeft { error ->
                                 if (error is DeleteRoleError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
@@ -276,8 +278,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     execute {
                         val idOrName = stringParam("idOrName")
+                        val actor = commandContext.sourceToActor(source)
 
-                        gradeway.roles.setDefault(idOrName)
+                        gradeway.roles.setDefault(idOrName, actor)
                             .onLeft { error ->
                                 if (error is SetDefaultError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
@@ -328,7 +331,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                 requires { commandContext.hasPermission(it, "gradeway.role.default.clear") }
 
                 execute {
-                    gradeway.roles.clearDefault()
+                    val actor = commandContext.sourceToActor(source)
+
+                    gradeway.roles.clearDefault(actor)
                         .onLeft { error ->
                             if (error is ClearDefaultError.NoDefaultRole) {
                                 commandContext.sendTranslatedMessage(

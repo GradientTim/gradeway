@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import dev.gradienttim.gradeway.entity.group.GroupEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.CompositeID
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
@@ -17,7 +18,7 @@ import java.util.*
  * and groups need to be dynamically associated with permissions, organizational structures,
  * or functional groupings within a system.
  */
-interface RoleGroupEntity {
+interface RoleGroupEntity : Auditable {
     /**
      * The unique identifier for the role-group relationship entity.
      *

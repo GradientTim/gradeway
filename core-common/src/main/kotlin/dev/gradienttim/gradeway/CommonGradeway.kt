@@ -35,6 +35,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val directory: Path,
     override val defaultPlatformConfig: TPlatformConfig,
     override val platformConfigSerializer: KSerializer<TPlatformConfig>,
+    override val events: EventManager,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override var state: GradewayState = GradewayState.UNLOADED
@@ -47,6 +48,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val groups: GroupService by inject()
     override val tracks: TrackService by inject()
     override val roles: RoleService by inject()
+    override val logs: LogService by inject()
 
     override val confirmations: ConfirmationManager by inject()
     override val migrations: MigrationManager by inject()
@@ -161,6 +163,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
                 single<GroupService> { CommonGroupService(gradeway) }
                 single<RoleService> { CommonRoleService(gradeway) }
                 single<TrackService> { CommonTrackService(gradeway) }
+                single<LogService> { CommonLogService(gradeway) }
             },
 
             module {

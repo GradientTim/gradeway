@@ -9,10 +9,11 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
-import dev.gradienttim.gradeway.velocity.command.VelocityCommandContext
+import dev.gradienttim.gradeway.velocity.command.context.VelocityCommandContext
 import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
+import dev.gradienttim.gradeway.velocity.managers.VelocityEventManager
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
 import org.slf4j.Logger
@@ -34,6 +35,7 @@ class GradewayVelocityInstance(
             directory = directory,
             defaultPlatformConfig = VelocityPlatformConfig(),
             platformConfigSerializer = VelocityPlatformConfig.serializer(),
+            events = VelocityEventManager(plugin),
         )
 
         gradeway.load()

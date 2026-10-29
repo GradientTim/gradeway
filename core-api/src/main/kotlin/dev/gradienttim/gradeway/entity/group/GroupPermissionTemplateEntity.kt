@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.group
 
 import dev.gradienttim.gradeway.entity.SharedPermissionTemplateEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -14,7 +15,7 @@ import java.util.*
  * This entity defines the relationship between a group and a permission template,
  * enabling the usage of preconfigured sets of permissions for a specific group.
  */
-interface GroupPermissionTemplateEntity : SharedPermissionTemplateEntity  {
+interface GroupPermissionTemplateEntity : Auditable, SharedPermissionTemplateEntity {
     /**
      * The unique identifier for a group entity in the `GroupPermissionTemplateEntity` interface.
      *

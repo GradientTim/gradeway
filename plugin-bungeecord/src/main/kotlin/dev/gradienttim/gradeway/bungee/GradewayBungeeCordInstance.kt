@@ -7,10 +7,11 @@ package dev.gradienttim.gradeway.bungee
 import com.mojang.brigadier.CommandDispatcher
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bungee.command.BungeeBrigadierCommand
-import dev.gradienttim.gradeway.bungee.command.BungeeCommandContext
+import dev.gradienttim.gradeway.bungee.command.context.BungeeCommandContext
 import dev.gradienttim.gradeway.bungee.config.BungeeCordPlatformConfig
 import dev.gradienttim.gradeway.bungee.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bungee.listeners.PermissionListener
+import dev.gradienttim.gradeway.bungee.managers.BungeeCordEventManager
 import dev.gradienttim.gradeway.bungee.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bungee.platform.BungeeCordScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
@@ -37,6 +38,7 @@ class GradewayBungeeCordInstance(
             directory = directory,
             defaultPlatformConfig = BungeeCordPlatformConfig(),
             platformConfigSerializer = BungeeCordPlatformConfig.serializer(),
+            events = BungeeCordEventManager(),
         )
 
         gradeway.load()

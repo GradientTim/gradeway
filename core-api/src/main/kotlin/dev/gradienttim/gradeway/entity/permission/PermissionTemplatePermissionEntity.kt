@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.permission
 
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -15,7 +16,7 @@ import java.util.*
  * enabling the definition of permission sets for templates.
  * It allows managing multiple permissions under a unified template structure.
  */
-interface PermissionTemplatePermissionEntity {
+interface PermissionTemplatePermissionEntity : Auditable {
     /**
      * Unique identifier for a permission template entity.
      *

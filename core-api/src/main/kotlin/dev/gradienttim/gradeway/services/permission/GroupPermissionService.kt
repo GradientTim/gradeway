@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.util.TriState
 import java.util.*
 
@@ -30,7 +31,8 @@ interface GroupPermissionService {
     fun setGroupPermission(
         id: UUID,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -45,7 +47,8 @@ interface GroupPermissionService {
     fun setGroupPermission(
         entity: GroupEntity,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -60,7 +63,8 @@ interface GroupPermissionService {
     fun setGroupPermission(
         idOrName: String,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -74,7 +78,8 @@ interface GroupPermissionService {
      */
     fun setGroupPermissions(
         id: UUID,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -88,7 +93,8 @@ interface GroupPermissionService {
      */
     fun setGroupPermissions(
         entity: GroupEntity,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -102,7 +108,8 @@ interface GroupPermissionService {
      */
     fun setGroupPermissions(
         idOrName: String,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -113,7 +120,11 @@ interface GroupPermissionService {
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetGroupPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetGroupPermission(
+        id: UUID,
+        permission: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a group, identified by their associated [GroupEntity].
@@ -125,7 +136,8 @@ interface GroupPermissionService {
      */
     fun unsetGroupPermission(
         entity: GroupEntity,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -138,7 +150,8 @@ interface GroupPermissionService {
      */
     fun unsetGroupPermission(
         idOrName: String,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -151,7 +164,8 @@ interface GroupPermissionService {
      */
     fun unsetGroupPermissions(
         id: UUID,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -164,7 +178,8 @@ interface GroupPermissionService {
      */
     fun unsetGroupPermissions(
         entity: GroupEntity,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -177,7 +192,8 @@ interface GroupPermissionService {
      */
     fun unsetGroupPermissions(
         idOrName: String,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -187,7 +203,10 @@ interface GroupPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified group.
@@ -196,7 +215,10 @@ interface GroupPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(entity: GroupEntity): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        entity: GroupEntity,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific group, identified by their unique identifier or name.
@@ -205,7 +227,10 @@ interface GroupPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if a group, identified by their unique identifier, has a specific permission.

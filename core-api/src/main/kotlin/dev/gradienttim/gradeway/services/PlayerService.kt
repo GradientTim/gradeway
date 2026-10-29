@@ -12,6 +12,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.player.RolePlayerService
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.audit.Actor
 import java.util.*
 
 /**
@@ -25,69 +26,76 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      *
      * @param id The unique identifier of the player to be created.
      * @param name The name of the player to be created.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [CreatePlayerError] if the creation fails,
      *         or [Unit] if the creation succeeds.
      */
-    fun create(id: UUID, name: String): Either<CreatePlayerError, PlayerEntity>
+    fun create(id: UUID, name: String, actor: Actor? = null): Either<CreatePlayerError, PlayerEntity>
 
     /**
      * Deletes a player identified by the given unique identifier.
      *
      * @param id The unique identifier of the player to be deleted.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [DeletePlayerError] if the deletion fails,
      *         or [Unit] if the deletion succeeds.
      */
-    fun delete(id: UUID): Either<DeletePlayerError, Unit>
+    fun delete(id: UUID, actor: Actor? = null): Either<DeletePlayerError, Unit>
 
     /**
      * Updates the name of a player identified by the specified unique identifier.
      *
      * @param id The unique identifier of the player whose name is to be updated.
      * @param name The new name to assign to the player.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(id: UUID, name: String): Either<SetNameError, Boolean>
+    fun setName(id: UUID, name: String, actor: Actor? = null): Either<SetNameError, Boolean>
 
     /**
      * Updates the name of the specified player entity.
      *
      * @param entity The player entity whose name is to be updated.
      * @param name The new name to assign to the player entity.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(entity: PlayerEntity, name: String): Either<SetNameError, Boolean>
+    fun setName(entity: PlayerEntity, name: String, actor: Actor? = null): Either<SetNameError, Boolean>
 
     /**
      * Updates the weight of a player identified by the specified unique identifier.
      *
      * @param id The unique identifier of the player whose weight is to be updated.
      * @param weight The new weight to assign to the player.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(id: UUID, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(id: UUID, weight: Int, actor: Actor? = null): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of the specified player entity.
      *
      * @param entity The player entity whose weight is to be updated.
      * @param weight The new weight to assign to the player entity.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(entity: PlayerEntity, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(entity: PlayerEntity, weight: Int, actor: Actor? = null): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of a player identified by its unique identifier or name.
      *
      * @param idOrName The unique identifier or name of the player whose weight needs to be updated.
      * @param weight The new weight to assign to the player entity.
+     * @param actor The actor performing the operation, if any.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(idOrName: String, weight: Int, actor: Actor? = null): Either<SetWeightError, Boolean>
 
     /**
      * Retrieves a player entity by its unique identifier.
@@ -204,11 +212,13 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * currently online players) rather than a per-player loop.
      *
      * @param playerIds The unique identifiers of the players whose expired roles should be removed.
+     * @param actor The actor performing the operation, if any.
      * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
      *         `(playerId, role)` pairs describing every role that was removed.
      */
     fun removeExpiredRoles(
-        playerIds: Collection<UUID>
+        playerIds: Collection<UUID>,
+        actor: Actor? = null,
     ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
     /**
@@ -217,10 +227,14 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * permissions stop applying at (close to) the moment it expires rather than waiting for that
      * player's permission cache entry to naturally miss or be otherwise invalidated.
      *
+     * @param actor The actor performing the operation, if any.
+     *
      * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
      *         `(playerId, role)` pairs describing every role that was removed.
      */
-    fun removeExpiredRoles(): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
+    fun removeExpiredRoles(
+        actor: Actor? = null,
+    ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
     sealed interface CreatePlayerError {
         object EntityAlreadyExists : CreatePlayerError

@@ -2,9 +2,10 @@
 MIT License
 Copyright (c) 2026 GradientTim
 */
-package dev.gradienttim.gradeway.bungee.command
+package dev.gradienttim.gradeway.bungee.command.context
 
 import dev.gradienttim.gradeway.command.context.CommandContext
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer
@@ -19,6 +20,13 @@ class BungeeCommandContext : CommandContext<CommandSender> {
     override fun sourceToUUID(source: CommandSender): UUID {
         if (source is ProxiedPlayer) return source.uniqueId
         return super.sourceToUUID(source)
+    }
+
+    override fun sourceToActor(source: CommandSender): Actor {
+        return when (source) {
+            is ProxiedPlayer -> Actor.Player(source.uniqueId)
+            else -> Actor.Console
+        }
     }
 
     override fun hasPermission(source: CommandSender, permission: String): Boolean {

@@ -4,13 +4,14 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.permission
 
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
 /**
  * Represents a permission entity used for validating permission strings based on specific matching types.
  */
-interface PermissionEntity {
+interface PermissionEntity : Auditable {
     /**
      * Unique identifier for an entity of type PermissionEntity.
      * This identifier is represented as an EntityID with a UUID backing value

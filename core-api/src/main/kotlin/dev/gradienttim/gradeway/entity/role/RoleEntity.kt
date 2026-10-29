@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.reference.GroupReference
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.services.RoleService
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
@@ -21,7 +22,7 @@ import java.util.*
  * and timestamps for when it was created and last updated. It also provides
  * mechanisms to modify its name and weight.
  */
-interface RoleEntity : AttributeReference<RoleAttributeEntity>, PermissionReference<RolePermissionEntity>,
+interface RoleEntity : Auditable, AttributeReference<RoleAttributeEntity>, PermissionReference<RolePermissionEntity>,
     PermissionTemplateReference<RolePermissionTemplateEntity>, GroupReference<RoleGroupEntity> {
     /**
      * The unique identifier for the entity. This value is immutable and is used to distinctly identify

@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import dev.gradienttim.gradeway.entity.SharedPermissionEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -16,7 +17,7 @@ import java.util.*
  * player-specific associations and properties. This interface serves as a foundational contract
  * for managing permissions in a player-centric manner.
  */
-interface PlayerPermissionEntity: SharedPermissionEntity {
+interface PlayerPermissionEntity : Auditable, SharedPermissionEntity {
     /**
      * The unique identifier for the player entity.
      *

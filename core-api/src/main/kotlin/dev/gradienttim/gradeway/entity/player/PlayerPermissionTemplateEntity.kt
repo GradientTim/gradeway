@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import dev.gradienttim.gradeway.entity.SharedPermissionTemplateEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -14,7 +15,7 @@ import java.util.*
  * This entity defines the relationship between a player and a permission template,
  * enabling the usage of preconfigured sets of permissions for a specific player.
  */
-interface PlayerPermissionTemplateEntity : SharedPermissionTemplateEntity  {
+interface PlayerPermissionTemplateEntity : Auditable, SharedPermissionTemplateEntity {
     /**
      * The unique identifier for a player entity in the `PlayerPermissionTemplateEntity` interface.
      *

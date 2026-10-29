@@ -7,9 +7,10 @@ package dev.gradienttim.gradeway.bukkit
 import com.mojang.brigadier.CommandDispatcher
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.command.BukkitBrigadierCommand
-import dev.gradienttim.gradeway.bukkit.command.BukkitCommandContext
+import dev.gradienttim.gradeway.bukkit.command.context.BukkitCommandContext
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
+import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
@@ -36,6 +37,7 @@ class GradewayBukkitInstance(
             directory = directory,
             defaultPlatformConfig = BukkitPlatformConfig(),
             platformConfigSerializer = BukkitPlatformConfig.serializer(),
+            events = BukkitEventManager(plugin)
         )
 
         gradeway.load()
@@ -76,7 +78,7 @@ class GradewayBukkitInstance(
     }
 
     private fun registerCommands() {
-        val commandContext = BukkitCommandContext()
+        val commandContext = BukkitCommandContext(gradeway)
 
         registerGradewayCommand(commandContext)
     }

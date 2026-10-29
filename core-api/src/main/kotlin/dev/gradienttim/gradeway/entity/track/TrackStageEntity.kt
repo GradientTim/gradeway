@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.track
 
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -12,7 +13,7 @@ import java.util.*
  * Represents a single position on a [TrackEntity], wrapping an existing
  * [RoleEntity] rather than duplicating role data.
  */
-interface TrackStageEntity {
+interface TrackStageEntity : Auditable {
     /**
      * A unique identifier for a `TrackStageEntity`.
      *

@@ -10,19 +10,58 @@ import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
 import dev.gradienttim.gradeway.services.track.PlayerTrackService.DemotePlayerError
 import dev.gradienttim.gradeway.services.track.PlayerTrackService.PromotePlayerError
+import dev.gradienttim.gradeway.audit.Actor
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.util.*
 
 interface TrackPlayerService {
-    fun promote(playerId: UUID, trackId: UUID): Either<PromotePlayerError, Unit>
-    fun promote(playerId: UUID, trackId: TrackEntity): Either<PromotePlayerError, Unit>
-    fun promote(playerId: PlayerEntity, trackId: UUID): Either<PromotePlayerError, Unit>
-    fun promote(player: PlayerEntity, track: TrackEntity): Either<PromotePlayerError, Unit>
+    fun promote(
+        playerId: UUID,
+        trackId: UUID,
+        actor: Actor? = null,
+    ): Either<PromotePlayerError, Unit>
 
-    fun demote(playerId: UUID, trackId: UUID): Either<DemotePlayerError, Unit>
-    fun demote(playerId: UUID, trackId: TrackEntity): Either<DemotePlayerError, Unit>
-    fun demote(playerId: PlayerEntity, trackId: UUID): Either<DemotePlayerError, Unit>
-    fun demote(player: PlayerEntity, track: TrackEntity): Either<DemotePlayerError, Unit>
+    fun promote(
+        playerId: UUID,
+        trackId: TrackEntity,
+        actor: Actor? = null,
+    ): Either<PromotePlayerError, Unit>
+
+    fun promote(
+        playerId: PlayerEntity,
+        trackId: UUID,
+        actor: Actor? = null,
+    ): Either<PromotePlayerError, Unit>
+
+    fun promote(
+        player: PlayerEntity,
+        track: TrackEntity,
+        actor: Actor? = null,
+    ): Either<PromotePlayerError, Unit>
+
+    fun demote(
+        playerId: UUID,
+        trackId: UUID,
+        actor: Actor? = null,
+    ): Either<DemotePlayerError, Unit>
+
+    fun demote(
+        playerId: UUID,
+        trackId: TrackEntity,
+        actor: Actor? = null,
+    ): Either<DemotePlayerError, Unit>
+
+    fun demote(
+        playerId: PlayerEntity,
+        trackId: UUID,
+        actor: Actor? = null,
+    ): Either<DemotePlayerError, Unit>
+
+    fun demote(
+        player: PlayerEntity,
+        track: TrackEntity,
+        actor: Actor? = null,
+    ): Either<DemotePlayerError, Unit>
 
     fun findCurrentStage(playerId: UUID, trackId: UUID): TrackStageEntity?
     fun findCurrentStage(playerId: UUID, track: TrackEntity): TrackStageEntity?

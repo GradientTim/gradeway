@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.paper
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
+import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.commands.createGradewayCommand
@@ -27,6 +28,7 @@ class GradewayPlugin : JavaPlugin() {
         directory = dataFolder.toPath(),
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
+        events = BukkitEventManager(this),
     )
 
     override fun onEnable() {
@@ -66,7 +68,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerCommands() {
-        val commandContext = PaperCommandContext()
+        val commandContext = PaperCommandContext(gradeway)
 
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) {
             val commands = it.registrar()

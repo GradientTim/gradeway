@@ -59,6 +59,11 @@ data class GradewayConfig(
         val assignWhenNoPrimaryRole: Boolean = false,
     )
 
+    @Serializable
+    data class AuditLogConfig(
+        val enabled: Boolean = true,
+    )
+
     companion object {
         const val LATEST_VERSION: Int = 2
     }

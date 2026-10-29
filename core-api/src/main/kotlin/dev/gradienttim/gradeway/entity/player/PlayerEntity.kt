@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.reference.TrackReference
 import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
@@ -23,7 +24,7 @@ import java.util.*
  * It also extends the shared services `SharedAttributeService` and `SharedPermissionService` specific
  * to `PlayerEntity` types.
  */
-interface PlayerEntity : AttributeReference<PlayerAttributeEntity>,
+interface PlayerEntity : Auditable, AttributeReference<PlayerAttributeEntity>,
     PermissionReference<PlayerPermissionEntity>,
     PermissionTemplateReference<PlayerPermissionTemplateEntity>,
     TrackReference {

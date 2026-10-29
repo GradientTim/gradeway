@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.util.TriState
 import java.util.*
 
@@ -30,7 +31,8 @@ interface PlayerPermissionService {
     fun setPlayerPermission(
         id: UUID,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -45,7 +47,8 @@ interface PlayerPermissionService {
     fun setPlayerPermission(
         entity: PlayerEntity,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -60,7 +63,8 @@ interface PlayerPermissionService {
     fun setPlayerPermission(
         idOrName: String,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -74,7 +78,8 @@ interface PlayerPermissionService {
      */
     fun setPlayerPermissions(
         id: UUID,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -88,7 +93,8 @@ interface PlayerPermissionService {
      */
     fun setPlayerPermissions(
         entity: PlayerEntity,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -102,7 +108,8 @@ interface PlayerPermissionService {
      */
     fun setPlayerPermissions(
         idOrName: String,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -113,7 +120,11 @@ interface PlayerPermissionService {
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetPlayerPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetPlayerPermission(
+        id: UUID,
+        permission: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their associated [PlayerEntity].
@@ -125,7 +136,8 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermission(
         entity: PlayerEntity,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -138,7 +150,8 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermission(
         idOrName: String,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -151,7 +164,8 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermissions(
         id: UUID,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -164,7 +178,8 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermissions(
         entity: PlayerEntity,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -177,7 +192,8 @@ interface PlayerPermissionService {
      */
     fun unsetPlayerPermissions(
         idOrName: String,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -187,7 +203,10 @@ interface PlayerPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearPlayerPermissions(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified player.
@@ -196,7 +215,10 @@ interface PlayerPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(entity: PlayerEntity): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearPlayerPermissions(
+        entity: PlayerEntity,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier or name.
@@ -205,7 +227,10 @@ interface PlayerPermissionService {
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearPlayerPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearPlayerPermissions(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if a player, identified by their unique identifier, has a specific permission.

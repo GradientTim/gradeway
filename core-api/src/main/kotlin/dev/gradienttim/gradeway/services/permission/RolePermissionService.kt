@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.services.PermissionService
+import dev.gradienttim.gradeway.audit.Actor
 import java.util.*
 
 /**
@@ -30,7 +31,8 @@ interface RolePermissionService {
     fun setRolePermission(
         id: UUID,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -46,7 +48,8 @@ interface RolePermissionService {
     fun setRolePermission(
         entity: RoleEntity,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -62,7 +65,8 @@ interface RolePermissionService {
     fun setRolePermission(
         idOrName: String,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
+        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
@@ -77,7 +81,8 @@ interface RolePermissionService {
      */
     fun setRolePermissions(
         id: UUID,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -92,7 +97,8 @@ interface RolePermissionService {
      */
     fun setRolePermissions(
         entity: RoleEntity,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -107,7 +113,8 @@ interface RolePermissionService {
      */
     fun setRolePermissions(
         idOrName: String,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -119,7 +126,11 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.UnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetRolePermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetRolePermission(
+        id: UUID,
+        permission: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes a specific permission from the given role entity.
@@ -132,7 +143,8 @@ interface RolePermissionService {
      */
     fun unsetRolePermission(
         entity: RoleEntity,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -146,7 +158,8 @@ interface RolePermissionService {
      */
     fun unsetRolePermission(
         idOrName: String,
-        permission: String
+        permission: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
@@ -160,7 +173,8 @@ interface RolePermissionService {
      */
     fun unsetRolePermissions(
         id: UUID,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -174,7 +188,8 @@ interface RolePermissionService {
      */
     fun unsetRolePermissions(
         entity: RoleEntity,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -188,7 +203,8 @@ interface RolePermissionService {
      */
     fun unsetRolePermissions(
         idOrName: String,
-        permissions: Collection<String>
+        permissions: Collection<String>,
+        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -198,7 +214,10 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the provided role entity.
@@ -207,7 +226,10 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        entity: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique identifier or name.
@@ -216,7 +238,10 @@ interface RolePermissionService {
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks whether an entity with the given ID has the specified role permission.

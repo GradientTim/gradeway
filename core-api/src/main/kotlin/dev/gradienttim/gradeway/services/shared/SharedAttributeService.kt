@@ -8,6 +8,7 @@ import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.services.AttributeService
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.key.Key
 import java.util.*
 
@@ -27,7 +28,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      */
     fun <TValue : Any> addAttribute(
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -40,7 +42,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      */
     fun <TValue : Any> addAttribute(
         entity: TEntity,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -53,7 +56,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      */
     fun <TValue : Any> addAttribute(
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -68,7 +72,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> updateAttribute(
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -83,7 +88,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> updateAttribute(
         entity: TEntity,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -98,7 +104,8 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun <TValue : Any> updateAttribute(
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -109,7 +116,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeAttribute(
+        id: UUID,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute identified by the given key from the specified entity.
@@ -119,7 +130,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeAttribute(entity: TEntity, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeAttribute(
+        entity: TEntity,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute identified by the given key from an entity specified by its unique identifier or name.
@@ -129,7 +144,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeAttribute(
+        idOrName: String,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Clears all attributes associated with the entity identified by the given UUID.
@@ -138,7 +157,10 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearAttributes(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the specified entity.
@@ -147,7 +169,10 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearAttributes(entity: TEntity): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearAttributes(
+        entity: TEntity,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the entity identified by the given unique identifier or name.
@@ -156,7 +181,10 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearAttributes(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Checks if an attribute with the specified key exists for the entity identified by the given UUID.
@@ -165,7 +193,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to check.
      * @return `true` if the attribute exists for the specified entity, otherwise `false`.
      */
-    fun hasAttribute(id: UUID, key: Key): Boolean
+    fun hasAttribute(
+        id: UUID,
+        key: Key,
+        actor: Actor? = null,
+    ): Boolean
 
     /**
      * Checks if an attribute exists for the specified entity using the given key.
@@ -174,7 +206,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to check.
      * @return `true` if the attribute exists for the provided entity and key, otherwise `false`.
      */
-    fun hasAttribute(entity: TEntity, key: Key): Boolean
+    fun hasAttribute(
+        entity: TEntity,
+        key: Key,
+        actor: Actor? = null,
+    ): Boolean
 
     /**
      * Checks if an attribute exists for the entity identified by the given unique identifier or name.
@@ -183,7 +219,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to check.
      * @return `true` if the attribute exists for the specified entity, otherwise `false`.
      */
-    fun hasAttribute(idOrName: String, key: Key): Boolean
+    fun hasAttribute(
+        idOrName: String,
+        key: Key,
+        actor: Actor? = null,
+    ): Boolean
 
     /**
      * Retrieves the attribute identified by the given key for the entity specified by the unique identifier.
@@ -192,7 +232,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to retrieve.
      * @return The attribute associated with the given key for the specified entity, or null if the attribute is not found.
      */
-    fun getAttribute(id: UUID, key: Key): TAttributeEntity?
+    fun getAttribute(
+        id: UUID,
+        key: Key,
+        actor: Actor? = null,
+    ): TAttributeEntity?
 
     /**
      * Retrieves the attribute identified by the given key for the specified entity.
@@ -201,7 +245,11 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to retrieve.
      * @return The attribute associated with the given key for the specified entity, or null if the attribute is not found.
      */
-    fun getAttribute(entity: TEntity, key: Key): TAttributeEntity?
+    fun getAttribute(
+        entity: TEntity,
+        key: Key,
+        actor: Actor? = null,
+    ): TAttributeEntity?
 
     /**
      * Retrieves the attribute identified by the given key for the entity specified by the unique identifier or name.
@@ -210,5 +258,9 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      * @param key The key identifying the attribute to retrieve.
      * @return The attribute associated with the given key for the specified entity, or null if the attribute is not found.
      */
-    fun getAttribute(idOrName: String, key: Key): TAttributeEntity?
+    fun getAttribute(
+        idOrName: String,
+        key: Key,
+        actor: Actor? = null,
+    ): TAttributeEntity?
 }

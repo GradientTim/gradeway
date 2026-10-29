@@ -14,6 +14,6 @@ package dev.gradienttim.gradeway.configs
  */
 interface PlatformConfig : BaseConfig {
     companion object {
-        const val LATEST_VERSION = 1
+        const val LATEST_VERSION = 2
     }
 }

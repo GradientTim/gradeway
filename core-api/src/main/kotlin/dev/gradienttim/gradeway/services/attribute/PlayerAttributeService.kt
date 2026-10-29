@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.services.AttributeService
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.key.Key
 import java.util.*
 
@@ -28,7 +29,8 @@ interface PlayerAttributeService {
      */
     fun <TValue : Any> addPlayerAttribute(
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -40,7 +42,8 @@ interface PlayerAttributeService {
      */
     fun <TValue : Any> addPlayerAttribute(
         entity: PlayerEntity,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -52,7 +55,8 @@ interface PlayerAttributeService {
      */
     fun <TValue : Any> addPlayerAttribute(
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -66,7 +70,8 @@ interface PlayerAttributeService {
     fun <TValue : Any> updatePlayerAttribute(
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -81,7 +86,8 @@ interface PlayerAttributeService {
     fun <TValue : Any> updatePlayerAttribute(
         entity: PlayerEntity,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -95,7 +101,8 @@ interface PlayerAttributeService {
     fun <TValue : Any> updatePlayerAttribute(
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -106,7 +113,11 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] in case of a failure,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        id: UUID,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes a specific attribute from the specified player entity.
@@ -116,7 +127,11 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(entity: PlayerEntity, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        entity: PlayerEntity,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes a specific attribute from a player identified by their unique ID or name.
@@ -126,7 +141,11 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] in case of a failure,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        idOrName: String,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Clears all attributes associated with the player identified by their unique ID.
@@ -135,7 +154,10 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the given player entity.
@@ -144,7 +166,10 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(entity: PlayerEntity): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        entity: PlayerEntity,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the player identified by their unique ID or name.
@@ -153,7 +178,10 @@ interface PlayerAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Checks if a player identified by their unique ID has a specific attribute.

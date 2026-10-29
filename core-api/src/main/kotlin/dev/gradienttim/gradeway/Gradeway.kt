@@ -109,6 +109,16 @@ interface Gradeway<TPlatformConfig : PlatformConfig> {
      */
     val roles: RoleService
 
+    /**
+     * Provides access to the system's logging services.
+     *
+     * The `logs` property is an instance of `LogService`, which facilitates logging operations
+     * and potentially integrates audit log capabilities through its superinterface `AuditLogService`.
+     * It serves as the logging utility within the `Gradeway` system, enabling centralized
+     * and structured logging functionality.
+     */
+    val logs: LogService
+
     companion object {
         /**
          * Attempts to retrieve an instance of the Gradeway class if available from the Koin dependency injection framework.

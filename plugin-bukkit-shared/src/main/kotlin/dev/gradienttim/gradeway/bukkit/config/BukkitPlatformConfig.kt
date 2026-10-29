@@ -16,4 +16,9 @@ data class BukkitPlatformConfig(
         "When enabled, server operators will not have access to all permission protected commands."
     )
     val disableOp: Boolean = true,
+
+    @TomlComments(
+        "When enabled, command blocks can no longer execute Gradeway commands."
+    )
+    val disableCommandBlocks: Boolean = true,
 ) : PlatformConfig

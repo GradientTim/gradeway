@@ -21,6 +21,7 @@ import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.platform.CommonCaches
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -38,7 +39,8 @@ class CommonPlayerService(
 
     override fun create(
         id: UUID,
-        name: String
+        name: String,
+        actor: Actor?,
     ): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> = either {
         if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.CreatePlayerError.InvalidName)
@@ -57,7 +59,10 @@ class CommonPlayerService(
         }
     }
 
-    override fun delete(id: UUID): Either<PlayerService.DeletePlayerError, Unit> = either {
+    override fun delete(
+        id: UUID,
+        actor: Actor?,
+    ): Either<PlayerService.DeletePlayerError, Unit> = either {
         val entity = findById(id) ?: raise(PlayerService.DeletePlayerError.EntityNotFound)
         try {
             transaction(gradeway.database) {
@@ -68,14 +73,19 @@ class CommonPlayerService(
         }
     }
 
-    override fun setName(id: UUID, name: String): Either<PlayerService.SetNameError, Boolean> = either {
+    override fun setName(
+        id: UUID,
+        name: String,
+        actor: Actor?,
+    ): Either<PlayerService.SetNameError, Boolean> = either {
         val entity = findById(id) ?: raise(PlayerService.SetNameError.EntityNotFound)
-        return setName(entity, name)
+        return setName(entity, name, actor)
     }
 
     override fun setName(
         entity: PlayerEntity,
-        name: String
+        name: String,
+        actor: Actor?,
     ): Either<PlayerService.SetNameError, Boolean> = either {
         if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.SetNameError.InvalidName)
@@ -94,14 +104,19 @@ class CommonPlayerService(
         }
     }
 
-    override fun setWeight(id: UUID, weight: Int): Either<PlayerService.SetWeightError, Boolean> = either {
+    override fun setWeight(
+        id: UUID,
+        weight: Int,
+        actor: Actor?,
+    ): Either<PlayerService.SetWeightError, Boolean> = either {
         val entity = findById(id) ?: raise(PlayerService.SetWeightError.EntityNotFound)
-        return setWeight(entity, weight)
+        return setWeight(entity, weight, actor)
     }
 
     override fun setWeight(
         entity: PlayerEntity,
-        weight: Int
+        weight: Int,
+        actor: Actor?,
     ): Either<PlayerService.SetWeightError, Boolean> = either {
         if (entity !is DatabasePlayerEntity) {
             val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
@@ -117,9 +132,13 @@ class CommonPlayerService(
         }
     }
 
-    override fun setWeight(idOrName: String, weight: Int): Either<PlayerService.SetWeightError, Boolean> = either {
+    override fun setWeight(
+        idOrName: String,
+        weight: Int,
+        actor: Actor?,
+    ): Either<PlayerService.SetWeightError, Boolean> = either {
         val entity = findByIdOrName(idOrName) ?: raise(PlayerService.SetWeightError.EntityNotFound)
-        return setWeight(entity, weight)
+        return setWeight(entity, weight, actor)
     }
 
     override fun getEffectiveWeight(id: UUID): Int {
@@ -854,7 +873,8 @@ class CommonPlayerService(
     }
 
     override fun removeExpiredRoles(
-        playerIds: Collection<UUID>
+        playerIds: Collection<UUID>,
+        actor: Actor?,
     ): Either<PlayerService.RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>> = either {
         if (playerIds.isEmpty()) {
             return@either emptyList()
@@ -875,7 +895,9 @@ class CommonPlayerService(
         }
     }
 
-    override fun removeExpiredRoles(): Either<PlayerService.RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>> =
+    override fun removeExpiredRoles(
+        actor: Actor?,
+    ): Either<PlayerService.RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>> =
         either {
             transaction(gradeway.database) {
                 val expiredPlayerRoleEntities = DatabasePlayerRoleEntity.find {

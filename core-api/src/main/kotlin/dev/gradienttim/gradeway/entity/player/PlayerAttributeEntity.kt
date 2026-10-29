@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -21,7 +22,7 @@ import java.util.*
  * that are stored and retrieved dynamically. The relationship between the attribute and the player
  * is managed via the `playerId` and `player` properties.
  */
-interface PlayerAttributeEntity : SharedAttributeEntity {
+interface PlayerAttributeEntity : Auditable, SharedAttributeEntity {
     /**
      * Represents the unique identifier of the player associated with the attribute.
      *

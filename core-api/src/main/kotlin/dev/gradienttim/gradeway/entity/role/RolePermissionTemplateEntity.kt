@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import dev.gradienttim.gradeway.entity.SharedPermissionTemplateEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -16,7 +17,7 @@ import java.util.*
  * It facilitates the management of permissions by grouping them into reusable templates and associating
  * those templates with roles.
  */
-interface RolePermissionTemplateEntity : SharedPermissionTemplateEntity {
+interface RolePermissionTemplateEntity : Auditable, SharedPermissionTemplateEntity {
     /**
      * Represents the unique identifier of the associated role in the many-to-many relationship
      * between `RoleEntity` and `PermissionTemplateEntity`.

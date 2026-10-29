@@ -19,6 +19,7 @@ import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.eq
@@ -36,7 +37,10 @@ class CommonRoleService(
         gradeway.messaging.subscribe { payload -> invalidateWeightFor(payload) }
     }
 
-    override fun create(name: String): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = either {
+    override fun create(
+        name: String,
+        actor: Actor?,
+    ): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = either {
         if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
@@ -54,7 +58,10 @@ class CommonRoleService(
         }
     }
 
-    override fun delete(id: UUID): Either<RoleService.DeleteRoleError, Unit> = either {
+    override fun delete(
+        id: UUID,
+        actor: Actor?,
+    ): Either<RoleService.DeleteRoleError, Unit> = either {
         val entity = findById(id) ?: raise(RoleService.DeleteRoleError.EntityNotFound)
         try {
             transaction(gradeway.database) {
@@ -65,12 +72,20 @@ class CommonRoleService(
         }
     }
 
-    override fun setName(id: UUID, name: String): Either<RoleService.SetNameError, Boolean> = either {
+    override fun setName(
+        id: UUID,
+        name: String,
+        actor: Actor?,
+    ): Either<RoleService.SetNameError, Boolean> = either {
         val entity = findById(id) ?: raise(RoleService.SetNameError.EntityNotFound)
-        return setName(entity, name)
+        return setName(entity, name, actor)
     }
 
-    override fun setName(entity: RoleEntity, name: String): Either<RoleService.SetNameError, Boolean> = either {
+    override fun setName(
+        entity: RoleEntity,
+        name: String,
+        actor: Actor?,
+    ): Either<RoleService.SetNameError, Boolean> = either {
         if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.SetNameError.InvalidName)
         }
@@ -94,17 +109,29 @@ class CommonRoleService(
         }
     }
 
-    override fun setName(idOrName: String, name: String): Either<RoleService.SetNameError, Boolean> = either {
+    override fun setName(
+        idOrName: String,
+        name: String,
+        actor: Actor?,
+    ): Either<RoleService.SetNameError, Boolean> = either {
         val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetNameError.EntityNotFound)
-        return setName(entity, name)
+        return setName(entity, name, actor)
     }
 
-    override fun setWeight(id: UUID, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
+    override fun setWeight(
+        id: UUID,
+        weight: Int,
+        actor: Actor?,
+    ): Either<RoleService.SetWeightError, Boolean> = either {
         val entity = findById(id) ?: raise(RoleService.SetWeightError.EntityNotFound)
-        return setWeight(entity, weight)
+        return setWeight(entity, weight, actor)
     }
 
-    override fun setWeight(entity: RoleEntity, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
+    override fun setWeight(
+        entity: RoleEntity,
+        weight: Int,
+        actor: Actor?,
+    ): Either<RoleService.SetWeightError, Boolean> = either {
         if (entity !is DatabaseRoleEntity) {
             val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
             raise(RoleService.SetWeightError.Unexpected(throwable))
@@ -119,9 +146,13 @@ class CommonRoleService(
         }
     }
 
-    override fun setWeight(idOrName: String, weight: Int): Either<RoleService.SetWeightError, Boolean> = either {
+    override fun setWeight(
+        idOrName: String,
+        weight: Int,
+        actor: Actor?,
+    ): Either<RoleService.SetWeightError, Boolean> = either {
         val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetWeightError.EntityNotFound)
-        return setWeight(entity, weight)
+        return setWeight(entity, weight, actor)
     }
 
     override fun getEffectiveWeight(id: UUID): Int {
@@ -145,6 +176,7 @@ class CommonRoleService(
                 gradeway.caches.roles.invalidateAll()
                 gradeway.caches.roleEffectiveWeights.invalidateAll()
             }
+
             else -> {}
         }
     }
@@ -219,7 +251,8 @@ class CommonRoleService(
 
     override fun setDefaultFlag(
         role: RoleEntity,
-        isDefault: Boolean
+        isDefault: Boolean,
+        actor: Actor?,
     ): Either<RoleService.SetDefaultFlagError, Unit> = either {
         catch({
             transaction(gradeway.database) {
@@ -242,13 +275,17 @@ class CommonRoleService(
 
     override fun setDefaultFlag(
         idOrName: String,
-        isDefault: Boolean
+        isDefault: Boolean,
+        actor: Actor?,
     ): Either<RoleService.SetDefaultFlagError, Unit> = either {
         val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetDefaultFlagError.EntityNotFound)
-        return setDefaultFlag(entity, isDefault)
+        return setDefaultFlag(entity, isDefault, actor)
     }
 
-    override fun setDefault(role: RoleEntity): Either<RoleService.SetDefaultError, Unit> = either {
+    override fun setDefault(
+        role: RoleEntity,
+        actor: Actor?,
+    ): Either<RoleService.SetDefaultError, Unit> = either {
         catch({
             transaction(gradeway.database) {
                 val defaultRoleIds = RolesTable
@@ -270,12 +307,15 @@ class CommonRoleService(
         }
     }
 
-    override fun setDefault(idOrName: String): Either<RoleService.SetDefaultError, Unit> = either {
+    override fun setDefault(
+        idOrName: String,
+        actor: Actor?,
+    ): Either<RoleService.SetDefaultError, Unit> = either {
         val entity = findByIdOrName(idOrName) ?: raise(RoleService.SetDefaultError.EntityNotFound)
-        return setDefault(entity)
+        return setDefault(entity, actor)
     }
 
-    override fun clearDefault(): Either<RoleService.ClearDefaultError, Unit> = either {
+    override fun clearDefault(actor: Actor?): Either<RoleService.ClearDefaultError, Unit> = either {
         catch({
             transaction(gradeway.database) {
                 val cleared = RolesTable.update({ RolesTable.isDefault eq true }) { it[isDefault] = false }
@@ -302,21 +342,23 @@ class CommonRoleService(
         }
         return role.parents.any { roleParentEntity ->
             roleParentEntity.parentId == candidateAncestor.id ||
-                isAncestorOf(candidateAncestor, roleParentEntity.parent, visitedRoleIds)
+                    isAncestorOf(candidateAncestor, roleParentEntity.parent, visitedRoleIds)
         }
     }
 
     override fun addParent(
         role: RoleEntity,
-        parentId: UUID
+        parentId: UUID,
+        actor: Actor?,
     ): Either<RoleService.AddParentError, RoleParentEntity> = either {
         val parent = findById(parentId) ?: raise(RoleService.AddParentError.TargetNotFound)
-        return addParent(role, parent)
+        return addParent(role, parent, actor)
     }
 
     override fun addParent(
         role: RoleEntity,
-        parent: RoleEntity
+        parent: RoleEntity,
+        actor: Actor?,
     ): Either<RoleService.AddParentError, RoleParentEntity> = either {
         if (role.id == parent.id) {
             raise(RoleService.AddParentError.SelfReference)
@@ -347,41 +389,46 @@ class CommonRoleService(
 
     override fun addParent(
         roleIdOrName: String,
-        parentId: UUID
+        parentId: UUID,
+        actor: Actor?,
     ): Either<RoleService.AddParentError, RoleParentEntity> = either {
         val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
         val parent = findById(parentId) ?: raise(RoleService.AddParentError.TargetNotFound)
-        return addParent(role, parent)
+        return addParent(role, parent, actor)
     }
 
     override fun addParent(
         roleIdOrName: String,
-        parent: RoleEntity
+        parent: RoleEntity,
+        actor: Actor?,
     ): Either<RoleService.AddParentError, RoleParentEntity> = either {
         val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
-        return addParent(role, parent)
+        return addParent(role, parent, actor)
     }
 
     override fun addChild(
         parentIdOrName: String,
-        childId: UUID
+        childId: UUID,
+        actor: Actor?,
     ): Either<RoleService.AddParentError, RoleParentEntity> = either {
         val parent = findByIdOrName(parentIdOrName) ?: raise(RoleService.AddParentError.EntityNotFound)
         val child = findById(childId) ?: raise(RoleService.AddParentError.TargetNotFound)
-        return addParent(child, parent)
+        return addParent(child, parent, actor)
     }
 
     override fun removeParent(
         role: RoleEntity,
-        parentId: UUID
+        parentId: UUID,
+        actor: Actor?,
     ): Either<RoleService.RemoveParentError, Unit> = either {
         val parent = findById(parentId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
-        return removeParent(role, parent)
+        return removeParent(role, parent, actor)
     }
 
     override fun removeParent(
         role: RoleEntity,
-        parent: RoleEntity
+        parent: RoleEntity,
+        actor: Actor?,
     ): Either<RoleService.RemoveParentError, Unit> = either {
         transaction(gradeway.database) {
             val roleParentEntity = role.parents.find { it.parentId == parent.id }
@@ -406,28 +453,31 @@ class CommonRoleService(
 
     override fun removeParent(
         roleIdOrName: String,
-        parentId: UUID
+        parentId: UUID,
+        actor: Actor?,
     ): Either<RoleService.RemoveParentError, Unit> = either {
         val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
         val parent = findById(parentId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
-        return removeParent(role, parent)
+        return removeParent(role, parent, actor)
     }
 
     override fun removeParent(
         roleIdOrName: String,
-        parent: RoleEntity
+        parent: RoleEntity,
+        actor: Actor?,
     ): Either<RoleService.RemoveParentError, Unit> = either {
         val role = findByIdOrName(roleIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
-        return removeParent(role, parent)
+        return removeParent(role, parent, actor)
     }
 
     override fun removeChild(
         parentIdOrName: String,
-        childId: UUID
+        childId: UUID,
+        actor: Actor?,
     ): Either<RoleService.RemoveParentError, Unit> = either {
         val parent = findByIdOrName(parentIdOrName) ?: raise(RoleService.RemoveParentError.EntityNotFound)
         val child = findById(childId) ?: raise(RoleService.RemoveParentError.TargetNotFound)
-        return removeParent(child, parent)
+        return removeParent(child, parent, actor)
     }
 
     override fun <TValue : Any> addAttribute(id: UUID, attribute: Attribute<TValue>) =

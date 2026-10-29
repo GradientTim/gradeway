@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.PlayerService
+import dev.gradienttim.gradeway.audit.Actor
 import java.time.Instant
 import java.util.*
 
@@ -29,7 +30,8 @@ interface RolePlayerService {
     fun addRole(
         playerId: UUID,
         roleId: UUID,
-        until: Instant? = null
+        until: Instant? = null,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -44,7 +46,8 @@ interface RolePlayerService {
     fun addRole(
         playerId: UUID,
         role: RoleEntity,
-        until: Instant? = null
+        until: Instant? = null,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -59,7 +62,8 @@ interface RolePlayerService {
     fun addRole(
         player: PlayerEntity,
         roleId: UUID,
-        until: Instant? = null
+        until: Instant? = null,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -74,7 +78,8 @@ interface RolePlayerService {
     fun addRole(
         player: PlayerEntity,
         role: RoleEntity,
-        until: Instant? = null
+        until: Instant? = null,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -88,7 +93,8 @@ interface RolePlayerService {
     fun addRole(
         playerIdOrName: String,
         roleId: UUID,
-        untilAt: Instant?
+        untilAt: Instant?,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -103,7 +109,8 @@ interface RolePlayerService {
     fun addRole(
         playerIdOrName: String,
         role: RoleEntity,
-        untilAt: Instant?
+        untilAt: Instant?,
+        actor: Actor? = null,
     ): Either<PlayerService.AddRoleError, PlayerRoleEntity>
 
     /**
@@ -114,7 +121,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveRoleError] if the operation fails,
      *         or [Unit] if the operation succeeds.
      */
-    fun removeRole(playerId: UUID, roleId: UUID): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        playerId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Removes a specific role from a player in the system.
@@ -124,7 +135,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveRoleError] if the operation fails,
      *         or [Unit] if the operation succeeds.
      */
-    fun removeRole(playerId: UUID, role: RoleEntity): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        playerId: UUID,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Removes a specified role from a player in the system.
@@ -134,7 +149,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveRoleError] if the operation fails,
      *         or [Unit] if the operation succeeds.
      */
-    fun removeRole(player: PlayerEntity, roleId: UUID): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        player: PlayerEntity,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Removes a specific role from a player in the system.
@@ -144,7 +163,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveRoleError] if the operation fails,
      *         or [Unit] if the operation succeeds.
      */
-    fun removeRole(player: PlayerEntity, role: RoleEntity): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        player: PlayerEntity,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Removes a specified role from a player identified by their ID or name.
@@ -154,7 +177,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveRoleError] if the operation fails,
      *         or [Unit] if the role is successfully removed.
      */
-    fun removeRole(playerIdOrName: String, roleId: UUID): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        playerIdOrName: String,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Removes a specific role from a player identified by their ID or name.
@@ -163,7 +190,11 @@ interface RolePlayerService {
      * @param role The role entity that should be removed from the player.
      * @return Either an error indicating why the role removal failed, or Unit if the operation is successful.
      */
-    fun removeRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.RemoveRoleError, Unit>
+    fun removeRole(
+        playerIdOrName: String,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveRoleError, Unit>
 
     /**
      * Sets the expiration date and time for a specific role assigned to a player.
@@ -174,7 +205,12 @@ interface RolePlayerService {
      * @return An [Either] instance containing [PlayerService.SetRoleUntilAtError] if an error occurs during the operation,
      *         or [Unit] if the operation completes successfully.
      */
-    fun setRoleUntilAt(playerId: UUID, roleId: UUID, untilAt: Instant): Either<PlayerService.SetRoleUntilAtError, Unit>
+    fun setRoleUntilAt(
+        playerId: UUID,
+        roleId: UUID,
+        untilAt: Instant,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
      * Updates the expiration date for a specific role assigned to a player.
@@ -188,7 +224,8 @@ interface RolePlayerService {
     fun setRoleUntilAt(
         playerId: UUID,
         role: RoleEntity,
-        untilAt: Instant
+        untilAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
@@ -203,7 +240,8 @@ interface RolePlayerService {
     fun setRoleUntilAt(
         player: PlayerEntity,
         roleId: UUID,
-        untilAt: Instant
+        untilAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
@@ -217,7 +255,8 @@ interface RolePlayerService {
     fun setRoleUntilAt(
         player: PlayerEntity,
         role: RoleEntity,
-        untilAt: Instant
+        untilAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
@@ -231,7 +270,8 @@ interface RolePlayerService {
     fun setRoleUntilAt(
         playerIdOrName: String,
         roleId: UUID,
-        untilAt: Instant
+        untilAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
@@ -246,7 +286,8 @@ interface RolePlayerService {
     fun setRoleUntilAt(
         playerIdOrName: String,
         role: RoleEntity,
-        untilAt: Instant
+        untilAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRoleUntilAtError, Unit>
 
     /**
@@ -260,7 +301,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         playerId: UUID,
         roleId: UUID,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -275,7 +317,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         playerId: UUID,
         role: RoleEntity,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -289,7 +332,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         player: PlayerEntity,
         roleId: UUID,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -303,7 +347,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         player: PlayerEntity,
         role: RoleEntity,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -317,7 +362,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         playerIdOrName: String,
         roleId: UUID,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -331,7 +377,8 @@ interface RolePlayerService {
     fun setRolePausedAt(
         playerIdOrName: String,
         role: RoleEntity,
-        pausedAt: Instant
+        pausedAt: Instant,
+        actor: Actor? = null,
     ): Either<PlayerService.SetRolePausedAtError, Unit>
 
     /**
@@ -342,7 +389,11 @@ interface RolePlayerService {
      * @return Either a [PlayerService.PauseRoleError] if an error occurs during the operation,
      *         or [Unit] if the role is successfully paused.
      */
-    fun pauseRole(playerId: UUID, roleId: UUID): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        playerId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Pauses the specified role for a player.
@@ -351,7 +402,11 @@ interface RolePlayerService {
      * @param role The role entity that needs to be paused for the specified player.
      * @return Either a PauseRoleError if pausing the role fails or Unit if the operation is successful.
      */
-    fun pauseRole(playerId: UUID, role: RoleEntity): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        playerId: UUID,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Pauses the role associated with the given role ID for the specified player.
@@ -360,7 +415,11 @@ interface RolePlayerService {
      * @param roleId The unique identifier of the role to be paused.
      * @return Either an error of type PlayerService.PauseRoleError if the operation fails, or Unit if the operation succeeds.
      */
-    fun pauseRole(player: PlayerEntity, roleId: UUID): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        player: PlayerEntity,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Pauses the specified role for the given player.
@@ -369,7 +428,11 @@ interface RolePlayerService {
      * @param role The role entity to be paused for the player.
      * @return Either a PauseRoleError if the operation fails, or Unit if it succeeds.
      */
-    fun pauseRole(player: PlayerEntity, role: RoleEntity): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        player: PlayerEntity,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Pauses the specified role for a given player.
@@ -378,7 +441,11 @@ interface RolePlayerService {
      * @param roleId The unique identifier of the role to be paused.
      * @return Either an error of type PlayerService.PauseRoleError if the operation fails, or Unit if the role is successfully paused.
      */
-    fun pauseRole(playerIdOrName: String, roleId: UUID): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        playerIdOrName: String,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Pauses the specified role for a player identified by their ID or name.
@@ -387,7 +454,11 @@ interface RolePlayerService {
      * @param role The role entity to be paused for the specified player.
      * @return Either a PauseRoleError if the operation fails or Unit if the role is successfully paused.
      */
-    fun pauseRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.PauseRoleError, Unit>
+    fun pauseRole(
+        playerIdOrName: String,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.PauseRoleError, Unit>
 
     /**
      * Resumes a previously assigned role for the specified player.
@@ -397,7 +468,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.ResumeRoleError if the operation fails,
      *         or Unit if the role is successfully resumed.
      */
-    fun resumeRole(playerId: UUID, roleId: UUID): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        playerId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Resumes the specified role for the given player.
@@ -407,7 +482,11 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.ResumeRoleError] if the operation fails,
      *         or [Unit] if the operation succeeds.
      */
-    fun resumeRole(playerId: UUID, role: RoleEntity): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        playerId: UUID,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Resumes the specified role for the given player.
@@ -416,7 +495,11 @@ interface RolePlayerService {
      * @param roleId The unique identifier of the role to be resumed.
      * @return Either a resume role error or a Unit indicating success.
      */
-    fun resumeRole(player: PlayerEntity, roleId: UUID): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        player: PlayerEntity,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Resumes the specified role for the given player.
@@ -426,7 +509,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.ResumeRoleError, indicating the reason the role
      *         could not be resumed, or a Unit instance if the operation was successful.
      */
-    fun resumeRole(player: PlayerEntity, role: RoleEntity): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        player: PlayerEntity,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Resumes a role for a specified player.
@@ -435,7 +522,11 @@ interface RolePlayerService {
      * @param roleId The unique identifier of the role to be resumed for the player.
      * @return Either a [PlayerService.ResumeRoleError] if an error occurs during the operation, or [Unit] if the operation succeeds.
      */
-    fun resumeRole(playerIdOrName: String, roleId: UUID): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        playerIdOrName: String,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Resumes the specified role for a player identified by their ID or name.
@@ -445,7 +536,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.ResumeRoleError if the action fails,
      *         or Unit if the role is successfully resumed.
      */
-    fun resumeRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.ResumeRoleError, Unit>
+    fun resumeRole(
+        playerIdOrName: String,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.ResumeRoleError, Unit>
 
     /**
      * Sets the primary role of a player identified by the provided player ID.
@@ -454,7 +549,11 @@ interface RolePlayerService {
      * @param roleId the unique identifier of the role to set as the primary role for the player
      * @return either containing a SetPrimaryRoleError if the operation fails, or Unit if the operation is successful
      */
-    fun setPrimaryRole(playerId: UUID, roleId: UUID): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        playerId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Sets the primary role for a player indicated by their unique identifier.
@@ -463,7 +562,11 @@ interface RolePlayerService {
      * @param role The role to be assigned as the primary role for the specified player.
      * @return An instance of Either that contains a SetPrimaryRoleError on failure or Unit on success.
      */
-    fun setPrimaryRole(playerId: UUID, role: RoleEntity): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        playerId: UUID,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Sets the primary role for a specified player.
@@ -472,7 +575,11 @@ interface RolePlayerService {
      * @param roleId The unique identifier of the role to set as primary.
      * @return Either an error of type PlayerService.SetPrimaryRoleError if the operation fails, or Unit if successful.
      */
-    fun setPrimaryRole(player: PlayerEntity, roleId: UUID): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        player: PlayerEntity,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Sets the primary role for a given player.
@@ -482,7 +589,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.SetPrimaryRoleError if the operation fails,
      *         or Unit if the operation is successful.
      */
-    fun setPrimaryRole(player: PlayerEntity, role: RoleEntity): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        player: PlayerEntity,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Assigns a primary role to a player identified by either their ID or name.
@@ -491,7 +602,11 @@ interface RolePlayerService {
      * @param roleId The UUID of the role to be set as primary for the player.
      * @return Either an error of type PlayerService.SetPrimaryRoleError if the operation fails or Unit if successful.
      */
-    fun setPrimaryRole(playerIdOrName: String, roleId: UUID): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        playerIdOrName: String,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Assigns a primary role to a player identified by their ID or name.
@@ -501,7 +616,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.SetPrimaryRoleError if the operation fails,
      *         or Unit if the primary role is successfully set.
      */
-    fun setPrimaryRole(playerIdOrName: String, role: RoleEntity): Either<PlayerService.SetPrimaryRoleError, Unit>
+    fun setPrimaryRole(
+        playerIdOrName: String,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.SetPrimaryRoleError, Unit>
 
     /**
      * Clears the primary role of the player identified by the given unique identifier.
@@ -511,7 +630,10 @@ interface RolePlayerService {
      * @param playerId The unique identifier of the player whose primary role should be cleared.
      * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
      */
-    fun clearPrimaryRole(playerId: UUID): Either<PlayerService.ClearPrimaryRoleError, Unit>
+    fun clearPrimaryRole(
+        playerId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.ClearPrimaryRoleError, Unit>
 
     /**
      * Clears the primary role of the given player.
@@ -521,7 +643,10 @@ interface RolePlayerService {
      * @param player The player entity whose primary role should be cleared.
      * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
      */
-    fun clearPrimaryRole(player: PlayerEntity): Either<PlayerService.ClearPrimaryRoleError, Unit>
+    fun clearPrimaryRole(
+        player: PlayerEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.ClearPrimaryRoleError, Unit>
 
     /**
      * Clears the primary role of the player identified by their ID or name.
@@ -531,7 +656,10 @@ interface RolePlayerService {
      * @param playerIdOrName A string representing the player's unique ID or name.
      * @return Either an error of type PlayerService.ClearPrimaryRoleError if the operation fails, or Unit if successful.
      */
-    fun clearPrimaryRole(playerIdOrName: String): Either<PlayerService.ClearPrimaryRoleError, Unit>
+    fun clearPrimaryRole(
+        playerIdOrName: String,
+        actor: Actor? = null,
+    ): Either<PlayerService.ClearPrimaryRoleError, Unit>
 
     /**
      * Assigns the default role to the player identified by the given unique identifier when the
@@ -546,7 +674,11 @@ interface RolePlayerService {
      * @return Either an error of type PlayerService.ApplyDefaultRoleError if the operation fails, or the
      *         assigned default role, or `null` if no role had to be assigned.
      */
-    fun applyDefaultRole(playerId: UUID, firstJoin: Boolean): Either<PlayerService.ApplyDefaultRoleError, RoleEntity?>
+    fun applyDefaultRole(
+        playerId: UUID,
+        firstJoin: Boolean,
+        actor: Actor? = null,
+    ): Either<PlayerService.ApplyDefaultRoleError, RoleEntity?>
 
     /**
      * Removes every role assigned to the player identified by the given unique identifier that has
@@ -556,7 +688,10 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveExpiredRolesError] if the operation fails,
      *         or the list of [RoleEntity] instances that were removed.
      */
-    fun removeExpiredRoles(playerId: UUID): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
+    fun removeExpiredRoles(
+        playerId: UUID,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
 
     /**
      * Removes every role assigned to the specified player that has expired (its `untilAt` has passed)
@@ -566,7 +701,10 @@ interface RolePlayerService {
      * @return Either an error of type [PlayerService.RemoveExpiredRolesError] if the operation fails,
      *         or the list of [RoleEntity] instances that were removed.
      */
-    fun removeExpiredRoles(player: PlayerEntity): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
+    fun removeExpiredRoles(
+        player: PlayerEntity,
+        actor: Actor? = null,
+    ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
 
     /**
      * Removes every role assigned to the player identified by their ID or name that has expired
@@ -577,6 +715,7 @@ interface RolePlayerService {
      *         or the list of [RoleEntity] instances that were removed.
      */
     fun removeExpiredRoles(
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PlayerService.RemoveExpiredRolesError, List<RoleEntity>>
 }

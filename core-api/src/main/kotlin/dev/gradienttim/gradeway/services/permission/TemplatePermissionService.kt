@@ -15,6 +15,7 @@ import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.PermissionService.CreateTemplateError
 import dev.gradienttim.gradeway.services.PermissionService.DeleteTemplateError
+import dev.gradienttim.gradeway.audit.Actor
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -30,7 +31,10 @@ interface TemplatePermissionService {
      * @return Either a CreateTemplateError indicating why the template could not be created,
      * or a PermissionTemplateEntity representing the successfully created template.
      */
-    fun createTemplate(name: String): Either<CreateTemplateError, PermissionTemplateEntity>
+    fun createTemplate(
+        name: String,
+        actor: Actor? = null,
+    ): Either<CreateTemplateError, PermissionTemplateEntity>
 
     /**
      * Deletes a template identified by the given ID.
@@ -38,7 +42,10 @@ interface TemplatePermissionService {
      * @param id The unique identifier of the template to be deleted.
      * @return Either an error of type DeleteTemplateError if the deletion fails, or the deleted PermissionTemplateEntity on success.
      */
-    fun deleteTemplate(id: UUID): Either<DeleteTemplateError, PermissionTemplateEntity>
+    fun deleteTemplate(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<DeleteTemplateError, PermissionTemplateEntity>
 
     /**
      * Updates the template name associated with a given identifier.
@@ -50,7 +57,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateName(
         id: UUID,
-        name: String
+        name: String,
+        actor: Actor? = null,
     ): Either<PermissionService.SetNameTemplateError, Boolean>
 
     /**
@@ -63,7 +71,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateName(
         entity: PermissionTemplateEntity,
-        name: String
+        name: String,
+        actor: Actor? = null,
     ): Either<PermissionService.SetNameTemplateError, Boolean>
 
     /**
@@ -76,7 +85,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateName(
         idOrName: String,
-        name: String
+        name: String,
+        actor: Actor? = null,
     ): Either<PermissionService.SetNameTemplateError, Boolean>
 
     /**
@@ -89,7 +99,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateAssignedTo(
         id: UUID,
-        assignedTo: PermissionTemplateEntity.AssignedTo
+        assignedTo: PermissionTemplateEntity.AssignedTo,
+        actor: Actor? = null,
     ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
     /**
@@ -101,7 +112,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateAssignedTo(
         entity: PermissionTemplateEntity,
-        assignedTo: PermissionTemplateEntity.AssignedTo
+        assignedTo: PermissionTemplateEntity.AssignedTo,
+        actor: Actor? = null,
     ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
     /**
@@ -113,7 +125,8 @@ interface TemplatePermissionService {
      */
     fun setTemplateAssignedTo(
         idOrName: String,
-        assignedTo: PermissionTemplateEntity.AssignedTo
+        assignedTo: PermissionTemplateEntity.AssignedTo,
+        actor: Actor? = null,
     ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
     /**
@@ -153,7 +166,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateId: UUID,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -166,7 +180,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         template: PermissionTemplateEntity,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -179,7 +194,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateId: UUID,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -192,7 +208,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateIdOrName: String,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -205,7 +222,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateIdOrName: String,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -218,7 +236,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         template: PermissionTemplateEntity,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -231,7 +250,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateId: UUID,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -244,7 +264,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         template: PermissionTemplateEntity,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -257,7 +278,8 @@ interface TemplatePermissionService {
      */
     fun addPermissionToTemplate(
         templateIdOrName: String,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity>
 
     /**
@@ -270,7 +292,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateId: UUID,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -283,7 +306,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         template: PermissionTemplateEntity,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -296,7 +320,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateId: UUID,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -309,7 +334,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateIdOrName: String,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -322,7 +348,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateIdOrName: String,
-        permissionId: UUID
+        permissionId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -335,7 +362,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         template: PermissionTemplateEntity,
-        permission: PermissionEntity
+        permission: PermissionEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -348,7 +376,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateId: UUID,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -361,7 +390,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         template: PermissionTemplateEntity,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -374,7 +404,8 @@ interface TemplatePermissionService {
      */
     fun removePermissionFromTemplate(
         templateIdOrName: String,
-        permissionIdOrValue: String
+        permissionIdOrValue: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RemovePermissionFromTemplateError, Unit>
 
     /**
@@ -385,7 +416,8 @@ interface TemplatePermissionService {
      *         or Unit if the permissions were cleared successfully.
      */
     fun clearPermissionsFromTemplate(
-        templateId: UUID
+        templateId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
 
     /**
@@ -396,7 +428,8 @@ interface TemplatePermissionService {
      *         or Unit if the permissions were cleared successfully.
      */
     fun clearPermissionsFromTemplate(
-        template: PermissionTemplateEntity
+        template: PermissionTemplateEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
 
     /**
@@ -407,7 +440,8 @@ interface TemplatePermissionService {
      *         or Unit if the permissions were cleared successfully.
      */
     fun clearPermissionsFromTemplate(
-        idOrName: String
+        idOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit>
 
     /**
@@ -434,7 +468,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateId: UUID,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -447,7 +482,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateId: UUID,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -460,7 +496,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         template: PermissionTemplateEntity,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -473,7 +510,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         template: PermissionTemplateEntity,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -486,7 +524,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateIdOrName: String,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -499,7 +538,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateIdOrName: String,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -512,7 +552,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateId: UUID,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -525,7 +566,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         template: PermissionTemplateEntity,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -538,7 +580,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToRole(
         templateIdOrName: String,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, RolePermissionTemplateEntity>
 
     /**
@@ -549,7 +592,11 @@ interface TemplatePermissionService {
      * @return Either an error of type UnlinkTemplateError if the operation fails,
      *         or Unit if the unlinking was successful.
      */
-    fun unlinkTemplateFromRole(templateId: UUID, roleId: UUID): Either<PermissionService.UnlinkTemplateError, Unit>
+    fun unlinkTemplateFromRole(
+        templateId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
      * Removes the link between a permission template and the specified role.
@@ -561,7 +608,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         templateId: UUID,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -574,7 +622,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         template: PermissionTemplateEntity,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -587,7 +636,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         template: PermissionTemplateEntity,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -600,7 +650,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         templateIdOrName: String,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -613,7 +664,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         templateIdOrName: String,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -626,7 +678,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         templateId: UUID,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -639,7 +692,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         template: PermissionTemplateEntity,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -652,7 +706,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromRole(
         templateIdOrName: String,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -663,7 +718,11 @@ interface TemplatePermissionService {
      * @return Either an error of type ApplyTemplateError if the operation fails,
      *         or a Boolean indicating whether the template was applied successfully.
      */
-    fun applyTemplateToRole(templateId: UUID, roleId: UUID): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplateToRole(
+        templateId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Applies a permission template to the specified role.
@@ -673,7 +732,11 @@ interface TemplatePermissionService {
      * @return Either an error of type ApplyTemplateError if the operation fails,
      *         or a Boolean indicating whether the template was applied successfully.
      */
-    fun applyTemplateToRole(templateId: UUID, role: RoleEntity): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplateToRole(
+        templateId: UUID,
+        role: RoleEntity,
+        actor: Actor? = null,
+    ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Applies a permission template to a role identified by the given role ID.
@@ -685,7 +748,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         template: PermissionTemplateEntity,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -698,7 +762,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         template: PermissionTemplateEntity,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -711,7 +776,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         templateIdOrName: String,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -724,7 +790,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         templateIdOrName: String,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -737,7 +804,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         templateId: UUID,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -750,7 +818,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         template: PermissionTemplateEntity,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -763,7 +832,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToRole(
         templateIdOrName: String,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -774,7 +844,11 @@ interface TemplatePermissionService {
      * @return Either an error of type RevokeTemplateError if the operation fails,
      *         or a Boolean indicating whether the template was revoked successfully.
      */
-    fun revokeTemplateFromRole(templateId: UUID, roleId: UUID): Either<PermissionService.RevokeTemplateError, Boolean>
+    fun revokeTemplateFromRole(
+        templateId: UUID,
+        roleId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
      * Revokes a permission template from the specified role.
@@ -786,7 +860,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         templateId: UUID,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -799,7 +874,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         template: PermissionTemplateEntity,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -812,7 +888,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         template: PermissionTemplateEntity,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -825,7 +902,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         templateIdOrName: String,
-        roleId: UUID
+        roleId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -838,7 +916,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         templateIdOrName: String,
-        role: RoleEntity
+        role: RoleEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -851,7 +930,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         templateId: UUID,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -864,7 +944,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         template: PermissionTemplateEntity,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -877,7 +958,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromRole(
         templateIdOrName: String,
-        roleIdOrName: String
+        roleIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -888,7 +970,11 @@ interface TemplatePermissionService {
      * @return Either an error of type LinkTemplateError if the operation fails,
      *         or Unit if the link was created successfully.
      */
-    fun linkTemplateToPlayer(templateId: UUID, playerId: UUID): Either<PermissionService.LinkTemplateError, Unit>
+    fun linkTemplateToPlayer(
+        templateId: UUID,
+        playerId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
      * Links a permission template to the specified player.
@@ -900,7 +986,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         templateId: UUID,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -913,7 +1000,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         template: PermissionTemplateEntity,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -926,7 +1014,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         template: PermissionTemplateEntity,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -939,7 +1028,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         templateIdOrName: String,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -952,7 +1042,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         templateIdOrName: String,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -965,7 +1056,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         templateId: UUID,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -978,7 +1070,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         template: PermissionTemplateEntity,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -991,7 +1084,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToPlayer(
         templateIdOrName: String,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1004,7 +1098,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateId: UUID,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1017,7 +1112,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateId: UUID,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1030,7 +1126,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1043,7 +1140,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1056,7 +1154,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateIdOrName: String,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1069,7 +1168,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateIdOrName: String,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1082,7 +1182,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateId: UUID,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1095,7 +1196,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1108,7 +1210,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromPlayer(
         templateIdOrName: String,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1119,7 +1222,11 @@ interface TemplatePermissionService {
      * @return Either an error of type ApplyTemplateError if the operation fails,
      *         or a Boolean indicating whether the template was applied successfully.
      */
-    fun applyTemplateToPlayer(templateId: UUID, playerId: UUID): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplateToPlayer(
+        templateId: UUID,
+        playerId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Applies a permission template to the specified player.
@@ -1131,7 +1238,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         templateId: UUID,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1144,7 +1252,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         template: PermissionTemplateEntity,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1157,7 +1266,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         template: PermissionTemplateEntity,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1170,7 +1280,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         templateIdOrName: String,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1183,7 +1294,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         templateIdOrName: String,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1196,7 +1308,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         templateId: UUID,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1209,7 +1322,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         template: PermissionTemplateEntity,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1222,7 +1336,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToPlayer(
         templateIdOrName: String,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1235,7 +1350,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateId: UUID,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1247,7 +1363,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateId: UUID,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1259,7 +1376,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1271,7 +1389,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1284,7 +1403,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateIdOrName: String,
-        playerId: UUID
+        playerId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1297,7 +1417,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateIdOrName: String,
-        player: PlayerEntity
+        player: PlayerEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1310,7 +1431,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateId: UUID,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1323,7 +1445,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         template: PermissionTemplateEntity,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1336,7 +1459,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromPlayer(
         templateIdOrName: String,
-        playerIdOrName: String
+        playerIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1347,7 +1471,11 @@ interface TemplatePermissionService {
      * @return Either an error of type LinkTemplateError if the operation fails,
      *         or Unit if the link was created successfully.
      */
-    fun linkTemplateToGroup(templateId: UUID, groupId: UUID): Either<PermissionService.LinkTemplateError, Unit>
+    fun linkTemplateToGroup(
+        templateId: UUID,
+        groupId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
      * Links a permission template to the specified group.
@@ -1359,7 +1487,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         templateId: UUID,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1372,7 +1501,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         template: PermissionTemplateEntity,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1385,7 +1515,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         template: PermissionTemplateEntity,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1398,7 +1529,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         templateIdOrName: String,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1411,7 +1543,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         templateIdOrName: String,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1424,7 +1557,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         templateId: UUID,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1437,7 +1571,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         template: PermissionTemplateEntity,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1450,7 +1585,8 @@ interface TemplatePermissionService {
      */
     fun linkTemplateToGroup(
         templateIdOrName: String,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
@@ -1463,7 +1599,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateId: UUID,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1476,7 +1613,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateId: UUID,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1489,7 +1627,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         template: PermissionTemplateEntity,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1502,7 +1641,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         template: PermissionTemplateEntity,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1515,7 +1655,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateIdOrName: String,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1528,7 +1669,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateIdOrName: String,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1541,7 +1683,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateId: UUID,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1554,7 +1697,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         template: PermissionTemplateEntity,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1567,7 +1711,8 @@ interface TemplatePermissionService {
      */
     fun unlinkTemplateFromGroup(
         templateIdOrName: String,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
@@ -1578,7 +1723,11 @@ interface TemplatePermissionService {
      * @return Either an error of type ApplyTemplateError if the operation fails,
      *         or a Boolean indicating whether the template was applied successfully.
      */
-    fun applyTemplateToGroup(templateId: UUID, groupId: UUID): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplateToGroup(
+        templateId: UUID,
+        groupId: UUID,
+        actor: Actor? = null,
+    ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Applies a permission template to the specified group.
@@ -1590,7 +1739,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         templateId: UUID,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1603,7 +1753,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         template: PermissionTemplateEntity,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1616,7 +1767,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         template: PermissionTemplateEntity,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1629,7 +1781,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         templateIdOrName: String,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1642,7 +1795,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         templateIdOrName: String,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1655,7 +1809,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         templateId: UUID,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1668,7 +1823,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         template: PermissionTemplateEntity,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1681,7 +1837,8 @@ interface TemplatePermissionService {
      */
     fun applyTemplateToGroup(
         templateIdOrName: String,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
@@ -1694,7 +1851,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateId: UUID,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1706,7 +1864,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateId: UUID,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1718,7 +1877,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         template: PermissionTemplateEntity,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1730,7 +1890,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         template: PermissionTemplateEntity,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1743,7 +1904,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateIdOrName: String,
-        groupId: UUID
+        groupId: UUID,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1756,7 +1918,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateIdOrName: String,
-        group: GroupEntity
+        group: GroupEntity,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1769,7 +1932,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateId: UUID,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1782,7 +1946,8 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         template: PermissionTemplateEntity,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
@@ -1795,6 +1960,7 @@ interface TemplatePermissionService {
      */
     fun revokeTemplateFromGroup(
         templateIdOrName: String,
-        groupIdOrName: String
+        groupIdOrName: String,
+        actor: Actor? = null,
     ): Either<PermissionService.RevokeTemplateError, Boolean>
 }

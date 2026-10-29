@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.entity.permission
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.services.PermissionService
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
@@ -16,7 +17,7 @@ import java.util.*
  * and their assignments to specific roles, players, or all entities. This entity is extensible
  * to support advanced permission management scenarios.
  */
-interface PermissionTemplateEntity {
+interface PermissionTemplateEntity : Auditable {
     /**
      * Unique identifier for an entity implementing the `PermissionTemplateEntity` interface.
      *

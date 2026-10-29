@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.AttributeService
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.key.Key
 import java.util.*
 
@@ -29,7 +30,8 @@ interface RoleAttributeService {
      */
     fun <TValue : Any> addRoleAttribute(
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -42,7 +44,8 @@ interface RoleAttributeService {
      */
     fun <TValue : Any> addRoleAttribute(
         entity: RoleEntity,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -55,7 +58,8 @@ interface RoleAttributeService {
      */
     fun <TValue : Any> addRoleAttribute(
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
+        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -70,7 +74,8 @@ interface RoleAttributeService {
     fun <TValue : Any> updateRoleAttribute(
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -85,7 +90,8 @@ interface RoleAttributeService {
     fun <TValue : Any> updateRoleAttribute(
         entity: RoleEntity,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -100,7 +106,8 @@ interface RoleAttributeService {
     fun <TValue : Any> updateRoleAttribute(
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
+        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -111,7 +118,11 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeRoleAttribute(
+        id: UUID,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a specific role entity.
@@ -121,7 +132,11 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(entity: RoleEntity, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeRoleAttribute(
+        entity: RoleEntity,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID or name.
@@ -131,7 +146,11 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun removeRoleAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeRoleAttribute(
+        idOrName: String,
+        key: Key,
+        actor: Actor? = null,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID.
@@ -140,7 +159,10 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearRoleAttributes(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a specific role entity.
@@ -149,7 +171,10 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(entity: RoleEntity): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearRoleAttributes(
+        entity: RoleEntity,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID or name.
@@ -158,7 +183,10 @@ interface RoleAttributeService {
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
-    fun clearRoleAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearRoleAttributes(
+        idOrName: String,
+        actor: Actor? = null,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Determines if a role, identified by its unique ID, has an attribute associated with the specified key.

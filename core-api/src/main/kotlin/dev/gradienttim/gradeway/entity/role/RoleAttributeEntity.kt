@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.role
 
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -20,7 +21,7 @@ import java.util.*
  * between attributes and roles within a system and enhances customization and extensibility
  * through the attachment of key-value pair information to role entities.
  */
-interface RoleAttributeEntity : SharedAttributeEntity {
+interface RoleAttributeEntity : Auditable, SharedAttributeEntity {
     /**
      * A property representing the unique identifier for a role associated with an attribute.
      *

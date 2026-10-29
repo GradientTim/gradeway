@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.services.permission.GroupPermissionService
 import dev.gradienttim.gradeway.services.permission.PlayerPermissionService
 import dev.gradienttim.gradeway.services.permission.RolePermissionService
 import dev.gradienttim.gradeway.services.permission.TemplatePermissionService
+import dev.gradienttim.gradeway.audit.Actor
 import java.util.*
 
 /**
@@ -31,7 +32,8 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      */
     fun createPermission(
         value: String,
-        type: PermissionEntity.Type = PermissionEntity.Type.EQUALS
+        type: PermissionEntity.Type = PermissionEntity.Type.EQUALS,
+        actor: Actor? = null,
     ): Either<CreatePermissionError, PermissionEntity>
 
     /**
@@ -40,7 +42,10 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @param id The unique identifier (UUID) of the permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
-    fun deletePermission(id: UUID): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        id: UUID,
+        actor: Actor? = null,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes the given permission entity from the system.
@@ -48,7 +53,10 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @param entity The permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
-    fun deletePermission(entity: PermissionEntity): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        entity: PermissionEntity,
+        actor: Actor? = null,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes a permission entity identified by the provided string, which can represent either the
@@ -57,7 +65,10 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @param idOrValue The unique identifier (UUID) or the value associated with the permission entity to be deleted.
      * @return Either a [DeletePermissionError] if the deletion fails or [Unit] if the operation succeeds.
      */
-    fun deletePermission(idOrValue: String): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        idOrValue: String,
+        actor: Actor? = null,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Updates the value of a permission entity identified by the given UUID.
@@ -67,7 +78,11 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @return Either an [UpdatePermissionValueError] if the update operation fails, or a [Boolean] indicating
      *         success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(id: UUID, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        id: UUID,
+        value: String,
+        actor: Actor? = null,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of the given permission entity.
@@ -77,7 +92,11 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @return Either an [UpdatePermissionValueError] if the update operation fails,
      *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(entity: PermissionEntity, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        entity: PermissionEntity,
+        value: String,
+        actor: Actor? = null,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of a permission entity identified by either its unique identifier (UUID)
@@ -89,7 +108,11 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @return Either an [UpdatePermissionValueError] if the update operation fails, or a
      *         [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(idOrValue: String, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        idOrValue: String,
+        value: String,
+        actor: Actor? = null,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the type of permission entity identified by the given unique identifier (UUID).
@@ -99,7 +122,11 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      * @return Either an [UpdatePermissionTypeError] if the update operation fails, or a [Boolean]
      *         indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionType(id: UUID, type: PermissionEntity.Type): Either<UpdatePermissionTypeError, Boolean>
+    fun updatePermissionType(
+        id: UUID,
+        type: PermissionEntity.Type,
+        actor: Actor? = null,
+    ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
      * Updates the type of the given permission entity.
@@ -111,7 +138,8 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      */
     fun updatePermissionType(
         entity: PermissionEntity,
-        type: PermissionEntity.Type
+        type: PermissionEntity.Type,
+        actor: Actor? = null,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
@@ -126,7 +154,8 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      */
     fun updatePermissionType(
         idOrValue: String,
-        type: PermissionEntity.Type
+        type: PermissionEntity.Type,
+        actor: Actor? = null,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**

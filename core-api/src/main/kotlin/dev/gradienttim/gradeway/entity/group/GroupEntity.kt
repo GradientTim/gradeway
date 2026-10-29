@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.entity.group
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
@@ -28,7 +29,7 @@ import java.util.*
  * - `createdAt` and `updatedAt`: Timestamps indicating when the group was created and last updated.
  * - `roles`: A collection of roles associated with the group.
  */
-interface GroupEntity : PermissionReference<GroupPermissionEntity>,
+interface GroupEntity : Auditable, PermissionReference<GroupPermissionEntity>,
     PermissionTemplateReference<GroupPermissionTemplateEntity> {
     /**
      * A unique identifier for a `GroupEntity`.

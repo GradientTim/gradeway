@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
+import dev.gradienttim.gradeway.audit.Actor
 import java.util.*
 
 interface TrackService : PlayerTrackService {
@@ -21,10 +22,11 @@ interface TrackService : PlayerTrackService {
      *
      * @param slug A unique, human-readable identifier for the track to be created.
      *             It should be concise, URL-friendly, and not already in use.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `TrackEntity` representing the newly created track or
      *         a `CreateTrackError` if the operation fails.
      */
-    fun createTrack(slug: String): Either<CreateTrackError, TrackEntity>
+    fun createTrack(slug: String, actor: Actor? = null): Either<CreateTrackError, TrackEntity>
 
     /**
      * Deletes a track identified by the given UUID.
@@ -34,9 +36,10 @@ interface TrackService : PlayerTrackService {
      * an appropriate `DeleteTrackError` is returned.
      *
      * @param id The unique identifier of the track to be deleted.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the deletion is successful, or a `DeleteTrackError` detailing the failure.
      */
-    fun deleteTrack(id: UUID): Either<DeleteTrackError, Unit>
+    fun deleteTrack(id: UUID, actor: Actor? = null): Either<DeleteTrackError, Unit>
 
     /**
      * Deletes the specified track from the system.
@@ -45,9 +48,10 @@ interface TrackService : PlayerTrackService {
      * the track not being found or any unexpected error, an appropriate `DeleteTrackError` is returned.
      *
      * @param track The `TrackEntity` to be deleted.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the deletion is successful, or a `DeleteTrackError` if the operation fails.
      */
-    fun deleteTrack(track: TrackEntity): Either<DeleteTrackError, Unit>
+    fun deleteTrack(track: TrackEntity, actor: Actor? = null): Either<DeleteTrackError, Unit>
 
     /**
      * Deletes a track identified by the given ID or slug.
@@ -57,36 +61,40 @@ interface TrackService : PlayerTrackService {
      * during the deletion process, an appropriate `DeleteTrackError` is returned.
      *
      * @param idOrSlug A unique identifier (UUID as a string) or a human-readable slug representing the track to be deleted.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the deletion is successful, or a `DeleteTrackError` indicating the reason for failure.
      */
-    fun deleteTrack(idOrSlug: String): Either<DeleteTrackError, Unit>
+    fun deleteTrack(idOrSlug: String, actor: Actor? = null): Either<DeleteTrackError, Unit>
 
     /**
      * Changes the slug of the track identified by the given UUID.
      *
      * @param id The unique identifier of the track to be updated.
      * @param slug The new unique, human-readable identifier of the track.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the slug has been changed, or a `SetSlugError` detailing the failure.
      */
-    fun setSlug(id: UUID, slug: String): Either<SetSlugError, Unit>
+    fun setSlug(id: UUID, slug: String, actor: Actor? = null): Either<SetSlugError, Unit>
 
     /**
      * Changes the slug of the specified track.
      *
      * @param track The `TrackEntity` to be updated.
      * @param slug The new unique, human-readable identifier of the track.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the slug has been changed, or a `SetSlugError` detailing the failure.
      */
-    fun setSlug(track: TrackEntity, slug: String): Either<SetSlugError, Unit>
+    fun setSlug(track: TrackEntity, slug: String, actor: Actor? = null): Either<SetSlugError, Unit>
 
     /**
      * Changes the slug of the track identified by the given ID or current slug.
      *
      * @param idOrSlug A unique identifier (UUID as a string) or the current slug of the track.
      * @param slug The new unique, human-readable identifier of the track.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the slug has been changed, or a `SetSlugError` detailing the failure.
      */
-    fun setSlug(idOrSlug: String, slug: String): Either<SetSlugError, Unit>
+    fun setSlug(idOrSlug: String, slug: String, actor: Actor? = null): Either<SetSlugError, Unit>
 
     /**
      * Adds a stage to the specified track using the provided track and role identifiers.
@@ -97,9 +105,10 @@ interface TrackService : PlayerTrackService {
      *
      * @param trackId The unique identifier of the track to which the stage should be added.
      * @param roleId The unique identifier of the role to be associated with the newly added stage.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `TrackStageEntity` representing the newly created stage, or an `AddStageError` if the operation fails.
      */
-    fun addStage(trackId: UUID, roleId: UUID): Either<AddStageError, TrackStageEntity>
+    fun addStage(trackId: UUID, roleId: UUID, actor: Actor? = null): Either<AddStageError, TrackStageEntity>
 
     /**
      * Adds a stage to the specified track using the given `TrackEntity` and `RoleEntity` references.
@@ -110,10 +119,11 @@ interface TrackService : PlayerTrackService {
      *
      * @param track The `TrackEntity` to which the stage should be added.
      * @param role The `RoleEntity` to be associated with the newly added stage.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `TrackStageEntity` representing the newly created stage, or an `AddStageError`
      *         detailing the reason for the failure.
      */
-    fun addStage(track: TrackEntity, role: RoleEntity): Either<AddStageError, TrackStageEntity>
+    fun addStage(track: TrackEntity, role: RoleEntity, actor: Actor? = null): Either<AddStageError, TrackStageEntity>
 
     /**
      * Adds a stage to a track using the specified track identifier (or slug) and role identifier.
@@ -125,10 +135,11 @@ interface TrackService : PlayerTrackService {
      * @param trackIdOrSlug The unique identifier or slug of the track to which the stage will be added.
      *                      This can either be a UUID-like string or a human-readable slug of the track.
      * @param roleId The unique identifier of the role to be associated with the stage being added.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `TrackStageEntity` representing the newly created stage, or an `AddStageError`
      *         indicating the reason for the failure.
      */
-    fun addStage(trackIdOrSlug: String, roleId: UUID): Either<AddStageError, TrackStageEntity>
+    fun addStage(trackIdOrSlug: String, roleId: UUID, actor: Actor? = null): Either<AddStageError, TrackStageEntity>
 
     /**
      * Removes a stage identified by the specified unique identifier.
@@ -138,9 +149,10 @@ interface TrackService : PlayerTrackService {
      * an appropriate `RemoveStageError` is returned.
      *
      * @param stageId The unique identifier of the stage to be removed.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the removal is successful, or a `RemoveStageError` detailing the failure.
      */
-    fun removeStage(stageId: UUID): Either<RemoveStageError, Unit>
+    fun removeStage(stageId: UUID, actor: Actor? = null): Either<RemoveStageError, Unit>
 
     /**
      * Removes the specified stage from the system.
@@ -149,9 +161,10 @@ interface TrackService : PlayerTrackService {
      * due to the stage not being found or an unexpected error, a corresponding `RemoveStageError` is returned.
      *
      * @param stage The `TrackStageEntity` to be removed.
+     * @param actor The actor performing the operation, if any.
      * @return Either a `Unit` if the removal is successful, or a `RemoveStageError` detailing the reason for failure.
      */
-    fun removeStage(stage: TrackStageEntity): Either<RemoveStageError, Unit>
+    fun removeStage(stage: TrackStageEntity, actor: Actor? = null): Either<RemoveStageError, Unit>
 
     /**
      * Moves the stage identified by the given UUID to a new position within its track.
@@ -161,9 +174,10 @@ interface TrackService : PlayerTrackService {
      *
      * @param stageId The unique identifier of the stage to be moved.
      * @param index The zero-based target position of the stage within its track.
+     * @param actor The actor performing the operation, if any.
      * @return Either the moved `TrackStageEntity`, or a `MoveStageError` detailing the failure.
      */
-    fun moveStage(stageId: UUID, index: Int): Either<MoveStageError, TrackStageEntity>
+    fun moveStage(stageId: UUID, index: Int, actor: Actor? = null): Either<MoveStageError, TrackStageEntity>
 
     /**
      * Moves the specified stage to a new position within its track.
@@ -173,9 +187,10 @@ interface TrackService : PlayerTrackService {
      *
      * @param stage The `TrackStageEntity` to be moved.
      * @param index The zero-based target position of the stage within its track.
+     * @param actor The actor performing the operation, if any.
      * @return Either the moved `TrackStageEntity`, or a `MoveStageError` detailing the failure.
      */
-    fun moveStage(stage: TrackStageEntity, index: Int): Either<MoveStageError, TrackStageEntity>
+    fun moveStage(stage: TrackStageEntity, index: Int, actor: Actor? = null): Either<MoveStageError, TrackStageEntity>
 
     /**
      * Retrieves a track entity by its unique identifier.

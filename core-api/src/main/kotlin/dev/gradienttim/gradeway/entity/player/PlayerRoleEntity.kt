@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.player
 
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.time.Instant
 import java.util.*
@@ -17,7 +18,7 @@ import java.util.*
  * It also allows accessing the relevant `PlayerEntity` and `RoleEntity` instances for further operations
  * and contextual information.
  */
-interface PlayerRoleEntity {
+interface PlayerRoleEntity : Auditable {
     /**
      * Represents the unique identifier of a player associated with a specific role in the `PlayerRoleEntity` context.
      *

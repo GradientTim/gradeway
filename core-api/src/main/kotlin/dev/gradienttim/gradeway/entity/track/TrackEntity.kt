@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.track
 
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant
@@ -20,7 +21,7 @@ import java.util.*
  * They also provide access to the collection of associated track stages, enabling navigation through
  * the stages within the track.
  */
-interface TrackEntity {
+interface TrackEntity : Auditable {
     /**
      * A unique identifier for a `TrackEntity`.
      *

@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.group
 
 import dev.gradienttim.gradeway.entity.SharedPermissionEntity
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -16,7 +17,7 @@ import java.util.*
  * group-specific associations and properties. This interface serves as a foundational contract
  * for managing permissions in a group-centric manner.
  */
-interface GroupPermissionEntity: SharedPermissionEntity {
+interface GroupPermissionEntity : Auditable, SharedPermissionEntity {
     /**
      * The unique identifier for the group entity.
      *
