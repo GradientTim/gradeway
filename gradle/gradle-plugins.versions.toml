@@ -6,7 +6,7 @@ detekt = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alph
 shadow = { module = "com.gradleup.shadow:com.gradleup.shadow.gradle.plugin", version = "9.6.1" }
 spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version = "8.10.4" }
 
-google-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version = "2.3.12" }
+google-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version = "2.3.13" }
 vanniktech-publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version = "0.37.0" }
 
 modrinth-minotaur = { module = "com.modrinth.minotaur:com.modrinth.minotaur.gradle.plugin", version = "2.10.0" }
