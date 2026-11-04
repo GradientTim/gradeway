@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.player
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
@@ -84,6 +85,8 @@ class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
         }
     }
 
+    override val target by lazy { Target.playerRole(playerId.value, roleId.value) }
+
     override var playerId by PlayerRolesTable.playerId
     override var roleId by PlayerRolesTable.roleId
 
@@ -99,5 +102,14 @@ class DatabasePlayerRoleEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
+    }
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("playerId", playerId.value.toString())
+        put("roleId", roleId.value.toString())
+        put("untilAt", untilAt?.toEpochMilli())
+        put("pausedAt", pausedAt?.toEpochMilli())
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
     }
 }

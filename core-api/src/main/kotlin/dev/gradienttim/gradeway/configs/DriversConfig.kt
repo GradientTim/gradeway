@@ -12,6 +12,7 @@ data class DriversConfig(
     override var version: Int = LATEST_VERSION,
     val database: DatabaseDriverConfig = DatabaseDriverConfig(),
     val messaging: MessagingDriverConfig = MessagingDriverConfig(),
+    val notification: NotificationDriverConfig = NotificationDriverConfig(),
 ) : BaseConfig {
     @Serializable
     data class DatabaseDriverConfig(
@@ -43,7 +44,35 @@ data class DriversConfig(
         val driver: String = "",
     )
 
+    @Serializable
+    data class NotificationDriverConfig(
+        @TomlComments(
+            "Controls whether notifications are sent to external services."
+        )
+        val enabled: Boolean = false,
+
+        @TomlComments(
+            "Defines the notification services to send notifications to.",
+            "Use the 'id' of each installed notification driver",
+            "(built-in: \"console\", \"discord\", \"ingame\", \"slack\", \"webhook\").",
+            "Every notification is sent to all listed drivers."
+        )
+        val drivers: List<String> = emptyList(),
+
+        @TomlComments(
+            "Only send notifications for these target types (e.g. \"role\", \"role_permission\", \"player_role\").",
+            "Leave empty to send notifications for every target type."
+        )
+        val targets: List<String> = emptyList(),
+
+        @TomlComments(
+            "Only send notifications for these actions (e.g. \"create\", \"update\", \"delete\").",
+            "Leave empty to send notifications for every action."
+        )
+        val actions: List<String> = emptyList(),
+    )
+
     companion object {
-        const val LATEST_VERSION: Int = 1
+        const val LATEST_VERSION: Int = 2
     }
 }

@@ -20,14 +20,15 @@ interface PlayerTrackService {
      * given track. If the progression is successful, it returns a success result. Otherwise,
      * it returns an error encapsulated in the result, indicating the reason for the failure.
      *
+     * @param actor The actor performing the operation.
      * @param playerId The unique identifier of the player to be promoted.
      * @param trackId The unique identifier of the track on which the player's progression occurs.
      * @return An `Either` containing a `PromotePlayerError` if the promotion fails, or `Unit` if the promotion is successful.
      */
     fun promotePlayer(
+        actor: Actor,
         playerId: UUID,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     /**
@@ -37,14 +38,15 @@ interface PlayerTrackService {
      * If the promotion is successful, the result contains `Unit`. If the promotion fails,
      * an error of type `PromotePlayerError` is returned, indicating the reason for the failure.
      *
+     * @param actor The actor performing the operation.
      * @param playerId The unique identifier of the player to be promoted.
      * @param track The track entity on which the player's progression is managed.
      * @return An `Either` containing a `PromotePlayerError` if the promotion fails, or `Unit` if successful.
      */
     fun promotePlayer(
+        actor: Actor,
         playerId: UUID,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     /**
@@ -54,14 +56,15 @@ interface PlayerTrackService {
      * If the promotion is successful, it returns a success result encapsulated as `Unit`.
      * If the promotion fails, it returns a `PromotePlayerError` indicating the reason.
      *
+     * @param actor The actor performing the operation.
      * @param player The player entity to be promoted.
      * @param trackId The unique identifier of the track on which the player's progression occurs.
      * @return An `Either` containing a `PromotePlayerError` if the promotion fails, or `Unit` if the promotion is successful.
      */
     fun promotePlayer(
+        actor: Actor,
         player: PlayerEntity,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     /**
@@ -71,14 +74,15 @@ interface PlayerTrackService {
      * If the promotion is successful, it returns a success result encapsulated as `Unit`.
      * If the promotion fails, it returns a `PromotePlayerError` indicating the reason.
      *
+     * @param actor The actor performing the operation.
      * @param player The player entity to be promoted.
      * @param track The track entity on which the player's progression is managed.
      * @return An `Either` containing a `PromotePlayerError` if the promotion fails, or `Unit` if the promotion is successful.
      */
     fun promotePlayer(
+        actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     /**
@@ -88,14 +92,15 @@ interface PlayerTrackService {
      * given track. If the demotion is successful, it returns a success result. Otherwise,
      * it returns an error encapsulated in the result, indicating the reason for the failure.
      *
+     * @param actor The actor performing the operation.
      * @param playerId The unique identifier of the player to be demoted.
      * @param trackId The unique identifier of the track on which the player's regression occurs.
      * @return An `Either` containing a `DemotePlayerError` if the demotion fails, or `Unit` if the demotion is successful.
      */
     fun demotePlayer(
+        actor: Actor,
         playerId: UUID,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     /**
@@ -106,14 +111,15 @@ interface PlayerTrackService {
      * Otherwise, it returns an error encapsulated in the result, indicating the reason
      * for the failure.
      *
+     * @param actor The actor performing the operation.
      * @param playerId The unique identifier of the player to be demoted.
      * @param track The track entity on which the player's regression occurs.
      * @return An `Either` containing a `DemotePlayerError` if the demotion fails, or `Unit` if the demotion is successful.
      */
     fun demotePlayer(
+        actor: Actor,
         playerId: UUID,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     /**
@@ -123,14 +129,15 @@ interface PlayerTrackService {
      * on a given track. If the demotion is successful, it returns `Unit` inside a success result.
      * Otherwise, it returns a `DemotePlayerError` inside a failure result, indicating the reason for failure.
      *
+     * @param actor The actor performing the operation.
      * @param player The player entity to be demoted.
      * @param trackId The unique identifier of the track on which the player's regression occurs.
      * @return An `Either` containing a `DemotePlayerError` if the demotion fails, or `Unit` if the demotion is successful.
      */
     fun demotePlayer(
+        actor: Actor,
         player: PlayerEntity,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     /**
@@ -141,15 +148,16 @@ interface PlayerTrackService {
      * encapsulated as `Unit`. If the demotion fails, an error of type `DemotePlayerError`
      * is returned, indicating the reason for failure.
      *
+     * @param actor The actor performing the operation.
      * @param player The player entity to be demoted.
      * @param track The track entity on which the player's regression occurs.
      * @return An `Either` containing a `DemotePlayerError` if the demotion fails,
      * or `Unit` if the demotion is successful.
      */
     fun demotePlayer(
+        actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     /**

@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.player
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.AttributeReference
@@ -142,18 +143,20 @@ interface PlayerEntity : Auditable, AttributeReference<PlayerAttributeEntity>,
     /**
      * Updates the name of this player entity.
      *
+     * @param actor The actor performing the operation.
      * @param name The new name to assign to the player entity.
      * @return An instance of [Either] containing [PlayerService.SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(name: String): Either<PlayerService.SetNameError, Boolean>
+    fun setName(actor: Actor, name: String): Either<PlayerService.SetNameError, Boolean>
 
     /**
      * Updates the weight of the player.
      *
+     * @param actor The actor performing the operation.
      * @param weight The new weight to assign to the player.
      * @return An instance of [Either] containing [PlayerService.SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(weight: Int): Either<PlayerService.SetWeightError, Boolean>
+    fun setWeight(actor: Actor, weight: Int): Either<PlayerService.SetWeightError, Boolean>
 }

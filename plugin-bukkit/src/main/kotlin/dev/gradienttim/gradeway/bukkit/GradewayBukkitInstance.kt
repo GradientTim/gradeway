@@ -12,9 +12,12 @@ import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bukkit.notification.SpigotIngameNotificationPlatform
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
+import dev.gradienttim.gradeway.bukkit.platform.BukkitStores
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
 import org.bukkit.command.CommandSender
 import java.nio.file.Path
@@ -33,6 +36,9 @@ class GradewayBukkitInstance(
 
         gradeway = CommonGradeway(
             logger = CommonLogger.fromJavaLogger(logger),
+            stores = BukkitStores(
+                persistentNotifications = { gradeway.configs.platformEntry.config.notification.persistent },
+            ),
             scheduler = BukkitScheduler(plugin),
             directory = directory,
             defaultPlatformConfig = BukkitPlatformConfig(),
@@ -49,6 +55,14 @@ class GradewayBukkitInstance(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
                     driver = PluginMessageDriver(plugin)
+                )
+
+                gradeway.drivers.registerDriver(
+                    id = IngameNotificationDriver.ID,
+                    type = DriverType.NOTIFICATION,
+                    driver = IngameNotificationDriver(
+                        SpigotIngameNotificationPlatform(plugin.server, BukkitCommandContext(gradeway))
+                    )
                 )
 
                 gradeway.enable()

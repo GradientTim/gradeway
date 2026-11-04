@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.platform
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.constants.CacheConstants
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupEntity
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
@@ -18,7 +19,6 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
-import kotlinx.coroutines.launch
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 import java.util.concurrent.TimeUnit
@@ -220,7 +220,7 @@ class CommonCaches(val gradeway: CommonGradeway<*>) : Caches {
      */
     private fun scheduleExpiredRoleCleanup(player: PlayerEntity) {
         gradeway.scheduler.runTaskLater {
-            gradeway.players.removeExpiredRoles(player)
+            gradeway.players.removeExpiredRoles(Actor.System, player)
                 .onLeft { error ->
                     gradeway.logger.error("Failed to remove expired roles for ${player.id.value}: $error")
                 }

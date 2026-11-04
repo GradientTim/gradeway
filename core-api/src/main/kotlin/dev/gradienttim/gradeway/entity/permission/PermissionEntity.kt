@@ -61,7 +61,7 @@ interface PermissionEntity : Auditable {
      * @return True if the permission matches this entity's value according to its type, false otherwise.
      */
     fun validatePermission(permission: String): Boolean {
-        return when (type) {
+        return value == "*" || when (type) {
             Type.EQUALS -> value == permission
             Type.STARTS_WITH -> permission.startsWith(value)
             Type.ENDS_WITH -> permission.endsWith(value)

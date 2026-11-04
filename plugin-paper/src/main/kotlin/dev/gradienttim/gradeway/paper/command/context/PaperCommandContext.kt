@@ -5,15 +5,18 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.paper.command.context
 
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.command.context.CommandContext
-import dev.gradienttim.gradeway.audit.Actor
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
 import org.bukkit.command.BlockCommandSender
 import org.bukkit.command.ConsoleCommandSender
+import org.bukkit.command.RemoteConsoleCommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import org.bukkit.entity.minecart.CommandMinecart
 import java.util.*
 
 class PaperCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) : CommandContext<CommandSourceStack> {
@@ -37,6 +40,26 @@ class PaperCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) : 
                 )
             }
 
+            is CommandMinecart -> Actor.CommandMinecart(
+                sender.entityId,
+                sender.uniqueId,
+                sender.world.name,
+                sender.location.blockX,
+                sender.location.blockY,
+                sender.location.blockZ
+            )
+
+            is RemoteConsoleCommandSender -> Actor.Rcon(sender.address.toString())
+
+            is Entity -> Actor.Entity(
+                sender.uniqueId,
+                sender.type.key.toString(),
+                sender.world.name,
+                sender.location.blockX,
+                sender.location.blockY,
+                sender.location.blockZ
+            )
+
             else -> Actor.Console
         }
     }
@@ -44,7 +67,8 @@ class PaperCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) : 
     override fun hasPermission(source: CommandSourceStack, permission: String): Boolean {
         val sender = source.executor ?: source.sender
         return when (sender) {
-            is BlockCommandSender -> !gradeway.configs.platformEntry.config.disableCommandBlocks
+            is BlockCommandSender, is CommandMinecart -> !gradeway.configs.platformEntry.config.disableCommandBlocks
+            is RemoteConsoleCommandSender -> !gradeway.configs.platformEntry.config.disableRemoteConsole
             else -> sender.hasPermission(permission)
         }
     }

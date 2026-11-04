@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.services
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
@@ -32,16 +33,23 @@ class CommonTrackServiceTest {
     private fun uniqueName(prefix: String) = "$prefix-${UUID.randomUUID().toString().take(8)}"
 
     private fun createTrack(): TrackEntity =
-        gradeway.tracks.createTrack(uniqueName("track")).getOrElse { error(it.toString()) }
+        gradeway.tracks.createTrack(Actor.System, uniqueName("track")).getOrElse { error(it.toString()) }
 
-    private fun createRole(): RoleEntity = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+    private fun createRole(): RoleEntity = gradeway.roles.create(
+        Actor.System,
+        uniqueName("role"),
+    ).getOrElse { error(it.toString()) }
 
     private fun createPlayer(): PlayerEntity =
-        gradeway.players.create(UUID.randomUUID(), uniqueName("player")).getOrElse { error(it.toString()) }
+        gradeway.players.create(
+            Actor.System,
+            UUID.randomUUID(),
+            uniqueName("player"),
+        ).getOrElse { error(it.toString()) }
 
     private fun createTrackWithStages(vararg roles: RoleEntity): TrackEntity {
         val track = createTrack()
-        roles.forEach { role -> gradeway.tracks.addStage(track, role).getOrElse { error(it.toString()) } }
+        roles.forEach { role -> gradeway.tracks.addStage(Actor.System, track, role).getOrElse { error(it.toString()) } }
         return track
     }
 
@@ -56,19 +64,22 @@ class CommonTrackServiceTest {
     @Test
     fun `createTrack rejects a duplicate slug`() {
         val slug = uniqueName("track")
-        gradeway.tracks.createTrack(slug).getOrElse { error(it.toString()) }
+        gradeway.tracks.createTrack(Actor.System, slug).getOrElse { error(it.toString()) }
 
-        val result = gradeway.tracks.createTrack(slug)
+        val result = gradeway.tracks.createTrack(Actor.System, slug)
 
         assertEquals(TrackService.CreateTrackError.EntityAlreadyExists, result.leftOrNull())
     }
 
     @Test
     fun `createTrack rejects an invalid slug`() {
-        assertEquals(TrackService.CreateTrackError.InvalidSlug, gradeway.tracks.createTrack("").leftOrNull())
         assertEquals(
             TrackService.CreateTrackError.InvalidSlug,
-            gradeway.tracks.createTrack("a".repeat(64)).leftOrNull()
+            gradeway.tracks.createTrack(Actor.System, "").leftOrNull(),
+        )
+        assertEquals(
+            TrackService.CreateTrackError.InvalidSlug,
+            gradeway.tracks.createTrack(Actor.System, "a".repeat(64)).leftOrNull()
         )
     }
 
@@ -96,7 +107,7 @@ class CommonTrackServiceTest {
         val track = createTrack()
         val newSlug = uniqueName("renamed")
 
-        gradeway.tracks.setSlug(track.id.value, newSlug).getOrElse { error(it.toString()) }
+        gradeway.tracks.setSlug(Actor.System, track.id.value, newSlug).getOrElse { error(it.toString()) }
 
         assertEquals(track.id.value, gradeway.tracks.findTrackBySlug(newSlug)?.id?.value)
         assertNull(gradeway.tracks.findTrackBySlug(track.slug))
@@ -107,17 +118,23 @@ class CommonTrackServiceTest {
         val track = createTrack()
         val other = createTrack()
 
-        assertEquals(TrackService.SetSlugError.InvalidSlug, gradeway.tracks.setSlug(track, "").leftOrNull())
-        assertEquals(TrackService.SetSlugError.SlugAlreadySet, gradeway.tracks.setSlug(track, track.slug).leftOrNull())
+        assertEquals(
+            TrackService.SetSlugError.InvalidSlug,
+            gradeway.tracks.setSlug(Actor.System, track, "").leftOrNull(),
+        )
+        assertEquals(
+            TrackService.SetSlugError.SlugAlreadySet,
+            gradeway.tracks.setSlug(Actor.System, track, track.slug).leftOrNull(),
+        )
         assertEquals(
             TrackService.SetSlugError.SlugAlreadyExists,
-            gradeway.tracks.setSlug(track, other.slug).leftOrNull()
+            gradeway.tracks.setSlug(Actor.System, track, other.slug).leftOrNull()
         )
     }
 
     @Test
     fun `setSlug fails for an unknown track`() {
-        val result = gradeway.tracks.setSlug(UUID.randomUUID(), uniqueName("track"))
+        val result = gradeway.tracks.setSlug(Actor.System, UUID.randomUUID(), uniqueName("track"))
 
         assertEquals(TrackService.SetSlugError.EntityNotFound, result.leftOrNull())
     }
@@ -128,7 +145,7 @@ class CommonTrackServiceTest {
         val received = mutableListOf<MessagingPayload>()
         gradeway.messaging.subscribe { received.add(it) }
 
-        gradeway.tracks.setSlug(track, uniqueName("renamed")).getOrElse { error(it.toString()) }
+        gradeway.tracks.setSlug(Actor.System, track, uniqueName("renamed")).getOrElse { error(it.toString()) }
 
         assertContains(received, TrackChangedPayload(track.id.value.toString(), MessagingAction.UPDATED))
     }
@@ -139,7 +156,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(role)
         val stage = gradeway.tracks.findStageByRole(track.id.value, role.id.value) ?: error("expected stage")
 
-        gradeway.tracks.deleteTrack(track.slug).getOrElse { error(it.toString()) }
+        gradeway.tracks.deleteTrack(Actor.System, track.slug).getOrElse { error(it.toString()) }
 
         assertNull(gradeway.tracks.findTrackById(track.id.value))
         assertNull(gradeway.tracks.findStageById(stage.id.value))
@@ -148,7 +165,7 @@ class CommonTrackServiceTest {
 
     @Test
     fun `deleteTrack fails for an unknown track`() {
-        val result = gradeway.tracks.deleteTrack(UUID.randomUUID())
+        val result = gradeway.tracks.deleteTrack(Actor.System, UUID.randomUUID())
 
         assertEquals(TrackService.DeleteTrackError.EntityNotFound, result.leftOrNull())
     }
@@ -159,7 +176,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(role)
         val stage = gradeway.tracks.findStageByRole(track.id.value, role.id.value) ?: error("expected stage")
 
-        gradeway.roles.delete(role.id.value).getOrElse { error(it.toString()) }
+        gradeway.roles.delete(Actor.System, role.id.value).getOrElse { error(it.toString()) }
 
         assertNull(gradeway.tracks.findStageById(stage.id.value))
         assertNotNull(gradeway.tracks.findTrackById(track.id.value))
@@ -184,9 +201,9 @@ class CommonTrackServiceTest {
         val second = createRole()
         val track = createTrackWithStages(first, second)
         val firstStage = gradeway.tracks.findStageByRole(track.id.value, first.id.value) ?: error("expected stage")
-        gradeway.tracks.removeStage(firstStage).getOrElse { error(it.toString()) }
+        gradeway.tracks.removeStage(Actor.System, firstStage).getOrElse { error(it.toString()) }
 
-        val third = gradeway.tracks.addStage(track, createRole()).getOrElse { error(it.toString()) }
+        val third = gradeway.tracks.addStage(Actor.System, track, createRole()).getOrElse { error(it.toString()) }
 
         assertEquals(2, third.position)
     }
@@ -196,7 +213,7 @@ class CommonTrackServiceTest {
         val role = createRole()
         val track = createTrackWithStages(role)
 
-        val result = gradeway.tracks.addStage(track, role)
+        val result = gradeway.tracks.addStage(Actor.System, track, role)
 
         assertEquals(TrackService.AddStageError.AlreadyExists, result.leftOrNull())
     }
@@ -207,7 +224,7 @@ class CommonTrackServiceTest {
         createTrackWithStages(role)
         val otherTrack = createTrack()
 
-        val result = gradeway.tracks.addStage(otherTrack, role)
+        val result = gradeway.tracks.addStage(Actor.System, otherTrack, role)
 
         assertTrue(result.isRight())
     }
@@ -219,11 +236,11 @@ class CommonTrackServiceTest {
 
         assertEquals(
             TrackService.AddStageError.EntityNotFound,
-            gradeway.tracks.addStage(UUID.randomUUID(), role.id.value).leftOrNull()
+            gradeway.tracks.addStage(Actor.System, UUID.randomUUID(), role.id.value).leftOrNull()
         )
         assertEquals(
             TrackService.AddStageError.TargetNotFound,
-            gradeway.tracks.addStage(track.id.value, UUID.randomUUID()).leftOrNull()
+            gradeway.tracks.addStage(Actor.System, track.id.value, UUID.randomUUID()).leftOrNull()
         )
     }
 
@@ -233,8 +250,8 @@ class CommonTrackServiceTest {
         val received = mutableListOf<MessagingPayload>()
         gradeway.messaging.subscribe { received.add(it) }
 
-        val stage = gradeway.tracks.addStage(track, createRole()).getOrElse { error(it.toString()) }
-        gradeway.tracks.removeStage(stage.id.value).getOrElse { error(it.toString()) }
+        val stage = gradeway.tracks.addStage(Actor.System, track, createRole()).getOrElse { error(it.toString()) }
+        gradeway.tracks.removeStage(Actor.System, stage.id.value).getOrElse { error(it.toString()) }
 
         val trackId = track.id.value.toString()
         val stageId = stage.id.value.toString()
@@ -244,7 +261,7 @@ class CommonTrackServiceTest {
 
     @Test
     fun `removeStage fails for an unknown stage`() {
-        val result = gradeway.tracks.removeStage(UUID.randomUUID())
+        val result = gradeway.tracks.removeStage(Actor.System, UUID.randomUUID())
 
         assertEquals(TrackService.RemoveStageError.EntityNotFound, result.leftOrNull())
     }
@@ -263,7 +280,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(first, second, third)
         val stage = gradeway.tracks.findStageByRole(track.id.value, first.id.value) ?: error("expected stage")
 
-        val moved = gradeway.tracks.moveStage(stage, 2).getOrElse { error(it.toString()) }
+        val moved = gradeway.tracks.moveStage(Actor.System, stage, 2).getOrElse { error(it.toString()) }
 
         assertEquals(2, moved.position)
         assertEquals(
@@ -280,7 +297,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(first, second, third)
         val stage = gradeway.tracks.findStageByRole(track.id.value, third.id.value) ?: error("expected stage")
 
-        gradeway.tracks.moveStage(stage.id.value, 0).getOrElse { error(it.toString()) }
+        gradeway.tracks.moveStage(Actor.System, stage.id.value, 0).getOrElse { error(it.toString()) }
 
         assertEquals(
             listOf(third.id.value to 0, first.id.value to 1, second.id.value to 2),
@@ -295,10 +312,10 @@ class CommonTrackServiceTest {
         val third = createRole()
         val track = createTrackWithStages(first, second, third)
         val secondStage = gradeway.tracks.findStageByRole(track.id.value, second.id.value) ?: error("expected stage")
-        gradeway.tracks.removeStage(secondStage).getOrElse { error(it.toString()) }
+        gradeway.tracks.removeStage(Actor.System, secondStage).getOrElse { error(it.toString()) }
         val thirdStage = gradeway.tracks.findStageByRole(track.id.value, third.id.value) ?: error("expected stage")
 
-        gradeway.tracks.moveStage(thirdStage, 0).getOrElse { error(it.toString()) }
+        gradeway.tracks.moveStage(Actor.System, thirdStage, 0).getOrElse { error(it.toString()) }
 
         assertEquals(listOf(third.id.value to 0, first.id.value to 1), stageOrderOf(track, first, third))
     }
@@ -310,14 +327,23 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(first, second)
         val stage = gradeway.tracks.findStageByRole(track.id.value, first.id.value) ?: error("expected stage")
 
-        assertEquals(TrackService.MoveStageError.InvalidPosition(2), gradeway.tracks.moveStage(stage, 2).leftOrNull())
-        assertEquals(TrackService.MoveStageError.InvalidPosition(2), gradeway.tracks.moveStage(stage, -1).leftOrNull())
-        assertEquals(TrackService.MoveStageError.AlreadyAtPosition, gradeway.tracks.moveStage(stage, 0).leftOrNull())
+        assertEquals(
+            TrackService.MoveStageError.InvalidPosition(2),
+            gradeway.tracks.moveStage(Actor.System, stage, 2).leftOrNull(),
+        )
+        assertEquals(
+            TrackService.MoveStageError.InvalidPosition(2),
+            gradeway.tracks.moveStage(Actor.System, stage, -1).leftOrNull(),
+        )
+        assertEquals(
+            TrackService.MoveStageError.AlreadyAtPosition,
+            gradeway.tracks.moveStage(Actor.System, stage, 0).leftOrNull(),
+        )
     }
 
     @Test
     fun `moveStage fails for an unknown stage`() {
-        val result = gradeway.tracks.moveStage(UUID.randomUUID(), 0)
+        val result = gradeway.tracks.moveStage(Actor.System, UUID.randomUUID(), 0)
 
         assertEquals(TrackService.MoveStageError.EntityNotFound, result.leftOrNull())
     }
@@ -325,11 +351,11 @@ class CommonTrackServiceTest {
     @Test
     fun `moveStage publishes an updated TrackStageChangedPayload`() {
         val track = createTrackWithStages(createRole(), createRole())
-        val stage = gradeway.tracks.addStage(track, createRole()).getOrElse { error(it.toString()) }
+        val stage = gradeway.tracks.addStage(Actor.System, track, createRole()).getOrElse { error(it.toString()) }
         val received = mutableListOf<MessagingPayload>()
         gradeway.messaging.subscribe { received.add(it) }
 
-        gradeway.tracks.moveStage(stage, 0).getOrElse { error(it.toString()) }
+        gradeway.tracks.moveStage(Actor.System, stage, 0).getOrElse { error(it.toString()) }
 
         assertContains(
             received,
@@ -344,7 +370,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(first, second)
         val player = createPlayer()
 
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
         assertEquals(first.id.value, primaryRoleIdOf(player))
         assertContains(roleIdsOf(player), first.id.value)
@@ -357,9 +383,9 @@ class CommonTrackServiceTest {
         val second = createRole()
         val track = createTrackWithStages(first, second)
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
-        gradeway.tracks.promotePlayer(player.id.value, track.id.value).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player.id.value, track.id.value).getOrElse { error(it.toString()) }
 
         assertEquals(second.id.value, primaryRoleIdOf(player))
         val roleIds = roleIdsOf(player)
@@ -374,11 +400,11 @@ class CommonTrackServiceTest {
         val last = createRole()
         val track = createTrackWithStages(first, middle, last)
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
         val middleStage = gradeway.tracks.findStageByRole(track.id.value, middle.id.value) ?: error("expected stage")
-        gradeway.tracks.removeStage(middleStage).getOrElse { error(it.toString()) }
+        gradeway.tracks.removeStage(Actor.System, middleStage).getOrElse { error(it.toString()) }
 
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
         assertEquals(last.id.value, primaryRoleIdOf(player))
     }
@@ -387,16 +413,16 @@ class CommonTrackServiceTest {
     fun `promotePlayer fails at the last stage`() {
         val track = createTrackWithStages(createRole())
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
-        val result = gradeway.tracks.promotePlayer(player, track)
+        val result = gradeway.tracks.promotePlayer(Actor.System, player, track)
 
         assertEquals(PlayerTrackService.PromotePlayerError.MaximumStageReached, result.leftOrNull())
     }
 
     @Test
     fun `promotePlayer fails on a track without stages`() {
-        val result = gradeway.tracks.promotePlayer(createPlayer(), createTrack())
+        val result = gradeway.tracks.promotePlayer(Actor.System, createPlayer(), createTrack())
 
         assertEquals(PlayerTrackService.PromotePlayerError.NoStages, result.leftOrNull())
     }
@@ -408,11 +434,11 @@ class CommonTrackServiceTest {
 
         assertEquals(
             PlayerTrackService.PromotePlayerError.EntityNotFound,
-            gradeway.tracks.promotePlayer(UUID.randomUUID(), track.id.value).leftOrNull()
+            gradeway.tracks.promotePlayer(Actor.System, UUID.randomUUID(), track.id.value).leftOrNull()
         )
         assertEquals(
             PlayerTrackService.PromotePlayerError.TargetNotFound,
-            gradeway.tracks.promotePlayer(player, UUID.randomUUID()).leftOrNull()
+            gradeway.tracks.promotePlayer(Actor.System, player, UUID.randomUUID()).leftOrNull()
         )
     }
 
@@ -422,10 +448,10 @@ class CommonTrackServiceTest {
         val second = createRole()
         val track = createTrackWithStages(first, second)
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
-        gradeway.tracks.demotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.demotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
         assertEquals(first.id.value, primaryRoleIdOf(player))
         val roleIds = roleIdsOf(player)
@@ -437,9 +463,9 @@ class CommonTrackServiceTest {
     fun `demotePlayer fails at the first stage`() {
         val track = createTrackWithStages(createRole(), createRole())
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
-        val result = gradeway.tracks.demotePlayer(player, track)
+        val result = gradeway.tracks.demotePlayer(Actor.System, player, track)
 
         assertEquals(PlayerTrackService.DemotePlayerError.MinimumStageReached, result.leftOrNull())
     }
@@ -448,7 +474,7 @@ class CommonTrackServiceTest {
     fun `demotePlayer fails for a player who is not on the track`() {
         val track = createTrackWithStages(createRole())
 
-        val result = gradeway.tracks.demotePlayer(createPlayer(), track)
+        val result = gradeway.tracks.demotePlayer(Actor.System, createPlayer(), track)
 
         assertEquals(PlayerTrackService.DemotePlayerError.MinimumStageReached, result.leftOrNull())
     }
@@ -460,8 +486,8 @@ class CommonTrackServiceTest {
         val third = createRole()
         val track = createTrackWithStages(first, second, third)
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
-        gradeway.tracks.promotePlayer(player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, track).getOrElse { error(it.toString()) }
 
         assertEquals(third.id, gradeway.tracks.findPlayersNextStage(player.id.value, track.id.value)?.roleId)
         assertEquals(first.id, gradeway.tracks.findPlayersPreviousStage(player.id.value, track.id.value)?.roleId)
@@ -481,15 +507,15 @@ class CommonTrackServiceTest {
     @Test
     fun `listPlayerTracks returns every track containing the players primary role sorted by slug`() {
         val role = createRole()
-        val trackB = gradeway.tracks.createTrack("b-${UUID.randomUUID().toString().take(8)}")
+        val trackB = gradeway.tracks.createTrack(Actor.System, "b-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
-        val trackA = gradeway.tracks.createTrack("a-${UUID.randomUUID().toString().take(8)}")
+        val trackA = gradeway.tracks.createTrack(Actor.System, "a-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
-        gradeway.tracks.addStage(trackB, role).getOrElse { error(it.toString()) }
-        gradeway.tracks.addStage(trackA, role).getOrElse { error(it.toString()) }
+        gradeway.tracks.addStage(Actor.System, trackB, role).getOrElse { error(it.toString()) }
+        gradeway.tracks.addStage(Actor.System, trackA, role).getOrElse { error(it.toString()) }
         createTrackWithStages(createRole())
         val player = createPlayer()
-        gradeway.tracks.promotePlayer(player, trackA).getOrElse { error(it.toString()) }
+        gradeway.tracks.promotePlayer(Actor.System, player, trackA).getOrElse { error(it.toString()) }
 
         val reloaded = gradeway.players.findById(player.id.value) ?: error("expected player to exist")
         val tracks = transaction(gradeway.database) {

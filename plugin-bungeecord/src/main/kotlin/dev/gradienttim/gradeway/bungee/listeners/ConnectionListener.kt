@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.bungee.listeners
 
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.GradewayLifecycle
 import net.md_5.bungee.api.event.PlayerDisconnectEvent
 import net.md_5.bungee.api.event.PostLoginEvent
@@ -15,12 +16,12 @@ class ConnectionListener(val gradeway: GradewayLifecycle<*>) : Listener {
     fun onPostLogin(event: PostLoginEvent) {
         val player = event.player
 
-        val firstJoin = gradeway.players.create(player.uniqueId, player.name).isRight()
-        gradeway.players.removeExpiredRoles(player.uniqueId)
+        val firstJoin = gradeway.players.create(Actor.System, player.uniqueId, player.name).isRight()
+        gradeway.players.removeExpiredRoles(Actor.System, player.uniqueId)
             .onLeft { error ->
                 gradeway.logger.error("Failed to remove expired roles for ${player.name}: $error")
             }
-        gradeway.players.applyDefaultRole(player.uniqueId, firstJoin)
+        gradeway.players.applyDefaultRole(Actor.System, player.uniqueId, firstJoin)
             .onLeft { error ->
                 gradeway.logger.error("Failed to apply the default role for ${player.name}: $error")
             }

@@ -9,6 +9,9 @@ import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.attribute.AttributeType
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Auditable
+import dev.gradienttim.gradeway.audit.audited
 import dev.gradienttim.gradeway.database.models.player.DatabasePlayerAttributeEntity
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleAttributeEntity
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
@@ -29,17 +32,23 @@ class CommonAttributeService(
     val gradeway: CommonGradeway<*>
 ) : AttributeService {
     override fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = gradeway.roles.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
-        return addRoleAttribute(entity, attribute)
+        return addRoleAttribute(actor, entity, attribute)
     }
 
     override fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
-        attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(entity, attribute) {
+        attribute: Attribute<TValue>,
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(
+        actor,
+        entity,
+        attribute,
+    ) {
         DatabaseRoleAttributeEntity.new {
             this.roleId = entity.id
             this.type = attribute.type.type
@@ -49,77 +58,88 @@ class CommonAttributeService(
     }
 
     override fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
-        return addRoleAttribute(entity, attribute)
+        return addRoleAttribute(actor, entity, attribute)
     }
 
     override fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity = gradeway.roles.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
-        return updateRoleAttribute(entity, key, value)
+        return updateRoleAttribute(actor, entity, key, value)
     }
 
     override fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
         key: Key,
-        value: TValue
-    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = updateEntityAttribute(entity, key, value)
+        value: TValue,
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> =
+        updateEntityAttribute(actor, entity, key, value)
 
     override fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
-        val entity =
-            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
-        return updateRoleAttribute(entity, key, value)
+        val entity = gradeway.roles.findByIdOrName(idOrName)
+            ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        return updateRoleAttribute(actor, entity, key, value)
     }
 
     override fun removeRoleAttribute(
+        actor: Actor,
         id: UUID,
-        key: Key
+        key: Key,
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
         val entity = gradeway.roles.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
-        return removeRoleAttribute(entity, key)
+        return removeRoleAttribute(actor, entity, key)
     }
 
     override fun removeRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
-        key: Key
-    ): Either<AttributeService.RemoveAttributeError, Unit> = removeEntityAttribute(entity, key)
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit> = removeEntityAttribute(actor, entity, key)
 
     override fun removeRoleAttribute(
+        actor: Actor,
         idOrName: String,
-        key: Key
+        key: Key,
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        val entity =
-            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
-        return removeRoleAttribute(entity, key)
+        val entity = gradeway.roles.findByIdOrName(idOrName)
+            ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        return removeRoleAttribute(actor, entity, key)
     }
 
     override fun clearRoleAttributes(
-        id: UUID
+        actor: Actor,
+        id: UUID,
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
         val entity = gradeway.roles.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
-        return clearRoleAttributes(entity)
+        return clearRoleAttributes(actor, entity)
     }
 
     override fun clearRoleAttributes(
-        entity: RoleEntity
-    ): Either<AttributeService.ClearAttributesError, Unit> = clearEntityAttributes(entity)
+        actor: Actor,
+        entity: RoleEntity,
+    ): Either<AttributeService.ClearAttributesError, Unit> = clearEntityAttributes(actor, entity)
 
     override fun clearRoleAttributes(
-        idOrName: String
+        actor: Actor,
+        idOrName: String,
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        val entity =
-            gradeway.roles.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
-        return clearRoleAttributes(entity)
+        val entity = gradeway.roles.findByIdOrName(idOrName)
+            ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        return clearRoleAttributes(actor, entity)
     }
 
     override fun hasRoleAttribute(id: UUID, key: Key): Boolean {
@@ -151,17 +171,23 @@ class CommonAttributeService(
     }
 
     override fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
         val entity = gradeway.players.findById(id) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
-        return addPlayerAttribute(entity, attribute)
+        return addPlayerAttribute(actor, entity, attribute)
     }
 
     override fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         entity: PlayerEntity,
-        attribute: Attribute<TValue>
-    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(entity, attribute) {
+        attribute: Attribute<TValue>,
+    ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = addEntityAttribute(
+        actor,
+        entity,
+        attribute,
+    ) {
         DatabasePlayerAttributeEntity.new {
             this.playerId = entity.id
             this.type = attribute.type.type
@@ -171,78 +197,89 @@ class CommonAttributeService(
     }
 
     override fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity> = either {
-        val entity =
-            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.AddAttributeError.EntityNotFound)
-        return addPlayerAttribute(entity, attribute)
+        val entity = gradeway.players.findByIdOrName(idOrName)
+            ?: raise(AttributeService.AddAttributeError.EntityNotFound)
+        return addPlayerAttribute(actor, entity, attribute)
     }
 
     override fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
         val entity = gradeway.players.findById(id) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
-        return updatePlayerAttribute(entity, key, value)
+        return updatePlayerAttribute(actor, entity, key, value)
     }
 
     override fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         entity: PlayerEntity,
         key: Key,
-        value: TValue
-    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = updateEntityAttribute(entity, key, value)
+        value: TValue,
+    ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> =
+        updateEntityAttribute(actor, entity, key, value)
 
     override fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> = either {
-        val entity =
-            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
-        return updatePlayerAttribute(entity, key, value)
+        val entity = gradeway.players.findByIdOrName(idOrName)
+            ?: raise(AttributeService.UpdateAttributeError.EntityNotFound)
+        return updatePlayerAttribute(actor, entity, key, value)
     }
 
     override fun removePlayerAttribute(
+        actor: Actor,
         id: UUID,
-        key: Key
+        key: Key,
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
         val entity = gradeway.players.findById(id) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
-        return removePlayerAttribute(entity, key)
+        return removePlayerAttribute(actor, entity, key)
     }
 
     override fun removePlayerAttribute(
+        actor: Actor,
         entity: PlayerEntity,
-        key: Key
-    ): Either<AttributeService.RemoveAttributeError, Unit> = removeEntityAttribute(entity, key)
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit> = removeEntityAttribute(actor, entity, key)
 
     override fun removePlayerAttribute(
+        actor: Actor,
         idOrName: String,
-        key: Key
+        key: Key,
     ): Either<AttributeService.RemoveAttributeError, Unit> = either {
-        val entity =
-            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
-        return removePlayerAttribute(entity, key)
+        val entity = gradeway.players.findByIdOrName(idOrName)
+            ?: raise(AttributeService.RemoveAttributeError.EntityNotFound)
+        return removePlayerAttribute(actor, entity, key)
     }
 
     override fun clearPlayerAttributes(
-        id: UUID
+        actor: Actor,
+        id: UUID,
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
         val entity = gradeway.players.findById(id) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
-        return clearPlayerAttributes(entity)
+        return clearPlayerAttributes(actor, entity)
     }
 
     override fun clearPlayerAttributes(
+        actor: Actor,
         entity: PlayerEntity,
-    ): Either<AttributeService.ClearAttributesError, Unit> = clearEntityAttributes(entity)
+    ): Either<AttributeService.ClearAttributesError, Unit> = clearEntityAttributes(actor, entity)
 
     override fun clearPlayerAttributes(
+        actor: Actor,
         idOrName: String,
     ): Either<AttributeService.ClearAttributesError, Unit> = either {
-        val entity =
-            gradeway.players.findByIdOrName(idOrName) ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
-        return clearPlayerAttributes(entity)
+        val entity = gradeway.players.findByIdOrName(idOrName)
+            ?: raise(AttributeService.ClearAttributesError.EntityNotFound)
+        return clearPlayerAttributes(actor, entity)
     }
 
     override fun hasPlayerAttribute(id: UUID, key: Key): Boolean {
@@ -308,14 +345,15 @@ class CommonAttributeService(
         gradeway.messaging.publish(payload)
     }
 
-    private fun <TValue : Any, TAttributeEntity> addEntityAttribute(
+    private fun <TValue : Any, TAttributeEntity : Auditable> addEntityAttribute(
+        actor: Actor,
         entity: AttributeReference<out SharedAttributeEntity>,
         attribute: Attribute<TValue>,
-        createEntityAttribute: () -> TAttributeEntity
-    ): Either<AttributeService.AddAttributeError, TAttributeEntity> = either {
+        createEntityAttribute: () -> TAttributeEntity,
+    ): Either<AttributeService.AddAttributeError, TAttributeEntity> = gradeway.audited(actor) { audit ->
         try {
             transaction(gradeway.database) {
-                createEntityAttribute()
+                createEntityAttribute().also { audit.created(it) }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -326,11 +364,12 @@ class CommonAttributeService(
     }.onRight { publishAttributeChanged(entity, attribute.key, MessagingAction.CREATED) }
 
     private fun <TValue : Any> updateEntityAttribute(
+        actor: Actor,
         entity: AttributeReference<out SharedAttributeEntity>,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity> =
-        either<AttributeService.UpdateAttributeError, SharedAttributeEntity> {
+        gradeway.audited(actor) { audit ->
             transaction(gradeway.database) {
                 val attribute = entity.attributes.find { it.key == key }
                 if (attribute == null) {
@@ -347,6 +386,7 @@ class CommonAttributeService(
                     ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered(attribute.type))
 
                 try {
+                    val before = (attribute as? Auditable)?.snapshot()
                     var tempValue = value
                     if (attributeType.unsafe) {
                         tempValue = attributeType.deserialize(value.toString()) ?: attributeType.fallback(key)
@@ -354,6 +394,9 @@ class CommonAttributeService(
 
                     attribute.value = attributeType.serialize(tempValue)
                     attribute.flush()
+                    if (attribute is Auditable && before != null) {
+                        audit.updated(attribute, before)
+                    }
 
                     attribute
                 } catch (throwable: Throwable) {
@@ -363,9 +406,10 @@ class CommonAttributeService(
         }.onRight { publishAttributeChanged(entity, key, MessagingAction.UPDATED) }
 
     private fun removeEntityAttribute(
+        actor: Actor,
         entity: AttributeReference<out SharedAttributeEntity>,
-        key: Key
-    ): Either<AttributeService.RemoveAttributeError, Unit> = either {
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit> = gradeway.audited(actor) { audit ->
         transaction(gradeway.database) {
             val attribute = entity.attributes.find { it.key == key }
             if (attribute == null) {
@@ -378,6 +422,7 @@ class CommonAttributeService(
             }
 
             try {
+                (attribute as? Auditable)?.let { audit.deleted(it) }
                 attribute.delete()
             } catch (throwable: Throwable) {
                 raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
@@ -386,8 +431,9 @@ class CommonAttributeService(
     }.onRight { publishAttributeChanged(entity, key, MessagingAction.DELETED) }
 
     private fun clearEntityAttributes(
-        entity: AttributeReference<out SharedAttributeEntity>
-    ): Either<AttributeService.ClearAttributesError, Unit> = either {
+        actor: Actor,
+        entity: AttributeReference<out SharedAttributeEntity>,
+    ): Either<AttributeService.ClearAttributesError, Unit> = gradeway.audited(actor) { audit ->
         transaction(gradeway.database) {
             if (entity.attributes.empty()) {
                 raise(AttributeService.ClearAttributesError.NoAttributesFound)
@@ -396,6 +442,7 @@ class CommonAttributeService(
             try {
                 entity.attributes.forEach { attributeEntity ->
                     if (attributeEntity is Entity<*>) {
+                        (attributeEntity as? Auditable)?.let { audit.deleted(it) }
                         attributeEntity.delete()
                     }
                 }

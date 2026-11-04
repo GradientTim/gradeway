@@ -49,6 +49,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
             string("id") {
                 string("name") {
                     execute {
+                        val actor = commandContext.sourceToActor(source)
                         val id = stringParam("id")
                         val name = stringParam("name")
 
@@ -65,7 +66,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                             return@execute
                         }
 
-                        gradeway.players.create(uniqueId, name)
+                        gradeway.players.create(actor, uniqueId, name)
                             .onLeft { error ->
                                 if (error is PlayerService.CreatePlayerError.EntityAlreadyExists) {
                                     commandContext.sendTranslatedMessage(
@@ -121,6 +122,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                 suggestPlayers(gradeway)
 
                 execute {
+                    val actor = commandContext.sourceToActor(source)
                     val id = stringParam("idOrName")
 
                     val player = gradeway.players.findByIdOrName(id)
@@ -136,7 +138,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                     }
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.players.delete(player.id.value)
+                        gradeway.players.delete(actor, player.id.value)
                             .onLeft { error ->
                                 if (error is PlayerService.DeletePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
@@ -289,16 +291,17 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                     gradeway = gradeway,
                     entityType = "player",
                     context = commandContext,
-                    handleAddAttribute = { idOrName, attribute -> gradeway.players.addAttribute(idOrName, attribute) },
-                    handleUpdateAttribute = { idOrName, key, value ->
+                    handleAddAttribute = { actor, idOrName, attribute -> gradeway.players.addAttribute(actor, idOrName, attribute) },
+                    handleUpdateAttribute = { actor, idOrName, key, value ->
                         gradeway.players.updateAttribute(
+                            actor,
                             idOrName,
                             key,
                             value
                         )
                     },
-                    handleRemoveAttribute = { idOrName, key -> gradeway.players.removeAttribute(idOrName, key) },
-                    handleClearAttributes = { idOrName -> gradeway.players.clearAttributes(idOrName) },
+                    handleRemoveAttribute = { actor, idOrName, key -> gradeway.players.removeAttribute(actor, idOrName, key) },
+                    handleClearAttributes = { actor, idOrName -> gradeway.players.clearAttributes(actor, idOrName) },
                     handleListQuery = { scope, page, limit ->
                         PlayerAttributesTable
                             .innerJoin(PlayersTable, { playerId }, { id })
@@ -358,27 +361,28 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                     gradeway = gradeway,
                     entityType = "player",
                     context = commandContext,
-                    handleSetPermission = { idOrName, permission, status ->
-                        gradeway.players.setPermission(idOrName, permission, status)
+                    handleSetPermission = { actor, idOrName, permission, status ->
+                        gradeway.players.setPermission(actor, idOrName, permission, status)
                     },
-                    handleUnsetPermission = { idOrName, permission ->
+                    handleUnsetPermission = { actor, idOrName, permission ->
                         gradeway.players.unsetPermission(
+                            actor,
                             idOrName,
                             permission
                         )
                     },
-                    handleClearPermissions = { idOrName -> gradeway.players.clearPermissions(idOrName) },
-                    handleLinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.linkTemplateToPlayer(templateIdOrName, idOrName)
+                    handleClearPermissions = { actor, idOrName -> gradeway.players.clearPermissions(actor, idOrName) },
+                    handleLinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.linkTemplateToPlayer(actor, templateIdOrName, idOrName)
                     },
-                    handleUnlinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.unlinkTemplateFromPlayer(templateIdOrName, idOrName)
+                    handleUnlinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.unlinkTemplateFromPlayer(actor, templateIdOrName, idOrName)
                     },
-                    handleApplyTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.applyTemplateToPlayer(templateIdOrName, idOrName)
+                    handleApplyTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.applyTemplateToPlayer(actor, templateIdOrName, idOrName)
                     },
-                    handleRevokeTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.revokeTemplateFromPlayer(templateIdOrName, idOrName)
+                    handleRevokeTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.revokeTemplateFromPlayer(actor, templateIdOrName, idOrName)
                     },
                     handleListQuery = { scope, page, limit ->
                         PlayerPermissionsTable
@@ -436,10 +440,11 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
 
                     integer("value") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val weight = intParam("value")
 
-                            gradeway.players.setWeight(idOrName, weight)
+                            gradeway.players.setWeight(actor, idOrName, weight)
                                 .onLeft { error ->
                                     if (error is PlayerService.SetWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
@@ -547,6 +552,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
 ) {
     @Suppress("ReturnCount")
     fun handleAddRole(source: TCommandContext, playerIdOrName: String, roleId: String, until: Instant? = null) {
+        val actor = context.sourceToActor(source)
         val roleUniqueId = gradeway.roles.findByIdOrName(roleId)?.id?.value
 
         if (roleUniqueId == null) {
@@ -561,7 +567,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
             return
         }
 
-        gradeway.players.addRole(playerIdOrName, roleUniqueId, until)
+        gradeway.players.addRole(actor, playerIdOrName, roleUniqueId, until)
             .onLeft { error ->
                 if (error is PlayerService.AddRoleError.EntityNotFound) {
                     context.sendTranslatedMessage(
@@ -677,6 +683,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                 suggestRoles(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val roleId = stringParam("role")
 
@@ -694,7 +701,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                         return@execute
                     }
 
-                    gradeway.players.removeRole(idOrName, roleUniqueId)
+                    gradeway.players.removeRole(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
                             if (error is PlayerService.RemoveRoleError.EntityNotFound) {
                                 context.sendTranslatedMessage(
@@ -756,6 +763,128 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
             }
         }
 
+        literal("pause") {
+            requires { context.hasPermission(it, "gradeway.player.roles.pause") }
+
+            string("role") {
+                suggestRoles(gradeway)
+
+                execute {
+                    val actor = context.sourceToActor(source)
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("role")
+
+                    val role = gradeway.roles.findByIdOrName(roleId)
+                    if (role == null) {
+                        context.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.player.pauseRole.targetNotFound",
+                                Argument.string("player", idOrName),
+                                Argument.string("role", roleId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.players.pauseRole(actor, idOrName, role)
+                        .onLeft { error ->
+                            val key = when (error) {
+                                PlayerService.PauseRoleError.EntityNotFound -> "gradeway.command.player.pauseRole.entityNotFound"
+                                PlayerService.PauseRoleError.TargetNotFound -> "gradeway.command.player.pauseRole.targetNotFound"
+                                PlayerService.PauseRoleError.RelationNotFound -> "gradeway.command.player.pauseRole.notExists"
+                                PlayerService.PauseRoleError.AlreadyPaused -> "gradeway.command.player.pauseRole.alreadyPaused"
+                                is PlayerService.PauseRoleError.Unexpected -> "gradeway.command.player.pauseRole.unexpectedError"
+                            }
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    key,
+                                    Argument.string("player", idOrName),
+                                    Argument.string("role", roleId),
+                                    Argument.string(
+                                        "error",
+                                        (error as? PlayerService.PauseRoleError.Unexpected)?.throwable?.message
+                                            ?: "Unknown"
+                                    )
+                                )
+                            )
+                        }
+                        .onRight {
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.player.pauseRole.success",
+                                    Argument.string("player", idOrName),
+                                    Argument.string("role", roleId)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
+        literal("resume") {
+            requires { context.hasPermission(it, "gradeway.player.roles.resume") }
+
+            string("role") {
+                suggestRoles(gradeway)
+
+                execute {
+                    val actor = context.sourceToActor(source)
+                    val idOrName = stringParam("idOrName")
+                    val roleId = stringParam("role")
+
+                    val role = gradeway.roles.findByIdOrName(roleId)
+                    if (role == null) {
+                        context.sendTranslatedMessage(
+                            source,
+                            Component.translatable(
+                                "gradeway.command.player.resumeRole.targetNotFound",
+                                Argument.string("player", idOrName),
+                                Argument.string("role", roleId)
+                            )
+                        )
+                        return@execute
+                    }
+
+                    gradeway.players.resumeRole(actor, idOrName, role)
+                        .onLeft { error ->
+                            val key = when (error) {
+                                PlayerService.ResumeRoleError.EntityNotFound -> "gradeway.command.player.resumeRole.entityNotFound"
+                                PlayerService.ResumeRoleError.TargetNotFound -> "gradeway.command.player.resumeRole.targetNotFound"
+                                PlayerService.ResumeRoleError.RelationNotFound -> "gradeway.command.player.resumeRole.notExists"
+                                PlayerService.ResumeRoleError.NotPaused -> "gradeway.command.player.resumeRole.notPaused"
+                                is PlayerService.ResumeRoleError.Unexpected -> "gradeway.command.player.resumeRole.unexpectedError"
+                            }
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    key,
+                                    Argument.string("player", idOrName),
+                                    Argument.string("role", roleId),
+                                    Argument.string(
+                                        "error",
+                                        (error as? PlayerService.ResumeRoleError.Unexpected)?.throwable?.message
+                                            ?: "Unknown"
+                                    )
+                                )
+                            )
+                        }
+                        .onRight {
+                            context.sendTranslatedMessage(
+                                source,
+                                Component.translatable(
+                                    "gradeway.command.player.resumeRole.success",
+                                    Argument.string("player", idOrName),
+                                    Argument.string("role", roleId)
+                                )
+                            )
+                        }
+                }
+            }
+        }
+
         literal("setPrimary") {
             requires { context.hasPermission(it, "gradeway.player.roles.setPrimary") }
 
@@ -763,6 +892,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                 suggestRoles(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val roleId = stringParam("role")
 
@@ -780,7 +910,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                         return@execute
                     }
 
-                    gradeway.players.setPrimaryRole(idOrName, roleUniqueId)
+                    gradeway.players.setPrimaryRole(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
                             if (error is PlayerService.SetPrimaryRoleError.EntityNotFound) {
                                 context.sendTranslatedMessage(
@@ -845,9 +975,10 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
             requires { context.hasPermission(it, "gradeway.player.roles.clearPrimary") }
 
             execute {
+                val actor = context.sourceToActor(source)
                 val idOrName = stringParam("idOrName")
 
-                gradeway.players.clearPrimaryRole(idOrName)
+                gradeway.players.clearPrimaryRole(actor, idOrName)
                     .onLeft { error ->
                         if (error is PlayerService.ClearPrimaryRoleError.EntityNotFound) {
                             context.sendTranslatedMessage(

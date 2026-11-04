@@ -23,48 +23,52 @@ interface RoleAttributeService {
     /**
      * Adds an attribute to a role identified by its unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role to which the attribute will be added.
      * @param attribute The attribute to be added to the role.
      * @return Either an error encapsulated in [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         id: UUID,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to a specific role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [RoleEntity] instance representing the role to which the attribute will be added.
      * @param attribute The attribute to be associated with the specified role entity.
      * @return An [Either] containing [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to a role identified by its unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role to which the attribute will be added.
      * @param attribute The attribute to be added to the role.
      * @return Either an error encapsulated in [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addRoleAttribute(
+        actor: Actor,
         idOrName: String,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role for which the attribute value will be updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to assign to the specified attribute.
@@ -72,15 +76,16 @@ interface RoleAttributeService {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a specific role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [RoleEntity] instance representing the role whose attribute needs to be updated.
      * @param key The [Key] identifying the attribute to be updated.
      * @param value The new value of type [TValue] to assign to the specified attribute.
@@ -88,15 +93,16 @@ interface RoleAttributeService {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a role identified by its unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role for which the attribute value will be updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to assign to the specified attribute.
@@ -104,88 +110,94 @@ interface RoleAttributeService {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateRoleAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role from which the attribute will be removed.
      * @param key The key identifying the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeRoleAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a specific role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [RoleEntity] instance representing the role from which the attribute will be removed.
      * @param key The [Key] identifying the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeRoleAttribute(
+        actor: Actor,
         entity: RoleEntity,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute associated with a role identified by its unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role from which the attribute will be removed.
      * @param key The key identifying the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeRoleAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role whose attributes should be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearRoleAttributes(
+        actor: Actor,
         id: UUID,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a specific role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [RoleEntity] instance representing the role whose attributes should be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearRoleAttributes(
+        actor: Actor,
         entity: RoleEntity,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Removes all attributes associated with a role identified by its unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role whose attributes should be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearRoleAttributes(
+        actor: Actor,
         idOrName: String,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**

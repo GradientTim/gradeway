@@ -8,13 +8,14 @@ import arrow.core.Either
 import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.audit.Snapshot
 import dev.gradienttim.gradeway.entity.log.AuditLogEntity
+import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.util.*
 
 interface AuditLogService {
     /**
      * Creates an audit log entry with the details of an operation.
      *
-     * @param actor The actor responsible for triggering the action. Must be an instance of `Actor`.
+     * @param actor The actor performing the operation.
      * @param action A string representing the action performed (e.g., "update", "delete").
      * @param snapshot The target entity involved in the operation and its state before and after it.
      * @return Either a `CreateAuditLogError` if the operation fails or an `AuditLogEntity` representing the created audit log entry.
@@ -43,11 +44,31 @@ interface AuditLogService {
      */
     fun deleteAuditLog(entity: AuditLogEntity): Either<DeleteAuditLogError, Unit>
 
+    /**
+     * Retrieves an audit log entry by its unique identifier.
+     *
+     * @param id The unique identifier of the audit log entry.
+     * @return The `AuditLogEntity` corresponding to the provided ID, or null if no entry is found.
+     */
+    fun findById(id: UUID): AuditLogEntity?
+
+    /**
+     * Retrieves all audit log entries recorded for the given actor, newest first.
+     *
+     * Entries are matched on both the actor's type and its identifier, so actors without an
+     * identifier (e.g. [Actor.System], [Actor.Console]) match every entry of their type.
+     *
+     * @param actor The actor whose audit log entries should be retrieved.
+     * @return A `SizedIterable` containing the matching `AuditLogEntity` instances, ordered by timestamp descending.
+     */
+    fun findByActor(actor: Actor): SizedIterable<AuditLogEntity>
+
     sealed interface CreateAuditLogError {
         data class Unexpected(val throwable: Throwable) : CreateAuditLogError
     }
 
     sealed interface DeleteAuditLogError {
+        data object EntityNotFound : DeleteAuditLogError
         data class Unexpected(val throwable: Throwable) : DeleteAuditLogError
     }
 }

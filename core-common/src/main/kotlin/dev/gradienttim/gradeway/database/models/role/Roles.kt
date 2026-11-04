@@ -5,6 +5,8 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.database.models.role
 
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
@@ -65,6 +67,8 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     internal val attributeService: AttributeService by inject()
     internal val permissionService: PermissionService by inject()
 
+    override val target by lazy { Target.role(id.value) }
+
     override var name by RolesTable.name
     override var weight by RolesTable.weight
     override var isDefault by RolesTable.isDefault
@@ -81,40 +85,44 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     override val parents by DatabaseRoleParentEntity referrersOn RoleParentsTable.childId
     override val children by DatabaseRoleParentEntity referrersOn RoleParentsTable.parentId
 
-    override fun setName(name: String) = roleService.setName(this, name)
-    override fun setWeight(weight: Int) = roleService.setWeight(this, weight)
+    override fun setName(actor: Actor, name: String) = roleService.setName(actor, this, name)
+    override fun setWeight(actor: Actor, weight: Int) = roleService.setWeight(actor, this, weight)
 
-    override fun addGroup(id: UUID) = groupService.addRoleToGroup(id, this)
-    override fun addGroup(idOrName: String) = groupService.addRoleToGroup(idOrName, this)
-    override fun addGroup(entity: GroupEntity) = groupService.addRoleToGroup(entity, this)
+    override fun addGroup(actor: Actor, id: UUID) = groupService.addRoleToGroup(actor, id, this)
+    override fun addGroup(actor: Actor, idOrName: String) = groupService.addRoleToGroup(actor, idOrName, this)
+    override fun addGroup(actor: Actor, entity: GroupEntity) = groupService.addRoleToGroup(actor, entity, this)
 
-    override fun removeGroup(id: UUID) = groupService.removeRoleFromGroup(id, this)
-    override fun removeGroup(idOrName: String) = groupService.removeRoleFromGroup(idOrName, this)
-    override fun removeGroup(entity: GroupEntity) = groupService.removeRoleFromGroup(entity, this)
+    override fun removeGroup(actor: Actor, id: UUID) = groupService.removeRoleFromGroup(actor, id, this)
+    override fun removeGroup(actor: Actor, idOrName: String) = groupService.removeRoleFromGroup(actor, idOrName, this)
+    override fun removeGroup(actor: Actor, entity: GroupEntity) = groupService.removeRoleFromGroup(actor, entity, this)
 
-    override fun <TValue : Any> addAttribute(attribute: Attribute<TValue>) =
-        attributeService.addRoleAttribute(this, attribute)
+    override fun <TValue : Any> addAttribute(actor: Actor, attribute: Attribute<TValue>) =
+        attributeService.addRoleAttribute(actor, this, attribute)
 
-    override fun <TValue : Any> updateAttribute(key: Key, value: TValue) =
-        attributeService.updateRoleAttribute(this, key, value)
+    override fun <TValue : Any> updateAttribute(actor: Actor, key: Key, value: TValue) =
+        attributeService.updateRoleAttribute(actor, this, key, value)
 
-    override fun removeAttribute(key: Key) = attributeService.removeRoleAttribute(this, key)
-    override fun clearAttributes() = attributeService.clearRoleAttributes(this)
+    override fun removeAttribute(actor: Actor, key: Key) = attributeService.removeRoleAttribute(actor, this, key)
+    override fun clearAttributes(actor: Actor) = attributeService.clearRoleAttributes(actor, this)
 
     override fun hasAttribute(key: Key) = attributeService.hasRoleAttribute(this, key)
     override fun getAttribute(key: Key) = attributeService.getRoleAttribute(this, key)
 
-    override fun setPermission(permission: String, enabled: Boolean) =
-        permissionService.setRolePermission(this, permission, enabled)
+    override fun setPermission(actor: Actor, permission: String, enabled: Boolean) =
+        permissionService.setRolePermission(actor, this, permission, enabled)
 
-    override fun setPermissions(permissions: Map<String, Boolean>) =
-        permissionService.setRolePermissions(this, permissions)
+    override fun setPermissions(actor: Actor, permissions: Map<String, Boolean>) =
+        permissionService.setRolePermissions(actor, this, permissions)
 
-    override fun unsetPermission(permission: String) = permissionService.unsetRolePermission(this, permission)
-    override fun unsetPermissions(permissions: Collection<String>) =
-        permissionService.unsetRolePermissions(this, permissions)
+    override fun unsetPermission(
+        actor: Actor,
+        permission: String,
+    ) = permissionService.unsetRolePermission(actor, this, permission)
 
-    override fun clearPermissions() = permissionService.clearRolePermissions(this)
+    override fun unsetPermissions(actor: Actor, permissions: Collection<String>) =
+        permissionService.unsetRolePermissions(actor, this, permissions)
+
+    override fun clearPermissions(actor: Actor) = permissionService.clearRolePermissions(actor, this)
 
     override fun hasPermission(permission: String) = permissionService.hasRolePermission(this, permission)
     override fun hasAnyPermissions(permissions: Collection<String>) =
@@ -123,24 +131,33 @@ class DatabaseRoleEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleEntity, KoinC
     override fun hasAllPermissions(permissions: Collection<String>) =
         permissionService.hasRoleAllPermissions(this, permissions)
 
-    override fun linkTemplate(id: UUID) = permissionService.linkTemplateToRole(id, this).map { }
-    override fun linkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.linkTemplateToRole(entity, this).map { }
+    override fun linkTemplate(actor: Actor, id: UUID) = permissionService.linkTemplateToRole(actor, id, this).map { }
+    override fun linkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.linkTemplateToRole(actor, entity, this).map { }
 
-    override fun unlinkTemplate(id: UUID) = permissionService.unlinkTemplateFromRole(id, this)
-    override fun unlinkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.unlinkTemplateFromRole(entity, this)
+    override fun unlinkTemplate(actor: Actor, id: UUID) = permissionService.unlinkTemplateFromRole(actor, id, this)
+    override fun unlinkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.unlinkTemplateFromRole(actor, entity, this)
 
-    override fun applyTemplate(id: UUID) = permissionService.applyTemplateToRole(id, this)
-    override fun applyTemplate(entity: PermissionTemplateEntity) =
-        permissionService.applyTemplateToRole(entity, this)
+    override fun applyTemplate(actor: Actor, id: UUID) = permissionService.applyTemplateToRole(actor, id, this)
+    override fun applyTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.applyTemplateToRole(actor, entity, this)
 
-    override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromRole(id, this)
-    override fun revokeTemplate(entity: PermissionTemplateEntity) =
-        permissionService.revokeTemplateFromRole(entity, this)
+    override fun revokeTemplate(actor: Actor, id: UUID) = permissionService.revokeTemplateFromRole(actor, id, this)
+    override fun revokeTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.revokeTemplateFromRole(actor, entity, this)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
+    }
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("name", name)
+        put("weight", weight)
+        put("isDefault", isDefault)
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
     }
 }

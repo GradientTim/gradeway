@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.reference
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
 import dev.gradienttim.gradeway.services.PermissionService
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -33,6 +34,7 @@ interface PermissionReference<TReference> {
      * operation is successful, it returns a success result. If it fails, an error describing
      * the issue is returned.
      *
+     * @param actor The actor performing the operation.
      * @param permission The name of the permission to set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
      * @return An [Either] instance which:
@@ -40,7 +42,11 @@ interface PermissionReference<TReference> {
      *           such as the entity not being found, or the permission already being in the requested state.
      *         - Contains [Unit] upon successful update of the permission.
      */
-    fun setPermission(permission: String, enabled: Boolean = true): Either<PermissionService.SetPermissionError, Unit>
+    fun setPermission(
+        actor: Actor,
+        permission: String,
+        enabled: Boolean = true,
+    ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the current entity.
@@ -49,6 +55,7 @@ interface PermissionReference<TReference> {
      * If the operation is successful, it returns a success result. If it fails, an error describing
      * the issue is returned.
      *
+     * @param actor The actor performing the operation.
      * @param permissions A map where each key represents a permission name, and each value is a boolean
      *                     indicating whether the permission should be enabled (true) or disabled (false).
      * @return An [Either] instance which:
@@ -57,7 +64,8 @@ interface PermissionReference<TReference> {
      *         - Contains [Unit] upon successful update of the permissions.
      */
     fun setPermissions(
-        permissions: Map<String, Boolean>
+        actor: Actor,
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
@@ -68,13 +76,14 @@ interface PermissionReference<TReference> {
      * detailing the reason for the failure, such as the entity not being found, the permission
      * not existing, or an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @param permission The name of the permission to be unset.
      * @return An [Either] instance which:
      *         - Contains a [PermissionService.UnsetPermissionError] if the operation fails, providing
      *           details about the failure.
      *         - Contains [Unit] upon successful removal of the permission.
      */
-    fun unsetPermission(permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetPermission(actor: Actor, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from the current entity.
@@ -83,6 +92,7 @@ interface PermissionReference<TReference> {
      * If the operation succeeds, it returns a success result. If it fails, it provides an error
      * detailing the reason for the failure.
      *
+     * @param actor The actor performing the operation.
      * @param permissions A collection of permission names to unset from the entity.
      * @return An [Either] instance which:
      *         - Contains a [PermissionService.BulkUnsetPermissionError] if the operation fails,
@@ -90,7 +100,8 @@ interface PermissionReference<TReference> {
      *         - Contains [Unit] upon successful removal of the permissions.
      */
     fun unsetPermissions(
-        permissions: Collection<String>
+        actor: Actor,
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
@@ -100,12 +111,13 @@ interface PermissionReference<TReference> {
      * indicating the success or failure of the operation. The operation may fail if the entity
      * associated with the permissions is not found, or due to an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @return An [Either] instance which:
      *         - Contains a [PermissionService.ClearPermissionsError] if the operation fails, detailing
      *           reasons such as the entity not being found, or an unexpected error.
      *         - Contains [Unit] on successful removal of all permissions.
      */
-    fun clearPermissions(): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearPermissions(actor: Actor): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if the current entity has the specified permission.

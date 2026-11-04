@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.platform
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
@@ -26,7 +27,7 @@ class CommonSuggestionIndexTest {
     @Test
     fun `creating a role adds it to the suggestion index`() {
         val roleName = "role-${UUID.randomUUID().toString().take(8)}"
-        val role = gradeway.roles.create(roleName).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, roleName).getOrElse { error(it.toString()) }
 
         assertEquals(roleName, gradeway.caches.suggestions.roles[role.id.value])
     }
@@ -34,10 +35,10 @@ class CommonSuggestionIndexTest {
     @Test
     fun `deleting a role removes it from the suggestion index`() {
         val roleName = "role-${UUID.randomUUID().toString().take(8)}"
-        val role = gradeway.roles.create(roleName).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, roleName).getOrElse { error(it.toString()) }
         assertTrue(gradeway.caches.suggestions.roles.containsKey(role.id.value))
 
-        gradeway.roles.delete(role.id.value).getOrElse { error(it.toString()) }
+        gradeway.roles.delete(Actor.System, role.id.value).getOrElse { error(it.toString()) }
 
         assertFalse(gradeway.caches.suggestions.roles.containsKey(role.id.value))
     }
@@ -46,7 +47,7 @@ class CommonSuggestionIndexTest {
     fun `creating a player adds it to the suggestion index`() {
         val playerId = UUID.randomUUID()
         val playerName = "player-${playerId.toString().take(8)}"
-        gradeway.players.create(playerId, playerName).getOrElse { error(it.toString()) }
+        gradeway.players.create(Actor.System, playerId, playerName).getOrElse { error(it.toString()) }
 
         assertEquals(playerName, gradeway.caches.suggestions.players[playerId])
     }
@@ -54,7 +55,7 @@ class CommonSuggestionIndexTest {
     @Test
     fun `a cache flush payload rebuilds the index from the database`() {
         val roleName = "role-${UUID.randomUUID().toString().take(8)}"
-        val role = gradeway.roles.create(roleName).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, roleName).getOrElse { error(it.toString()) }
 
         // Bypasses CommonRoleService entirely, so no RoleChangedPayload is published for this
         // rename - if the index only relied on per-entity payloads, it would never see it.

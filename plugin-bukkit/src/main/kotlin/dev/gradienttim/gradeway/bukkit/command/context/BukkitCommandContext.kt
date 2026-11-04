@@ -5,9 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.bukkit.command.context
 
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.command.context.CommandContext
-import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer
@@ -15,7 +15,10 @@ import net.kyori.adventure.translation.GlobalTranslator
 import org.bukkit.command.BlockCommandSender
 import org.bukkit.command.CommandSender
 import org.bukkit.command.ConsoleCommandSender
+import org.bukkit.command.RemoteConsoleCommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import org.bukkit.entity.minecart.CommandMinecart
 import java.util.*
 
 class BukkitCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) : CommandContext<CommandSender> {
@@ -38,13 +41,40 @@ class BukkitCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) :
                 )
             }
 
+            is CommandMinecart -> {
+                val location = source.location
+                Actor.CommandMinecart(
+                    source.entityId,
+                    source.uniqueId,
+                    source.world.name,
+                    location.blockX,
+                    location.blockY,
+                    location.blockZ
+                )
+            }
+
+            is RemoteConsoleCommandSender -> Actor.Rcon(source.address.toString())
+
+            is Entity -> {
+                val location = source.location
+                Actor.Entity(
+                    source.uniqueId,
+                    source.type.name,
+                    source.world.name,
+                    location.blockX,
+                    location.blockY,
+                    location.blockZ
+                )
+            }
+
             else -> Actor.Console
         }
     }
 
     override fun hasPermission(source: CommandSender, permission: String): Boolean {
         return when (source) {
-            is BlockCommandSender -> gradeway.configs.platformEntry.config.disableCommandBlocks
+            is BlockCommandSender, is CommandMinecart -> !gradeway.configs.platformEntry.config.disableCommandBlocks
+            is RemoteConsoleCommandSender -> !gradeway.configs.platformEntry.config.disableRemoteConsole
             else -> source.hasPermission(permission)
         }
     }

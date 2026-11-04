@@ -18,6 +18,7 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     /**
      * Sets the specified permission for the entity identified by the given ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity for which the permission is being set.
      * @param permission The name of the permission to set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -25,15 +26,16 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermission(
+        actor: Actor,
         id: UUID,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets the specified permission for the given entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity for which the permission is being set.
      * @param permission The name of the permission to set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -41,15 +43,16 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermission(
+        actor: Actor,
         entity: TEntity,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets the specified permission for the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity for which the permission is being set.
      * @param permission The name of the permission to set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -57,15 +60,16 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the entity identified by the given ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity for which permissions are being set.
      * @param permissions A map of permission names to their enabled states, where the map key represents the
      *                    permission name and the value represents whether the permission should be enabled (true)
@@ -74,14 +78,15 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermissions(
+        actor: Actor,
         id: UUID,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity for which permissions are being set.
      * @param permissions A map of permission names to their enabled states, where the map key represents the
      *                    permission name and the value represents whether the permission should be enabled (true)
@@ -90,14 +95,15 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermissions(
+        actor: Actor,
         entity: TEntity,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity for which permissions are being set.
      * @param permissions A map of permission names to their enabled states, where the map key represents the
      *                    permission name and the value represents whether the permission should be enabled (true)
@@ -106,129 +112,138 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      *         or `true` if the update succeeds.
      */
     fun setPermissions(
+        actor: Actor,
         idOrName: String,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the entity identified by the given ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity whose permission is to be removed.
      * @param permission The name of the permission to unset.
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermission(
+        actor: Actor,
         id: UUID,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the given entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity for which the permission is to be removed.
      * @param permission The name of the permission to unset.
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermission(
+        actor: Actor,
         entity: TEntity,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes the specified permission for the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity whose permission is to be removed.
      * @param permission The name of the permission to unset.
      * @return An [Either] containing either a [PermissionService.UnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the entity identified by the given ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity whose permissions are to be removed.
      * @param permissions A list of permission names to unset.
      * @return An [Either] containing either a [PermissionService.BulkUnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermissions(
+        actor: Actor,
         id: UUID,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity for which permissions are to be removed.
      * @param permissions A list of permission names to unset from the specified entity.
      * @return An [Either] containing either a [PermissionService.BulkUnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermissions(
+        actor: Actor,
         entity: TEntity,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions for the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity whose permissions are to be removed.
      * @param permissions A list of permission names to unset from the specified entity.
      * @return An [Either] containing either a [PermissionService.BulkUnsetPermissionError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun unsetPermissions(
+        actor: Actor,
         idOrName: String,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with the entity identified by the given unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity whose permissions are to be cleared.
      * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs
      *         or `true` if the update succeeds.
      */
     fun clearPermissions(
+        actor: Actor,
         id: UUID,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity whose permissions are to be cleared.
      * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs during
      *         or `true` if the update succeeds.
      */
     fun clearPermissions(
+        actor: Actor,
         entity: TEntity,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity whose permissions are to be cleared.
      * @return An [Either] containing either a [PermissionService.ClearPermissionsError] if an error occurs during
      *         or `true` if the update succeeds.
      */
     fun clearPermissions(
+        actor: Actor,
         idOrName: String,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
@@ -241,7 +256,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasPermission(
         id: UUID,
         permission: String,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -254,7 +268,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasPermission(
         entity: TEntity,
         permission: String,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -267,7 +280,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasPermission(
         idOrName: String,
         permission: String,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -280,7 +292,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAnyPermissions(
         id: UUID,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -293,7 +304,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAnyPermissions(
         entity: TEntity,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -307,7 +317,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAnyPermissions(
         idOrName: String,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -320,7 +329,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAllPermissions(
         id: UUID,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -333,7 +341,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAllPermissions(
         entity: TEntity,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -347,7 +354,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
     fun hasAllPermissions(
         idOrName: String,
         permissions: List<String>,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -359,7 +365,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      */
     fun getPermissions(
         id: UUID,
-        actor: Actor? = null,
     ): Set<TPermissionEntity>
 
     /**
@@ -372,7 +377,6 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      */
     fun getPermissions(
         entity: TEntity,
-        actor: Actor? = null,
     ): Set<TPermissionEntity>
 
     /**
@@ -386,6 +390,5 @@ interface SharedPermissionService<TEntity, TPermissionEntity> {
      */
     fun getPermissions(
         idOrName: String,
-        actor: Actor? = null,
     ): Set<TPermissionEntity>
 }

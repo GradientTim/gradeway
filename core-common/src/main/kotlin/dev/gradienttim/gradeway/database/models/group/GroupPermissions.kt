@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.group
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
@@ -65,6 +66,8 @@ class DatabaseGroupPermissionEntity(id: EntityID<CompositeID>) : CompositeEntity
         }
     }
 
+    override val target by lazy { Target.groupPermission(groupId.value, permissionId.value) }
+
     override var groupId by GroupPermissionsTable.groupId
     override var permissionId by GroupPermissionsTable.permissionId
 
@@ -72,4 +75,10 @@ class DatabaseGroupPermissionEntity(id: EntityID<CompositeID>) : CompositeEntity
 
     override val group by DatabaseGroupEntity referencedOn GroupPermissionsTable.groupId
     override val permission by DatabasePermissionEntity referencedOn GroupPermissionsTable.permissionId
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("groupId", groupId.value.toString())
+        put("permissionId", permissionId.value.toString())
+        put("isEnabled", isEnabled)
+    }
 }

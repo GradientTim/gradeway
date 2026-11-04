@@ -7,9 +7,15 @@ package dev.gradienttim.gradeway
 import arrow.core.Either
 import arrow.core.raise.Raise
 import arrow.core.raise.either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.configs.PlatformConfig
 import dev.gradienttim.gradeway.constants.ScheduleConstants
+import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.managers.*
+import dev.gradienttim.gradeway.notification.drivers.console.ConsoleNotificationDriver
+import dev.gradienttim.gradeway.notification.drivers.discord.DiscordNotificationDriver
+import dev.gradienttim.gradeway.notification.drivers.slack.SlackNotificationDriver
+import dev.gradienttim.gradeway.notification.drivers.webhook.WebhookNotificationDriver
 import dev.gradienttim.gradeway.platform.*
 import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
@@ -31,6 +37,7 @@ import java.util.concurrent.TimeUnit
 
 class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val logger: Logger,
+    override val stores: Stores,
     override val scheduler: Scheduler,
     override val directory: Path,
     override val defaultPlatformConfig: TPlatformConfig,
@@ -50,6 +57,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val roles: RoleService by inject()
     override val logs: LogService by inject()
 
+    override val notifications: NotificationManager by inject()
     override val confirmations: ConfirmationManager by inject()
     override val migrations: MigrationManager by inject()
     override val messaging: MessagingManager by inject()
@@ -81,6 +89,11 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         languages.load().bind()
         messaging.load().bind()
 
+        drivers.registerDriver("console", DriverType.NOTIFICATION, ConsoleNotificationDriver())
+        drivers.registerDriver("webhook", DriverType.NOTIFICATION, WebhookNotificationDriver())
+        drivers.registerDriver("discord", DriverType.NOTIFICATION, DiscordNotificationDriver())
+        drivers.registerDriver("slack", DriverType.NOTIFICATION, SlackNotificationDriver())
+
         state = GradewayState.LOADED
     }.onLeft { throwable ->
         logger.panic(throwable)
@@ -111,6 +124,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         configs.load().bind()
         messaging.reload().bind()
         languages.reload().bind()
+        notifications.reload().bind()
     }.onLeft { throwable ->
         logger.panic(throwable)
     }
@@ -120,6 +134,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
 
         databases.enable().bind()
         messaging.enable().bind()
+        notifications.enable().bind()
 
         caches.suggestions.initialize()
 
@@ -127,7 +142,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
             interval = ScheduleConstants.EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS,
             intervalUnit = TimeUnit.SECONDS
         ) {
-            players.removeExpiredRoles().onLeft {
+            players.removeExpiredRoles(Actor.System).onLeft {
                 logger.warn("Failed to sweep expired player roles: $it")
             }
         }
@@ -144,6 +159,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         databases.disable().bind()
         messaging.disable().bind()
         confirmations.disable().bind()
+        notifications.disable().bind()
     }.onLeft { throwable ->
         logger.panic(throwable)
     }
@@ -167,6 +183,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
             },
 
             module {
+                single<NotificationManager> { CommonNotificationManager(gradeway) }
                 single<ConfirmationManager> { CommonConfirmationManager(gradeway) }
                 // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,
                 // before ever touching gradeway.migrations, so the registrations CommonMigrationManager's init

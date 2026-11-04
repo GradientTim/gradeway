@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.reference
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
@@ -33,79 +34,96 @@ interface PermissionTemplateReference<TReference> {
     /**
      * Links a permission template, identified by the specified unique identifier, to the current entity.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the permission template to be linked.
      * @return An instance of [Either], containing either a [PermissionService.LinkTemplateError] indicating
      *         the error that occurred during the operation, or [Unit] upon successful linking.
      */
-    fun linkTemplate(id: UUID): Either<PermissionService.LinkTemplateError, Unit>
+    fun linkTemplate(actor: Actor, id: UUID): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
      * Links the specified permission template entity to the current entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PermissionTemplateEntity] instance representing the template to be linked.
      * @return An [Either] containing either a [PermissionService.LinkTemplateError] in case of a failure,
      *         or [Unit] upon successful linking.
      */
-    fun linkTemplate(entity: PermissionTemplateEntity): Either<PermissionService.LinkTemplateError, Unit>
+    fun linkTemplate(actor: Actor, entity: PermissionTemplateEntity): Either<PermissionService.LinkTemplateError, Unit>
 
     /**
      * Removes the link between a permission template, identified by the specified unique identifier,
      * and the current entity.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the permission template to be unlinked.
      * @return An instance of [Either], containing either a [PermissionService.UnlinkTemplateError]
      *         indicating the reason for failure, or [Unit] upon successful removal.
      */
-    fun unlinkTemplate(id: UUID): Either<PermissionService.UnlinkTemplateError, Unit>
+    fun unlinkTemplate(actor: Actor, id: UUID): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
      * Removes the link between the specified permission template entity and the current entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PermissionTemplateEntity] instance representing the template to be unlinked.
      * @return An [Either] containing a [PermissionService.UnlinkTemplateError] if the operation fails, or
      *         [Unit] if the removal was successful.
      */
-    fun unlinkTemplate(entity: PermissionTemplateEntity): Either<PermissionService.UnlinkTemplateError, Unit>
+    fun unlinkTemplate(
+        actor: Actor,
+        entity: PermissionTemplateEntity,
+    ): Either<PermissionService.UnlinkTemplateError, Unit>
 
     /**
      * Applies a permission template, identified by the specified unique identifier, to the current entity,
      * copying its permissions onto the entity immediately.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the permission template to be applied.
      * @return An instance of [Either], containing either a [PermissionService.ApplyTemplateError] indicating
      *         the error that occurred during the operation, or a [Boolean] indicating whether the template
      *         was applied successfully.
      */
-    fun applyTemplate(id: UUID): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplate(actor: Actor, id: UUID): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Applies the specified permission template entity to the current entity, copying its permissions
      * onto the entity immediately.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PermissionTemplateEntity] instance representing the template to be applied.
      * @return An [Either] containing either a [PermissionService.ApplyTemplateError] in case of a failure,
      *         or a [Boolean] indicating whether the template was applied successfully.
      */
-    fun applyTemplate(entity: PermissionTemplateEntity): Either<PermissionService.ApplyTemplateError, Boolean>
+    fun applyTemplate(
+        actor: Actor,
+        entity: PermissionTemplateEntity,
+    ): Either<PermissionService.ApplyTemplateError, Boolean>
 
     /**
      * Revokes a permission template, identified by the specified unique identifier, from the current entity,
      * undoing a previous [applyTemplate] operation.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the permission template to be revoked.
      * @return An instance of [Either], containing either a [PermissionService.RevokeTemplateError] indicating
      *         the error that occurred during the operation, or a [Boolean] indicating whether the template
      *         was revoked successfully.
      */
-    fun revokeTemplate(id: UUID): Either<PermissionService.RevokeTemplateError, Boolean>
+    fun revokeTemplate(actor: Actor, id: UUID): Either<PermissionService.RevokeTemplateError, Boolean>
 
     /**
      * Revokes the specified permission template entity from the current entity, undoing a previous
      * [applyTemplate] operation.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PermissionTemplateEntity] instance representing the template to be revoked.
      * @return An [Either] containing either a [PermissionService.RevokeTemplateError] in case of a failure,
      *         or a [Boolean] indicating whether the template was revoked successfully.
      */
-    fun revokeTemplate(entity: PermissionTemplateEntity): Either<PermissionService.RevokeTemplateError, Boolean>
+    fun revokeTemplate(
+        actor: Actor,
+        entity: PermissionTemplateEntity,
+    ): Either<PermissionService.RevokeTemplateError, Boolean>
 }

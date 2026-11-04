@@ -33,5 +33,18 @@ enum class DriverType {
      * It supports integration with specific messaging frameworks or platforms
      * through concrete implementations, such as Redis or plugin messaging systems.
      */
-    MESSAGING
+    MESSAGING,
+
+    /**
+     * Represents the NOTIFICATION driver type in the system.
+     *
+     * This driver type is designed for notification-related functionalities, such as
+     * sending alerts, updates, or user-facing messages. It can be utilized to construct
+     * or configure notification services that deliver information through various channels
+     * like email, SMS, or push notifications.
+     *
+     * Drivers of this type are intended to facilitate communication with end-users
+     * by providing a unified interface for managing notifications across multiple delivery mediums.
+     */
+    NOTIFICATION,
 }

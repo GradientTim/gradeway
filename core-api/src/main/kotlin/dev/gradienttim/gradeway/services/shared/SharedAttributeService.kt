@@ -21,48 +21,52 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     /**
      * Adds an attribute to an entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity to which the attribute will be added.
      * @param attribute The attribute to be added to the entity.
      * @return Either an error of type [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addAttribute(
+        actor: Actor,
         id: UUID,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity to which the attribute will be added.
      * @param attribute The attribute to be added to the entity.
      * @return Either an error of type [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addAttribute(
+        actor: Actor,
         entity: TEntity,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds an attribute to an entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity to which the attribute will be added.
      * @param attribute The attribute to be added to the entity.
      * @return Either an error of type [AttributeService.AddAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> addAttribute(
+        actor: Actor,
         idOrName: String,
         attribute: Attribute<TValue>,
-        actor: Actor? = null,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for a specific entity.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity whose attribute should be updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to assign to the attribute.
@@ -70,15 +74,16 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity whose attribute is to be updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to assign to the attribute.
@@ -86,15 +91,16 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateAttribute(
+        actor: Actor,
         entity: TEntity,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the value of an existing attribute for an entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity whose attribute should be updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to assign to the attribute.
@@ -102,88 +108,94 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
      *         or `true` if the update succeeds.
      */
     fun <TValue : Any> updateAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
         value: TValue,
-        actor: Actor? = null,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes an attribute identified by the given key from an entity specified by its unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity from which the attribute should be removed.
      * @param key The key identifying the attribute to be removed.
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute identified by the given key from the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity from which the attribute should be removed.
      * @param key The key identifying the attribute to be removed.
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeAttribute(
+        actor: Actor,
         entity: TEntity,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes an attribute identified by the given key from an entity specified by its unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity from which the attribute should be removed.
      * @param key The key identifying the attribute to be removed.
      * @return Either an error of type [AttributeService.RemoveAttributeError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun removeAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
-        actor: Actor? = null,
     ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Clears all attributes associated with the entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the entity whose attributes are to be cleared.
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearAttributes(
+        actor: Actor,
         id: UUID,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the specified entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The entity whose attributes are to be cleared.
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearAttributes(
+        actor: Actor,
         entity: TEntity,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the entity identified by the given unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the entity whose attributes are to be cleared.
      * @return Either an error of type [AttributeService.ClearAttributesError] if the operation fails,
      *         or `true` if the update succeeds.
      */
     fun clearAttributes(
+        actor: Actor,
         idOrName: String,
-        actor: Actor? = null,
     ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
@@ -196,7 +208,6 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun hasAttribute(
         id: UUID,
         key: Key,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -209,7 +220,6 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun hasAttribute(
         entity: TEntity,
         key: Key,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -222,7 +232,6 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun hasAttribute(
         idOrName: String,
         key: Key,
-        actor: Actor? = null,
     ): Boolean
 
     /**
@@ -235,7 +244,6 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun getAttribute(
         id: UUID,
         key: Key,
-        actor: Actor? = null,
     ): TAttributeEntity?
 
     /**
@@ -248,7 +256,6 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun getAttribute(
         entity: TEntity,
         key: Key,
-        actor: Actor? = null,
     ): TAttributeEntity?
 
     /**
@@ -261,6 +268,5 @@ interface SharedAttributeService<TEntity, TAttributeEntity> {
     fun getAttribute(
         idOrName: String,
         key: Key,
-        actor: Actor? = null,
     ): TAttributeEntity?
 }

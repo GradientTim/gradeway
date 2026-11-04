@@ -16,51 +16,51 @@ import java.util.*
 
 interface TrackPlayerService {
     fun promote(
+        actor: Actor,
         playerId: UUID,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     fun promote(
+        actor: Actor,
         playerId: UUID,
         trackId: TrackEntity,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     fun promote(
+        actor: Actor,
         playerId: PlayerEntity,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     fun promote(
+        actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<PromotePlayerError, Unit>
 
     fun demote(
+        actor: Actor,
         playerId: UUID,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     fun demote(
+        actor: Actor,
         playerId: UUID,
         trackId: TrackEntity,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     fun demote(
+        actor: Actor,
         playerId: PlayerEntity,
         trackId: UUID,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     fun demote(
+        actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-        actor: Actor? = null,
     ): Either<DemotePlayerError, Unit>
 
     fun findCurrentStage(playerId: UUID, trackId: UUID): TrackStageEntity?

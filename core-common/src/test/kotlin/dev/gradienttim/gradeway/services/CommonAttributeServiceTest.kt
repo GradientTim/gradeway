@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.services
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
@@ -26,22 +27,34 @@ class CommonAttributeServiceTest {
     }
 
     private fun uniquePlayer() =
-        gradeway.players.create(UUID.randomUUID(), "player-${UUID.randomUUID().toString().take(8)}")
+        gradeway.players.create(Actor.System, UUID.randomUUID(), "player-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
 
     @Test
     fun `clearing a player's attributes publishes a single general cleared payload`() {
-        val player = gradeway.players.create(UUID.randomUUID(), "player-${UUID.randomUUID().toString().take(8)}")
+        val player = gradeway.players.create(
+            Actor.System,
+            UUID.randomUUID(),
+            "player-${UUID.randomUUID().toString().take(8)}",
+        )
             .getOrElse { error(it.toString()) }
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(Key.key("gradeway:test-one"), "a"))
+        gradeway.attributes.addPlayerAttribute(
+            Actor.System,
+            player,
+            Attribute.string(Key.key("gradeway:test-one"), "a"),
+        )
             .getOrElse { error(it.toString()) }
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(Key.key("gradeway:test-two"), "b"))
+        gradeway.attributes.addPlayerAttribute(
+            Actor.System,
+            player,
+            Attribute.string(Key.key("gradeway:test-two"), "b"),
+        )
             .getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
         gradeway.messaging.subscribe { received.add(it) }
 
-        gradeway.attributes.clearPlayerAttributes(player).getOrElse { error(it.toString()) }
+        gradeway.attributes.clearPlayerAttributes(Actor.System, player).getOrElse { error(it.toString()) }
 
         assertEquals(
             listOf<MessagingPayload>(PlayerAttributesClearedPayload(player.id.value.toString())),
@@ -52,15 +65,23 @@ class CommonAttributeServiceTest {
 
     @Test
     fun `removing a single player attribute still publishes a per-key payload`() {
-        val player = gradeway.players.create(UUID.randomUUID(), "player-${UUID.randomUUID().toString().take(8)}")
+        val player = gradeway.players.create(
+            Actor.System,
+            UUID.randomUUID(),
+            "player-${UUID.randomUUID().toString().take(8)}",
+        )
             .getOrElse { error(it.toString()) }
         val key = Key.key("gradeway:test-single")
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(key, "a")).getOrElse { error(it.toString()) }
+        gradeway.attributes.addPlayerAttribute(
+            Actor.System,
+            player,
+            Attribute.string(key, "a"),
+        ).getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
         gradeway.messaging.subscribe { received.add(it) }
 
-        gradeway.attributes.removePlayerAttribute(player, key).getOrElse { error(it.toString()) }
+        gradeway.attributes.removePlayerAttribute(Actor.System, player, key).getOrElse { error(it.toString()) }
 
         assertEquals(1, received.size)
         val payload = received.single()
@@ -72,9 +93,13 @@ class CommonAttributeServiceTest {
     fun `addPlayerAttribute rejects a duplicate key`() {
         val player = uniquePlayer()
         val key = Key.key("gradeway:test-duplicate")
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(key, "a")).getOrElse { error(it.toString()) }
+        gradeway.attributes.addPlayerAttribute(
+            Actor.System,
+            player,
+            Attribute.string(key, "a"),
+        ).getOrElse { error(it.toString()) }
 
-        val result = gradeway.attributes.addPlayerAttribute(player, Attribute.string(key, "b"))
+        val result = gradeway.attributes.addPlayerAttribute(Actor.System, player, Attribute.string(key, "b"))
 
         assertEquals(AttributeService.AddAttributeError.AttributeAlreadyExists, result.leftOrNull())
     }
@@ -83,10 +108,10 @@ class CommonAttributeServiceTest {
     fun `updateAttribute round-trips the serialized value`() {
         val player = uniquePlayer()
         val key = Key.key("gradeway:test-update")
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(key, "before"))
+        gradeway.attributes.addPlayerAttribute(Actor.System, player, Attribute.string(key, "before"))
             .getOrElse { error(it.toString()) }
 
-        gradeway.attributes.updatePlayerAttribute(player, key, "after").getOrElse { error(it.toString()) }
+        gradeway.attributes.updatePlayerAttribute(Actor.System, player, key, "after").getOrElse { error(it.toString()) }
 
         assertEquals("after", gradeway.attributes.getPlayerAttribute(player, key)?.value)
     }
@@ -99,7 +124,7 @@ class CommonAttributeServiceTest {
         assertFalse(gradeway.attributes.hasPlayerAttribute(player, key))
         assertNull(gradeway.attributes.getPlayerAttribute(player, key))
 
-        gradeway.attributes.addPlayerAttribute(player, Attribute.string(key, "value"))
+        gradeway.attributes.addPlayerAttribute(Actor.System, player, Attribute.string(key, "value"))
             .getOrElse { error(it.toString()) }
 
         assertTrue(gradeway.attributes.hasPlayerAttribute(player, key))
@@ -110,7 +135,7 @@ class CommonAttributeServiceTest {
     fun `removeAttribute fails for a key that was never set`() {
         val player = uniquePlayer()
 
-        val result = gradeway.attributes.removePlayerAttribute(player, Key.key("gradeway:test-missing"))
+        val result = gradeway.attributes.removePlayerAttribute(Actor.System, player, Key.key("gradeway:test-missing"))
 
         assertEquals(AttributeService.RemoveAttributeError.AttributeNotExists, result.leftOrNull())
     }

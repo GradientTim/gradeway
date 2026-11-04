@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.permission
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
 import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.audit.Auditable
@@ -71,20 +72,25 @@ interface PermissionTemplateEntity : Auditable {
     /**
      * Updates the name of this permission template entity.
      *
+     * @param actor The actor performing the operation.
      * @param name The new name to assign to this template.
      * @return Either an error of type SetNameTemplateError if the update fails,
      *         or a Boolean indicating whether the update was successful.
      */
-    fun setName(name: String): Either<PermissionService.SetNameTemplateError, Boolean>
+    fun setName(actor: Actor, name: String): Either<PermissionService.SetNameTemplateError, Boolean>
 
     /**
      * Updates the assigned-to value of this permission template entity.
      *
+     * @param actor The actor performing the operation.
      * @param assignedTo The new assignment target to set for this template.
      * @return Either an error of type SetAssignedToTemplateError if the update fails,
      *         or a Boolean indicating whether the update was successful.
      */
-    fun setAssignedTo(assignedTo: AssignedTo): Either<PermissionService.SetAssignedToTemplateError, Boolean>
+    fun setAssignedTo(
+        actor: Actor,
+        assignedTo: AssignedTo,
+    ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
     /**
      * Represents the assignment target for a specific permission template entity.

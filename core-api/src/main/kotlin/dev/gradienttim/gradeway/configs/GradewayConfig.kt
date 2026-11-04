@@ -42,6 +42,11 @@ data class GradewayConfig(
         "The default role is selected with '/gradeway role default set <role>'."
     )
     val defaultRole: DefaultRoleConfig = DefaultRoleConfig(),
+
+    @TomlComments(
+        "Controls how changes are recorded in the audit log."
+    )
+    val auditLog: AuditLogConfig = AuditLogConfig(),
 ) : BaseConfig {
     @Serializable
     data class DefaultRoleConfig(
@@ -61,10 +66,19 @@ data class GradewayConfig(
 
     @Serializable
     data class AuditLogConfig(
+        @TomlComments(
+            "Controls whether changes are recorded in the audit log."
+        )
         val enabled: Boolean = true,
+
+        @TomlComments(
+            "Controls whether each recorded audit log entry also sends a notification.",
+            "Requires notifications to be enabled in drivers.toml."
+        )
+        val notify: Boolean = true,
     )
 
     companion object {
-        const val LATEST_VERSION: Int = 2
+        const val LATEST_VERSION: Int = 3
     }
 }

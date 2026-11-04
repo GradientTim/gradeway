@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.role
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
@@ -51,9 +52,16 @@ class DatabaseRoleParentEntity(id: EntityID<CompositeID>) : CompositeEntity(id),
         }
     }
 
+    override val target by lazy { Target.roleParent(childId.value, parentId.value) }
+
     override var parentId by RoleParentsTable.parentId
     override var childId by RoleParentsTable.childId
 
     override val parent by DatabaseRoleEntity referencedOn RoleParentsTable.parentId
     override val child by DatabaseRoleEntity referencedOn RoleParentsTable.childId
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("childId", childId.value.toString())
+        put("parentId", parentId.value.toString())
+    }
 }

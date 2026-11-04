@@ -10,9 +10,12 @@ import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
+import dev.gradienttim.gradeway.bukkit.platform.BukkitStores
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.paper.command.context.PaperCommandContext
+import dev.gradienttim.gradeway.paper.notification.PaperIngameNotificationPlatform
 import dev.gradienttim.gradeway.paper.platform.FoliaScheduler
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.ServerBuildInfo
@@ -22,8 +25,11 @@ import net.kyori.adventure.key.Key
 import org.bukkit.plugin.java.JavaPlugin
 
 class GradewayPlugin : JavaPlugin() {
-    val gradeway = CommonGradeway(
+    val gradeway: CommonGradeway<BukkitPlatformConfig> = CommonGradeway(
         logger = CommonLogger.fromSlf4jLogger(slF4JLogger),
+        stores = BukkitStores(
+            persistentNotifications = { gradeway.configs.platformEntry.config.notification.persistent },
+        ),
         scheduler = if (isFolia()) FoliaScheduler(this) else BukkitScheduler(this),
         directory = dataFolder.toPath(),
         defaultPlatformConfig = BukkitPlatformConfig(),
@@ -41,6 +47,12 @@ class GradewayPlugin : JavaPlugin() {
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
                     driver = PluginMessageDriver(this)
+                )
+
+                gradeway.drivers.registerDriver(
+                    id = IngameNotificationDriver.ID,
+                    type = DriverType.NOTIFICATION,
+                    driver = IngameNotificationDriver(PaperIngameNotificationPlatform(server))
                 )
 
                 gradeway.enable()

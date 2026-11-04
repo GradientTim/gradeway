@@ -56,6 +56,37 @@ sealed interface Actor : Typed {
         val z: Int,
     ) : Actor {
         override val type: String = "command_block"
-        override fun identifier(): String = "$world;$x:$y:$z"
+        override fun identifier(): String = "$world:$x:$y:$z"
+    }
+
+    data class CommandMinecart(
+        val entityId: Int,
+        val uniqueId: UUID,
+        val world: String,
+        val x: Int,
+        val y: Int,
+        val z: Int,
+    ) : Actor {
+        override val type: String = "command_minecart"
+        override fun identifier(): String = "$entityId:$uniqueId:$world:$x:$y:$z"
+    }
+
+    data class Rcon(
+        val address: String,
+    ) : Actor {
+        override val type: String = "rcon"
+        override fun identifier(): String = address
+    }
+
+    data class Entity(
+        val uniqueId: UUID,
+        val entityType: String,
+        val world: String,
+        val x: Int,
+        val y: Int,
+        val z: Int,
+    ) : Actor {
+        override val type: String = "entity"
+        override fun identifier(): String = "$uniqueId:$entityType:$world:$x:$y:$z"
     }
 }

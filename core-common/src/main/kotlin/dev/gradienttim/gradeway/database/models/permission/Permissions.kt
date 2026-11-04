@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.permission
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
@@ -41,6 +42,8 @@ class DatabasePermissionEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionE
         }
     }
 
+    override val target by lazy { Target.permission(id.value) }
+
     override var value: String
         get() = PermissionsTable.value.getValue(this, ::value)
         set(newValue) {
@@ -59,4 +62,10 @@ class DatabasePermissionEntity(id: EntityID<UUID>) : UUIDEntity(id), PermissionE
         }
 
     private var cachedRegex: Regex? = null
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("value", value)
+        put("type", type.name)
+    }
 }

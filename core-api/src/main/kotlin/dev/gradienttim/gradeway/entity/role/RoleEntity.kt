@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.role
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.reference.GroupReference
@@ -144,18 +145,20 @@ interface RoleEntity : Auditable, AttributeReference<RoleAttributeEntity>, Permi
     /**
      * Updates the name of the role.
      *
+     * @param actor The actor performing the operation.
      * @param name The new name to assign to the role.
      * @return An instance of [Either] containing [RoleService.SetNameError] if the update fails,
      *         or `true` if the update is successful.
      */
-    fun setName(name: String): Either<RoleService.SetNameError, Boolean>
+    fun setName(actor: Actor, name: String): Either<RoleService.SetNameError, Boolean>
 
     /**
      * Updates the weight of the role.
      *
+     * @param actor The actor performing the operation.
      * @param weight The new weight to assign to the role.
      * @return An instance of [Either] containing [RoleService.SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(weight: Int): Either<RoleService.SetWeightError, Boolean>
+    fun setWeight(actor: Actor, weight: Int): Either<RoleService.SetWeightError, Boolean>
 }

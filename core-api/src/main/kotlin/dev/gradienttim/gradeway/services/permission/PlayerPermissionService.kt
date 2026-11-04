@@ -22,6 +22,7 @@ interface PlayerPermissionService {
     /**
      * Sets a specific permission for a player, identified by their unique identifier, to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player.
      * @param permission The name of the permission to modify.
      * @param enabled Whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -29,15 +30,16 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermission(
+        actor: Actor,
         id: UUID,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a player, identified by their associated [PlayerEntity], to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PlayerEntity] representing the player for whom the permission is being modified.
      * @param permission The name of the permission to modify.
      * @param enabled A flag indicating whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -45,15 +47,16 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermission(
+        actor: Actor,
         entity: PlayerEntity,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a player, identified by their unique identifier or name, to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player.
      * @param permission The name of the permission to modify.
      * @param enabled Whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -61,15 +64,16 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
         enabled: Boolean = true,
-        actor: Actor? = null,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -77,14 +81,15 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermissions(
+        actor: Actor,
         id: UUID,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their associated [PlayerEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PlayerEntity] representing the player whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -92,14 +97,15 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermissions(
+        actor: Actor,
         entity: PlayerEntity,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a player, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -107,129 +113,138 @@ interface PlayerPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setPlayerPermissions(
+        actor: Actor,
         idOrName: String,
         permissions: Map<String, Boolean>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player from whom the permission will be revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermission(
+        actor: Actor,
         id: UUID,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their associated [PlayerEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PlayerEntity] representing the player whose permission is being revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermission(
+        actor: Actor,
         entity: PlayerEntity,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a player, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player from whom the permission will be revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
-        actor: Actor? = null,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
+        actor: Actor,
         id: UUID,
         permissions: Collection<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their associated [PlayerEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PlayerEntity] representing the player whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
+        actor: Actor,
         entity: PlayerEntity,
         permissions: Collection<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a player, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified player.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetPlayerPermissions(
+        actor: Actor,
         idOrName: String,
         permissions: Collection<String>,
-        actor: Actor? = null,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
     fun clearPlayerPermissions(
+        actor: Actor,
         id: UUID,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified player.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [PlayerEntity] representing the player whose permissions should be cleared.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
     fun clearPlayerPermissions(
+        actor: Actor,
         entity: PlayerEntity,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific player, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
     fun clearPlayerPermissions(
+        actor: Actor,
         idOrName: String,
-        actor: Actor? = null,
     ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**

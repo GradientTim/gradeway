@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.strategies
 
+import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
@@ -183,7 +184,10 @@ class LuckPermsMigrationStrategyTest {
 
     @Test
     fun `migrate wipes existing data before importing`() {
-        val preExistingRole = gradeway.roles.create("pre-existing-${UUID.randomUUID().toString().take(8)}")
+        val preExistingRole = gradeway.roles.create(
+            Actor.System,
+            "pre-existing-${UUID.randomUUID().toString().take(8)}",
+        )
             .getOrElse { error(it.toString()) }
 
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
@@ -194,7 +198,7 @@ class LuckPermsMigrationStrategyTest {
 
     @Test
     fun `migrate wipes existing tracks before importing`() {
-        val preExistingTrack = gradeway.tracks.createTrack("pre-${UUID.randomUUID().toString().take(8)}")
+        val preExistingTrack = gradeway.tracks.createTrack(Actor.System, "pre-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
 
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")

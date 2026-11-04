@@ -47,7 +47,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     val name = stringParam("name")
                     val actor = commandContext.sourceToActor(source)
 
-                    gradeway.roles.create(name, actor)
+                    gradeway.roles.create(actor, name)
                         .onLeft { error ->
                             if (error is CreateRoleError.EntityAlreadyExists) {
                                 commandContext.sendTranslatedMessage(
@@ -117,7 +117,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     }
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.roles.delete(role.id.value, actor)
+                        gradeway.roles.delete(actor, role.id.value)
                             .onLeft { error ->
                                 if (error is DeleteRoleError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
@@ -280,7 +280,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                         val idOrName = stringParam("idOrName")
                         val actor = commandContext.sourceToActor(source)
 
-                        gradeway.roles.setDefault(idOrName, actor)
+                        gradeway.roles.setDefault(actor, idOrName)
                             .onLeft { error ->
                                 if (error is SetDefaultError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
@@ -372,16 +372,17 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     gradeway = gradeway,
                     entityType = "role",
                     context = commandContext,
-                    handleAddAttribute = { idOrName, attribute -> gradeway.roles.addAttribute(idOrName, attribute) },
-                    handleUpdateAttribute = { idOrName, key, value ->
+                    handleAddAttribute = { actor, idOrName, attribute -> gradeway.roles.addAttribute(actor, idOrName, attribute) },
+                    handleUpdateAttribute = { actor, idOrName, key, value ->
                         gradeway.roles.updateAttribute(
+                            actor,
                             idOrName,
                             key,
                             value
                         )
                     },
-                    handleRemoveAttribute = { idOrName, key -> gradeway.roles.removeAttribute(idOrName, key) },
-                    handleClearAttributes = { idOrName -> gradeway.roles.clearAttributes(idOrName) },
+                    handleRemoveAttribute = { actor, idOrName, key -> gradeway.roles.removeAttribute(actor, idOrName, key) },
+                    handleClearAttributes = { actor, idOrName -> gradeway.roles.clearAttributes(actor, idOrName) },
                     handleListQuery = { scope, page, limit ->
                         RoleAttributesTable
                             .innerJoin(RolesTable, { roleId }, { id })
@@ -441,27 +442,28 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     gradeway = gradeway,
                     entityType = "role",
                     context = commandContext,
-                    handleSetPermission = { idOrName, permission, status ->
-                        gradeway.roles.setPermission(idOrName, permission, status)
+                    handleSetPermission = { actor, idOrName, permission, status ->
+                        gradeway.roles.setPermission(actor, idOrName, permission, status)
                     },
-                    handleUnsetPermission = { idOrName, permission ->
+                    handleUnsetPermission = { actor, idOrName, permission ->
                         gradeway.roles.unsetPermission(
+                            actor,
                             idOrName,
                             permission
                         )
                     },
-                    handleClearPermissions = { idOrName -> gradeway.roles.clearPermissions(idOrName) },
-                    handleLinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.linkTemplateToRole(templateIdOrName, idOrName).map { }
+                    handleClearPermissions = { actor, idOrName -> gradeway.roles.clearPermissions(actor, idOrName) },
+                    handleLinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.linkTemplateToRole(actor, templateIdOrName, idOrName).map { }
                     },
-                    handleUnlinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.unlinkTemplateFromRole(templateIdOrName, idOrName)
+                    handleUnlinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.unlinkTemplateFromRole(actor, templateIdOrName, idOrName)
                     },
-                    handleApplyTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.applyTemplateToRole(templateIdOrName, idOrName)
+                    handleApplyTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.applyTemplateToRole(actor, templateIdOrName, idOrName)
                     },
-                    handleRevokeTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.revokeTemplateFromRole(templateIdOrName, idOrName)
+                    handleRevokeTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.revokeTemplateFromRole(actor, templateIdOrName, idOrName)
                     },
                     handleListQuery = { scope, page, limit ->
                         RolePermissionsTable
@@ -521,10 +523,11 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     string("name") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val name = stringParam("name")
 
-                            gradeway.roles.setName(idOrName, name)
+                            gradeway.roles.setName(actor, idOrName, name)
                                 .onLeft { error ->
                                     if (error is SetNameError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
@@ -601,10 +604,11 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     boolean("isDefault") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val isDefault = booleanParam("isDefault")
 
-                            gradeway.roles.setDefaultFlag(idOrName, isDefault)
+                            gradeway.roles.setDefaultFlag(actor, idOrName, isDefault)
                                 .onLeft { error ->
                                     if (error is SetDefaultFlagError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
@@ -671,10 +675,11 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     integer("value") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val weight = intParam("value")
 
-                            gradeway.roles.setWeight(idOrName, weight)
+                            gradeway.roles.setWeight(actor, idOrName, weight)
                                 .onLeft { error ->
                                     if (error is SetWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
@@ -797,8 +802,8 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerRoleRel
         relationKey = "Parent",
         targetKey = "parent",
         context = context,
-        handleAdd = { idOrName, parentId -> gradeway.roles.addParent(idOrName, parentId) },
-        handleRemove = { idOrName, parentId -> gradeway.roles.removeParent(idOrName, parentId) },
+        handleAdd = { actor, idOrName, parentId -> gradeway.roles.addParent(actor, idOrName, parentId) },
+        handleRemove = { actor, idOrName, parentId -> gradeway.roles.removeParent(actor, idOrName, parentId) },
         handleListQuery = { scope, page, limit ->
             val childRole = RolesTable.alias("child_role")
             val parentRole = RolesTable.alias("parent_role")
@@ -852,8 +857,8 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerRoleRel
         relationKey = "Child",
         targetKey = "child",
         context = context,
-        handleAdd = { idOrName, childId -> gradeway.roles.addChild(idOrName, childId) },
-        handleRemove = { idOrName, childId -> gradeway.roles.removeChild(idOrName, childId) },
+        handleAdd = { actor, idOrName, childId -> gradeway.roles.addChild(actor, idOrName, childId) },
+        handleRemove = { actor, idOrName, childId -> gradeway.roles.removeChild(actor, idOrName, childId) },
         handleListQuery = { scope, page, limit ->
             val parentRole = RolesTable.alias("parent_role")
             val childRole = RolesTable.alias("child_role")

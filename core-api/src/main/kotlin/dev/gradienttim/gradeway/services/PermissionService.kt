@@ -26,82 +26,89 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     /**
      * Creates a new permission entity with the given value and type.
      *
+     * @param actor The actor performing the operation.
      * @param value The string value representing the permission.
      * @param type The type of the permission. Defaults to `PermissionEntity.Type.EQUALS`.
      * @return Either a `CreatePermissionError` if the creation fails, or the created `PermissionEntity`.
      */
     fun createPermission(
+        actor: Actor,
         value: String,
         type: PermissionEntity.Type = PermissionEntity.Type.EQUALS,
-        actor: Actor? = null,
     ): Either<CreatePermissionError, PermissionEntity>
 
     /**
      * Deletes a permission entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
     fun deletePermission(
+        actor: Actor,
         id: UUID,
-        actor: Actor? = null,
     ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes the given permission entity from the system.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
     fun deletePermission(
+        actor: Actor,
         entity: PermissionEntity,
-        actor: Actor? = null,
     ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes a permission entity identified by the provided string, which can represent either the
      * unique identifier (UUID) of the entity or its value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue The unique identifier (UUID) or the value associated with the permission entity to be deleted.
      * @return Either a [DeletePermissionError] if the deletion fails or [Unit] if the operation succeeds.
      */
     fun deletePermission(
+        actor: Actor,
         idOrValue: String,
-        actor: Actor? = null,
     ): Either<DeletePermissionError, Unit>
 
     /**
      * Updates the value of a permission entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity to be updated.
      * @param value The new value to be set for the permission entity.
      * @return Either an [UpdatePermissionValueError] if the update operation fails, or a [Boolean] indicating
      *         success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionValue(
+        actor: Actor,
         id: UUID,
         value: String,
-        actor: Actor? = null,
     ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of the given permission entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity whose value is to be updated.
      * @param value The new value to assign to the permission entity.
      * @return Either an [UpdatePermissionValueError] if the update operation fails,
      *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionValue(
+        actor: Actor,
         entity: PermissionEntity,
         value: String,
-        actor: Actor? = null,
     ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of a permission entity identified by either its unique identifier (UUID)
      * or its current value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue A string representing either the unique identifier (UUID) or the current
      *                  value of the permission entity to be updated.
      * @param value The new value to set for the permission entity.
@@ -109,43 +116,46 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      *         [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionValue(
+        actor: Actor,
         idOrValue: String,
         value: String,
-        actor: Actor? = null,
     ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the type of permission entity identified by the given unique identifier (UUID).
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
      * @return Either an [UpdatePermissionTypeError] if the update operation fails, or a [Boolean]
      *         indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionType(
+        actor: Actor,
         id: UUID,
         type: PermissionEntity.Type,
-        actor: Actor? = null,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
      * Updates the type of the given permission entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
      * @return Either an [UpdatePermissionTypeError] if the update operation fails,
      *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionType(
+        actor: Actor,
         entity: PermissionEntity,
         type: PermissionEntity.Type,
-        actor: Actor? = null,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
      * Updates the type of permission entity identified by either its unique identifier (UUID)
      * or its current value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue A string representing either the unique identifier (UUID) or the current
      *                  value of the permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
@@ -153,9 +163,9 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      *         indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionType(
+        actor: Actor,
         idOrValue: String,
         type: PermissionEntity.Type,
-        actor: Actor? = null,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
