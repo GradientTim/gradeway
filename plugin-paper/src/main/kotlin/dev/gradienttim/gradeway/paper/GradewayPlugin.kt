@@ -17,6 +17,7 @@ import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDr
 import dev.gradienttim.gradeway.paper.command.context.PaperCommandContext
 import dev.gradienttim.gradeway.paper.notification.PaperIngameNotificationPlatform
 import dev.gradienttim.gradeway.paper.platform.FoliaScheduler
+import dev.gradienttim.gradeway.paper.platform.PaperKnownPermissionSource
 import dev.gradienttim.gradeway.platform.CommonLogger
 import io.papermc.paper.ServerBuildInfo
 import io.papermc.paper.command.brigadier.Commands
@@ -35,6 +36,7 @@ class GradewayPlugin : JavaPlugin() {
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
         events = BukkitEventManager(this),
+        knownPermissionSource = PaperKnownPermissionSource(server),
     )
 
     override fun onEnable() {

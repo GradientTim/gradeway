@@ -78,6 +78,8 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
             requires { commandContext.hasPermission(it, "gradeway.permission.add") }
 
             string("value") {
+                suggestKnownPermissions(gradeway, includeStored = false)
+
                 execute {
                     val value = stringParam("value")
 
@@ -113,6 +115,8 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
             requires { commandContext.hasPermission(it, "gradeway.permission.remove") }
 
             string("idOrValue") {
+                suggestPermissions(gradeway)
+
                 execute {
                     val actor = commandContext.sourceToActor(source)
                     val idOrValue = stringParam("idOrValue")

@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.commands.extensions
 import com.mojang.brigadier.LiteralMessage
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.suggest
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import java.util.*
 
@@ -75,4 +76,23 @@ internal fun <C, T> RequiredArgumentBuilder<C, T>.suggestStrings(values: () -> C
         values()
             .filter { it.lowercase().startsWith(remaining) }
             .associateWith { null }
+    }
+
+internal fun <C, T> RequiredArgumentBuilder<C, T>.suggestKnownPermissions(
+    gradeway: CommonGradeway<*>,
+    includeStored: Boolean = true,
+) =
+    suggests { _, builder ->
+        val remaining = builder.remaining
+        val stored = gradeway.caches.suggestions.permissions.values.toSet()
+        val known = gradeway.knownPermissions.registry.asSequence()
+
+        val permissions = if (includeStored) stored.asSequence() + known else known.filterNot { it in stored }
+
+        permissions
+            .distinct()
+            .filter { it.startsWith(remaining) }
+            .forEach { builder.suggest(it) }
+
+        builder.buildFuture()
     }

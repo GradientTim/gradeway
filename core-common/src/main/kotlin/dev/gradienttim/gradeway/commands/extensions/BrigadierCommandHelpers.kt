@@ -8,8 +8,8 @@ import arrow.core.Either
 import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
-import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.attribute.AttributeType
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
@@ -462,6 +462,8 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
             requires { context.hasPermission(it, "gradeway.$entityType.permissions.set") }
 
             string("permission") {
+                suggestKnownPermissions(gradeway)
+
                 execute {
                     val idOrName = stringParam("idOrName")
                     val permission = stringParam("permission")

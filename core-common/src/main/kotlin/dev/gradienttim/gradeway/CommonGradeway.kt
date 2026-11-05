@@ -43,6 +43,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val defaultPlatformConfig: TPlatformConfig,
     override val platformConfigSerializer: KSerializer<TPlatformConfig>,
     override val events: EventManager,
+    private val knownPermissionSource: KnownPermissionSource,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override var state: GradewayState = GradewayState.UNLOADED
@@ -57,6 +58,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val roles: RoleService by inject()
     override val logs: LogService by inject()
 
+    override val knownPermissions: KnownPermissionsManager by inject()
     override val notifications: NotificationManager by inject()
     override val confirmations: ConfirmationManager by inject()
     override val migrations: MigrationManager by inject()
@@ -106,6 +108,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
 
         caches.invalidateAll()
 
+        knownPermissions.unload().bind()
         messaging.unload().bind()
         languages.unload().bind()
         drivers.unload().bind()
@@ -137,6 +140,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         notifications.enable().bind()
 
         caches.suggestions.initialize()
+        knownPermissions.seed(knownPermissionSource.collect())
 
         expiredRoleSweepTask = scheduler.runTaskTimer(
             interval = ScheduleConstants.EXPIRED_ROLE_SWEEP_INTERVAL_SECONDS,
@@ -183,6 +187,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
             },
 
             module {
+                single<KnownPermissionsManager> { CommonKnownPermissionManager() }
                 single<NotificationManager> { CommonNotificationManager(gradeway) }
                 single<ConfirmationManager> { CommonConfirmationManager(gradeway) }
                 // createdAtStart: the migrate command looks strategies up in MigrationStrategyRegistry directly,

@@ -13,6 +13,7 @@ import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.notification.SpigotIngameNotificationPlatform
+import dev.gradienttim.gradeway.bukkit.platform.BukkitKnownPermissionSource
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.bukkit.platform.BukkitStores
 import dev.gradienttim.gradeway.commands.createGradewayCommand
@@ -43,7 +44,8 @@ class GradewayBukkitInstance(
             directory = directory,
             defaultPlatformConfig = BukkitPlatformConfig(),
             platformConfigSerializer = BukkitPlatformConfig.serializer(),
-            events = BukkitEventManager(plugin)
+            events = BukkitEventManager(plugin),
+            knownPermissionSource = BukkitKnownPermissionSource(plugin.server),
         )
 
         gradeway.load()

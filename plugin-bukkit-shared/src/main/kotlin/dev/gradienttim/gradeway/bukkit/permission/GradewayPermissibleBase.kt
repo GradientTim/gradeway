@@ -19,6 +19,8 @@ class GradewayPermissibleBase(
     override fun hasPermission(perm: Permission): Boolean = this.hasPermission(perm.name)
 
     override fun hasPermission(inName: String): Boolean {
+        gradeway?.knownPermissions?.record(inName)
+
         val playerId = player?.uniqueId ?: return false
         val gradeway = gradeway ?: return super.hasPermission(inName)
         return gradeway.permissions.hasEffectivePlayerPermission(playerId, inName)

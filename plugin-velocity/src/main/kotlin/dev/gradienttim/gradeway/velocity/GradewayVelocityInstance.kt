@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import dev.gradienttim.gradeway.velocity.command.context.VelocityCommandContext
 import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
@@ -40,6 +41,7 @@ class GradewayVelocityInstance(
             defaultPlatformConfig = VelocityPlatformConfig(),
             platformConfigSerializer = VelocityPlatformConfig.serializer(),
             events = VelocityEventManager(plugin),
+            knownPermissionSource = KnownPermissionSource.NONE,
         )
 
         gradeway.load()

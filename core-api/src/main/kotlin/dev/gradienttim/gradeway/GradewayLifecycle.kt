@@ -136,6 +136,15 @@ interface GradewayLifecycle<TPlatformConfig : PlatformConfig> : Gradeway<TPlatfo
     val directory: Path
 
     /**
+     * Manages the set of permission identifiers known to the Gradeway lifecycle.
+     *
+     * This manager is used to seed and record permissions discovered or registered by
+     * the platform, allowing the system to maintain a centralized registry of recognized
+     * permission keys across services and lifecycle operations.
+     */
+    val knownPermissions: KnownPermissionsManager
+
+    /**
      * Manages and dispatches notification logs within the Gradeway system.
      *
      * This property provides an instance of [NotificationManager], which allows for
