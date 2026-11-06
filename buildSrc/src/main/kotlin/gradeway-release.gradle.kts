@@ -1,4 +1,4 @@
-import gradle.kotlin.dsl.accessors._7efdda50f9f959eb80d21b302d04c803.shadowJar
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("com.modrinth.minotaur")
@@ -21,6 +21,8 @@ val modrinthToken = findProperty("gradeway.modrinth.token") as? String
 
 val readMeContent = rootProject.file("README.md").readText()
 
+val shadowJarFile = tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile }
+
 // the mappings for Modrinth loader types
 val moduleLoaders = when (project.name) {
     "plugin-bukkit" -> listOf("bukkit", "spigot")
@@ -42,7 +44,7 @@ if (modrinthToken != null) {
         versionType.set("release")
         versionNumber.set(moduleVersion)
 
-        uploadFile.set(tasks.shadowJar.flatMap { it.archiveFile })
+        uploadFile.set(shadowJarFile)
         syncBodyFrom = readMeContent
 
         loaders.addAll(moduleLoaders)
@@ -66,7 +68,7 @@ if (hangarSupported) {
             platforms {
                 if (project.name == "plugin-paper") {
                     paper {
-                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        jar = shadowJarFile
                         platformVersions.addAll(*supportedMinecraftVersions)
                     }
                 }
@@ -74,7 +76,7 @@ if (hangarSupported) {
 //                TODO: check which versions are accepted.
 //                if (project.name == "plugin-velocity") {
 //                    velocity {
-//                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+//                        jar = shadowJarFile
 //                        platformVersions.addAll(*supportedMinecraftVersions)
 //                    }
 //                }
