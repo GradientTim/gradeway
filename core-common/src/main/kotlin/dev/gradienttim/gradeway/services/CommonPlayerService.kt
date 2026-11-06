@@ -19,11 +19,14 @@ import dev.gradienttim.gradeway.database.models.player.PlayersTable
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.player.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.platform.CommonCaches
+import dev.gradienttim.gradeway.spec.PlayerCreateSpec
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -43,15 +46,22 @@ class CommonPlayerService(
         actor: Actor,
         id: UUID,
         name: String,
+        builder: PlayerCreateSpec.() -> Unit,
     ): Either<PlayerService.CreatePlayerError, DatabasePlayerEntity> = gradeway.audited(actor) { audit ->
-        if (!name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
+        val spec = PlayerCreateSpec(id, name).apply(builder)
+        fireCancellable(gradeway, PlayerCreateEvent(actor, spec), PlayerService.CreatePlayerError.Cancelled)
+        if (!spec.name.isNameValid(TableConstants.PLAYERS_TABLE_MAX_NAME_LENGTH)) {
             raise(PlayerService.CreatePlayerError.InvalidName)
         }
         try {
             transaction(gradeway.database) {
                 DatabasePlayerEntity.new(id) {
-                    this.name = name
-                }.also { audit.created(it) }
+                    this.name = spec.name
+                    this.weight = spec.weight
+                }.also {
+                    audit.created(it)
+                    audit.emit(PlayerCreatedEvent(actor, it.id.value, it.name, it.weight))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -66,9 +76,11 @@ class CommonPlayerService(
         id: UUID,
     ): Either<PlayerService.DeletePlayerError, Unit> = gradeway.audited(actor) { audit ->
         val entity = findById(id) ?: raise(PlayerService.DeletePlayerError.EntityNotFound)
+        fireCancellable(gradeway, PlayerDeleteEvent(actor, entity), PlayerService.DeletePlayerError.Cancelled)
         try {
             transaction(gradeway.database) {
                 audit.deleted(entity)
+                audit.emit(PlayerDeletedEvent(actor, entity.id.value, entity.name))
                 entity.delete()
             }
         } catch (throwable: Throwable) {
@@ -97,9 +109,11 @@ class CommonPlayerService(
             val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
             raise(PlayerService.SetNameError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, PlayerRenameEvent(actor, entity, name), PlayerService.SetNameError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(PlayerRenamedEvent(actor, entity.id.value, entity.name, name))
                 entity.name = name
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -128,9 +142,15 @@ class CommonPlayerService(
             val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
             raise(PlayerService.SetWeightError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PlayerWeightChangeEvent(actor, entity, weight),
+            PlayerService.SetWeightError.Cancelled,
+        )
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(PlayerWeightChangedEvent(actor, entity.id.value, entity.weight, weight))
                 entity.weight = weight
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -290,6 +310,7 @@ class CommonPlayerService(
         if (until != null && until < gradeway.now()) {
             raise(PlayerService.AddRoleError.UntilInPast)
         }
+        fireCancellable(gradeway, PlayerRoleAddEvent(actor, player, role, until), PlayerService.AddRoleError.Cancelled)
 
         try {
             transaction(gradeway.database) {
@@ -297,7 +318,10 @@ class CommonPlayerService(
                     this.roleId = role.id
                     this.playerId = player.id
                     this.untilAt = until
-                }.also { audit.created(it) }
+                }.also {
+                    audit.created(it)
+                    audit.emit(PlayerRoleAddedEvent(actor, player.id.value, role.id.value, until))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -375,8 +399,14 @@ class CommonPlayerService(
                 val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
                 raise(PlayerService.RemoveRoleError.Unexpected(throwable))
             }
+            fireCancellable(
+                gradeway,
+                PlayerRoleRemoveEvent(actor, player, role),
+                PlayerService.RemoveRoleError.Cancelled,
+            )
             try {
                 audit.deleted(playerRoleEntity)
+                audit.emit(PlayerRoleRemovedEvent(actor, player.id.value, role.id.value))
                 playerRoleEntity.delete()
             } catch (throwable: Throwable) {
                 raise(PlayerService.RemoveRoleError.Unexpected(throwable))
@@ -458,9 +488,18 @@ class CommonPlayerService(
                 val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
                 raise(PlayerService.SetRoleUntilAtError.Unexpected(throwable))
             }
+            fireCancellable(
+                gradeway,
+                PlayerRoleExpiryChangeEvent(actor, player, role, untilAt),
+                PlayerService.SetRoleUntilAtError.Cancelled,
+            )
             try {
                 val before = playerRoleEntity.snapshot()
+                val previousUntilAt = playerRoleEntity.untilAt
                 playerRoleEntity.untilAt = untilAt
+                audit.emit(
+                    PlayerRoleExpiryChangedEvent(actor, player.id.value, role.id.value, previousUntilAt, untilAt)
+                )
                 playerRoleEntity.flush()
                 audit.updated(playerRoleEntity, before)
             } catch (throwable: Throwable) {
@@ -545,9 +584,15 @@ class CommonPlayerService(
                 val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
                 raise(PlayerService.SetRolePausedAtError.Unexpected(throwable))
             }
+            fireCancellable(
+                gradeway,
+                PlayerRolePauseEvent(actor, player, role, pausedAt),
+                PlayerService.SetRolePausedAtError.Cancelled,
+            )
             try {
                 val before = playerRoleEntity.snapshot()
                 playerRoleEntity.pausedAt = pausedAt
+                audit.emit(PlayerRolePausedEvent(actor, player.id.value, role.id.value, pausedAt))
                 playerRoleEntity.flush()
                 audit.updated(playerRoleEntity, before)
             } catch (throwable: Throwable) {
@@ -627,9 +672,16 @@ class CommonPlayerService(
                 val throwable = Throwable("Entity is not a type of DatabasePlayerRoleEntity")
                 raise(PlayerService.PauseRoleError.Unexpected(throwable))
             }
+            val pausedAt = gradeway.now()
+            fireCancellable(
+                gradeway,
+                PlayerRolePauseEvent(actor, player, role, pausedAt),
+                PlayerService.PauseRoleError.Cancelled,
+            )
             try {
                 val before = playerRoleEntity.snapshot()
-                playerRoleEntity.pausedAt = gradeway.now()
+                playerRoleEntity.pausedAt = pausedAt
+                audit.emit(PlayerRolePausedEvent(actor, player.id.value, role.id.value, pausedAt))
                 playerRoleEntity.flush()
                 audit.updated(playerRoleEntity, before)
             } catch (throwable: Throwable) {
@@ -708,6 +760,12 @@ class CommonPlayerService(
                 raise(PlayerService.ResumeRoleError.Unexpected(throwable))
             }
 
+            fireCancellable(
+                gradeway,
+                PlayerRoleResumeEvent(actor, player, role),
+                PlayerService.ResumeRoleError.Cancelled,
+            )
+
             try {
                 val before = playerRoleEntity.snapshot()
                 val untilAt = playerRoleEntity.untilAt
@@ -715,6 +773,7 @@ class CommonPlayerService(
                     playerRoleEntity.untilAt = untilAt + Duration.between(pausedAt, gradeway.now())
                 }
                 playerRoleEntity.pausedAt = null
+                audit.emit(PlayerRoleResumedEvent(actor, player.id.value, role.id.value, playerRoleEntity.untilAt))
                 playerRoleEntity.flush()
                 audit.updated(playerRoleEntity, before)
             } catch (throwable: Throwable) {
@@ -788,10 +847,18 @@ class CommonPlayerService(
             val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
             raise(PlayerService.SetPrimaryRoleError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PlayerPrimaryRoleChangeEvent(actor, player, role),
+            PlayerService.SetPrimaryRoleError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = player.snapshot()
+                audit.emit(
+                    PlayerPrimaryRoleChangedEvent(actor, player.id.value, player.primaryRoleId?.value, role.id.value)
+                )
                 player.primaryRoleId = role.id
                 player.flush()
                 audit.updated(player, before)
@@ -839,10 +906,16 @@ class CommonPlayerService(
             val throwable = Throwable("Entity is not a type of DatabasePlayerEntity")
             raise(PlayerService.ClearPrimaryRoleError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PlayerPrimaryRoleChangeEvent(actor, player, null),
+            PlayerService.ClearPrimaryRoleError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = player.snapshot()
+                audit.emit(PlayerPrimaryRoleChangedEvent(actor, player.id.value, player.primaryRoleId?.value, null))
                 player.primaryRoleId = null
                 player.flush()
                 audit.updated(player, before)
@@ -869,11 +942,17 @@ class CommonPlayerService(
         val role = gradeway.roles.getDefaultRole() ?: return@either null
 
         addRole(actor, player, role).onLeft { error ->
+            if (error is PlayerService.AddRoleError.Cancelled) {
+                raise(PlayerService.ApplyDefaultRoleError.Cancelled)
+            }
             if (error !is PlayerService.AddRoleError.AlreadyExists) {
                 raise(PlayerService.ApplyDefaultRoleError.Unexpected(defaultRoleFailure("add", role, error)))
             }
         }
         setPrimaryRole(actor, player, role).onLeft { error ->
+            if (error is PlayerService.SetPrimaryRoleError.Cancelled) {
+                raise(PlayerService.ApplyDefaultRoleError.Cancelled)
+            }
             if (error !is PlayerService.SetPrimaryRoleError.AlreadyPrimary) {
                 raise(PlayerService.ApplyDefaultRoleError.Unexpected(defaultRoleFailure("set primary", role, error)))
             }
@@ -897,10 +976,11 @@ class CommonPlayerService(
 
     /**
      * Deletes the given already-expired player-role rows and returns the `(playerId, role)` pair for
-     * each one removed. Single choke point for physically removing expired role assignments, so a
-     * future "player lost role" event dispatch only needs to be wired in here.
+     * each one removed. Single choke point for physically removing expired role assignments, which
+     * emits a [PlayerRoleExpiredEvent] for each of them.
      */
     private fun deleteExpiredPlayerRoleRows(
+        actor: Actor,
         audit: AuditRecorder,
         rows: List<DatabasePlayerRoleEntity>
     ): List<Pair<UUID, RoleEntity>> {
@@ -908,6 +988,9 @@ class CommonPlayerService(
             val playerId = playerRoleEntity.playerId.value
             val role = playerRoleEntity.role
             audit.deleted(playerRoleEntity)
+            audit.emit(
+                PlayerRoleExpiredEvent(actor, playerId, role.id.value, playerRoleEntity.untilAt ?: gradeway.now())
+            )
             playerRoleEntity.delete()
 
             gradeway.messaging.publish(
@@ -936,7 +1019,7 @@ class CommonPlayerService(
                 .filterIsInstance<DatabasePlayerRoleEntity>()
 
             try {
-                deleteExpiredPlayerRoleRows(audit, expiredPlayerRoleEntities).map { it.second }
+                deleteExpiredPlayerRoleRows(actor, audit, expiredPlayerRoleEntities).map { it.second }
             } catch (throwable: Throwable) {
                 raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
             }
@@ -967,7 +1050,7 @@ class CommonPlayerService(
             }.toList()
 
             try {
-                deleteExpiredPlayerRoleRows(audit, expiredPlayerRoleEntities)
+                deleteExpiredPlayerRoleRows(actor, audit, expiredPlayerRoleEntities)
             } catch (throwable: Throwable) {
                 raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
             }
@@ -984,7 +1067,7 @@ class CommonPlayerService(
                 }.toList()
 
                 try {
-                    deleteExpiredPlayerRoleRows(audit, expiredPlayerRoleEntities)
+                    deleteExpiredPlayerRoleRows(actor, audit, expiredPlayerRoleEntities)
                 } catch (throwable: Throwable) {
                     raise(PlayerService.RemoveExpiredRolesError.Unexpected(throwable))
                 }

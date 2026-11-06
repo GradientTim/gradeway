@@ -18,10 +18,13 @@ import dev.gradienttim.gradeway.database.models.role.DatabaseRoleParentEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.role.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
+import dev.gradienttim.gradeway.spec.RoleCreateSpec
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -32,7 +35,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import java.util.*
 
-@Suppress("TooManyFunctions")
+@Suppress("LargeClass", "TooManyFunctions")
 class CommonRoleService(
     val gradeway: CommonGradeway<*>
 ) : RoleService {
@@ -43,15 +46,23 @@ class CommonRoleService(
     override fun create(
         actor: Actor,
         name: String,
+        builder: RoleCreateSpec.() -> Unit,
     ): Either<RoleService.CreateRoleError, DatabaseRoleEntity> = gradeway.audited(actor) { audit ->
-        if (!name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
+        val spec = RoleCreateSpec(name).apply(builder)
+        fireCancellable(gradeway, RoleCreateEvent(actor, spec), RoleService.CreateRoleError.Cancelled)
+        if (!spec.name.isNameValid(TableConstants.ROLES_TABLE_MAX_NAME_LENGTH)) {
             raise(RoleService.CreateRoleError.InvalidName)
         }
         try {
             transaction(gradeway.database) {
                 DatabaseRoleEntity.new {
-                    this.name = name
-                }.also { audit.created(it) }
+                    this.name = spec.name
+                    this.weight = spec.weight
+                    this.isDefault = spec.isDefault
+                }.also {
+                    audit.created(it)
+                    audit.emit(RoleCreatedEvent(actor, it.id.value, it.name, it.weight, it.isDefault))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -66,9 +77,11 @@ class CommonRoleService(
         id: UUID,
     ): Either<RoleService.DeleteRoleError, Unit> = gradeway.audited(actor) { audit ->
         val entity = findById(id) ?: raise(RoleService.DeleteRoleError.EntityNotFound)
+        fireCancellable(gradeway, RoleDeleteEvent(actor, entity), RoleService.DeleteRoleError.Cancelled)
         try {
             transaction(gradeway.database) {
                 audit.deleted(entity)
+                audit.emit(RoleDeletedEvent(actor, entity.id.value, entity.name))
                 entity.delete()
             }
         } catch (throwable: Throwable) {
@@ -100,9 +113,11 @@ class CommonRoleService(
             val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
             raise(RoleService.SetNameError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, RoleRenameEvent(actor, entity, name), RoleService.SetNameError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(RoleRenamedEvent(actor, entity.id.value, entity.name, name))
                 entity.name = name
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -143,9 +158,11 @@ class CommonRoleService(
             val throwable = Throwable("Entity is not a type of DatabaseRoleEntity")
             raise(RoleService.SetWeightError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, RoleWeightChangeEvent(actor, entity, weight), RoleService.SetWeightError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(RoleWeightChangedEvent(actor, entity.id.value, entity.weight, weight))
                 entity.weight = weight
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -275,8 +292,13 @@ class CommonRoleService(
                 if (current == isDefault) {
                     raise(RoleService.SetDefaultFlagError.FlagAlreadySet)
                 }
+                fireCancellable(
+                    gradeway,
+                    RoleDefaultChangeEvent(actor, role, isDefault, exclusive = false),
+                    RoleService.SetDefaultFlagError.Cancelled,
+                )
 
-                auditDefaultChanges(audit, RolesTable.id eq role.id.value) {
+                auditDefaultChanges(actor, audit, RolesTable.id eq role.id.value) {
                     RolesTable.update({ RolesTable.id eq role.id.value }) { it[this.isDefault] = isDefault }
                 }
             }
@@ -307,9 +329,14 @@ class CommonRoleService(
                 if (defaultRoleIds == listOf(role.id.value)) {
                     raise(RoleService.SetDefaultError.AlreadyDefault)
                 }
+                fireCancellable(
+                    gradeway,
+                    RoleDefaultChangeEvent(actor, role, isDefault = true, exclusive = true),
+                    RoleService.SetDefaultError.Cancelled,
+                )
 
                 val affected = (RolesTable.isDefault eq true) or (RolesTable.id eq role.id.value)
-                auditDefaultChanges(audit, affected) {
+                auditDefaultChanges(actor, audit, affected) {
                     RolesTable.update({ RolesTable.isDefault eq true }) { it[isDefault] = false }
                     val updated = RolesTable.update({ RolesTable.id eq role.id.value }) { it[isDefault] = true }
                     if (updated == 0) {
@@ -335,7 +362,16 @@ class CommonRoleService(
     ): Either<RoleService.ClearDefaultError, Unit> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
-                auditDefaultChanges(audit, RolesTable.isDefault eq true) {
+                if (RolesTable.select(RolesTable.id).where { RolesTable.isDefault eq true }.empty()) {
+                    raise(RoleService.ClearDefaultError.NoDefaultRole)
+                }
+                fireCancellable(
+                    gradeway,
+                    RoleDefaultChangeEvent(actor, null, isDefault = false, exclusive = true),
+                    RoleService.ClearDefaultError.Cancelled,
+                )
+
+                auditDefaultChanges(actor, audit, RolesTable.isDefault eq true) {
                     val cleared = RolesTable.update({ RolesTable.isDefault eq true }) { it[isDefault] = false }
                     if (cleared == 0) {
                         raise(RoleService.ClearDefaultError.NoDefaultRole)
@@ -388,11 +424,15 @@ class CommonRoleService(
                 if (isAncestorOf(role, parent)) {
                     raise(RoleService.AddParentError.CyclicRelation)
                 }
+                fireCancellable(gradeway, RoleParentAddEvent(actor, role, parent), RoleService.AddParentError.Cancelled)
 
                 DatabaseRoleParentEntity.new {
                     this.parentId = parent.id
                     this.childId = role.id
-                }.also { audit.created(it) }
+                }.also {
+                    audit.created(it)
+                    audit.emit(RoleParentAddedEvent(actor, role.id.value, parent.id.value))
+                }
             }
         }) { throwable ->
             if (throwable.isIntegrityConstraintViolation()) {
@@ -458,8 +498,14 @@ class CommonRoleService(
                 val throwable = Throwable("Entity is not a type of DatabaseRoleParentEntity")
                 raise(RoleService.RemoveParentError.Unexpected(throwable))
             }
+            fireCancellable(
+                gradeway,
+                RoleParentRemoveEvent(actor, role, parent),
+                RoleService.RemoveParentError.Cancelled,
+            )
             try {
                 audit.deleted(roleParentEntity)
+                audit.emit(RoleParentRemovedEvent(actor, role.id.value, parent.id.value))
                 roleParentEntity.delete()
             } catch (throwable: Throwable) {
                 raise(RoleService.RemoveParentError.Unexpected(throwable))
@@ -718,18 +764,28 @@ class CommonRoleService(
 }
 
 /**
- * Records an update for every role matching [where] whose state [block] changed.
+ * Records an update for every role matching [where] whose state [block] changed, and emits a
+ * [RoleDefaultChangedEvent] for every role whose default flag flipped.
  *
  * The default flag is changed through DSL updates that bypass the DAO cache, so the matching
  * roles are loaded and snapshotted first, then refreshed from the database after [block] ran.
  */
-private inline fun <T> auditDefaultChanges(audit: AuditRecorder, where: Op<Boolean>, block: () -> T): T {
+private inline fun <T> auditDefaultChanges(
+    actor: Actor,
+    audit: AuditRecorder,
+    where: Op<Boolean>,
+    block: () -> T,
+): T {
     val roles = DatabaseRoleEntity.find(where).toList()
     val before = roles.associateWith { it.snapshot() }
+    val wasDefault = roles.associateWith { it.isDefault }
     val result = block()
     roles.forEach { role ->
         role.refresh()
         audit.updated(role, before.getValue(role))
+        if (wasDefault.getValue(role) != role.isDefault) {
+            audit.emit(RoleDefaultChangedEvent(actor, role.id.value, role.isDefault))
+        }
     }
     return result
 }

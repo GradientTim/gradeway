@@ -60,6 +60,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
 
                         gradeway.players.create(actor, uniqueId, name)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is PlayerService.CreatePlayerError.EntityAlreadyExists) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -132,6 +133,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.players.delete(actor, player.id.value)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is PlayerService.DeletePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -438,6 +440,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
 
                             gradeway.players.setWeight(actor, idOrName, weight)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is PlayerService.SetWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -561,6 +564,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
 
         gradeway.players.addRole(actor, playerIdOrName, roleUniqueId, until)
             .onLeft { error ->
+                if (context.sendIfCancelled(source, error)) return@onLeft
                 if (error is PlayerService.AddRoleError.EntityNotFound) {
                     context.sendTranslatedMessage(
                         source,
@@ -695,6 +699,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
 
                     gradeway.players.removeRole(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is PlayerService.RemoveRoleError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -786,6 +791,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                                 PlayerService.PauseRoleError.TargetNotFound -> "gradeway.command.player.pauseRole.targetNotFound"
                                 PlayerService.PauseRoleError.RelationNotFound -> "gradeway.command.player.pauseRole.notExists"
                                 PlayerService.PauseRoleError.AlreadyPaused -> "gradeway.command.player.pauseRole.alreadyPaused"
+                                PlayerService.PauseRoleError.Cancelled -> "gradeway.command.cancelled"
                                 is PlayerService.PauseRoleError.Unexpected -> "gradeway.command.player.pauseRole.unexpectedError"
                             }
                             context.sendTranslatedMessage(
@@ -847,6 +853,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
                                 PlayerService.ResumeRoleError.TargetNotFound -> "gradeway.command.player.resumeRole.targetNotFound"
                                 PlayerService.ResumeRoleError.RelationNotFound -> "gradeway.command.player.resumeRole.notExists"
                                 PlayerService.ResumeRoleError.NotPaused -> "gradeway.command.player.resumeRole.notPaused"
+                                PlayerService.ResumeRoleError.Cancelled -> "gradeway.command.cancelled"
                                 is PlayerService.ResumeRoleError.Unexpected -> "gradeway.command.player.resumeRole.unexpectedError"
                             }
                             context.sendTranslatedMessage(
@@ -904,6 +911,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
 
                     gradeway.players.setPrimaryRole(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is PlayerService.SetPrimaryRoleError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -972,6 +980,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.registerPlaye
 
                 gradeway.players.clearPrimaryRole(actor, idOrName)
                     .onLeft { error ->
+                        if (context.sendIfCancelled(source, error)) return@execute
                         if (error is PlayerService.ClearPrimaryRoleError.EntityNotFound) {
                             context.sendTranslatedMessage(
                                 source,

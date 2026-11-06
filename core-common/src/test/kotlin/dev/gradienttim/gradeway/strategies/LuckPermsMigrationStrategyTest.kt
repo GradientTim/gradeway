@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import net.kyori.adventure.key.Key
 import java.io.File
@@ -212,7 +213,7 @@ class LuckPermsMigrationStrategyTest {
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
 

@@ -10,7 +10,9 @@ import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.spec.GroupCreateSpec
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -30,14 +32,14 @@ interface GroupService : SharedPermissionService<GroupEntity, GroupPermissionEnt
      *
      * @param actor The actor performing the operation.
      * @param name The name of the group to be created. It must be unique and non-empty.
-     * @param builder A lambda function to configure the group entity using the provided `GroupEntity` context. The default is an empty configuration.
+     * @param builder Configures further properties of the group before it is created.
      * @return An `Either` instance containing a `CreateGroupError` if there was an error during creation,
      *         or the successfully created `GroupEntity` object.
      */
     fun create(
         actor: Actor,
         name: String,
-        builder: GroupEntity.() -> Unit = {},
+        builder: GroupCreateSpec.() -> Unit = {},
     ): Either<CreateGroupError, GroupEntity>
 
     /**
@@ -380,16 +382,19 @@ interface GroupService : SharedPermissionService<GroupEntity, GroupPermissionEnt
     ): Either<RemoveTargetError, Unit>
 
     sealed interface CreateGroupError {
+        object Cancelled : CreateGroupError, EventCancelledError
         object InvalidName : CreateGroupError
         data class Unexpected(val throwable: Throwable) : CreateGroupError
     }
 
     sealed interface DeleteGroupError {
+        object Cancelled : DeleteGroupError, EventCancelledError
         object EntityNotFound : DeleteGroupError
         data class Unexpected(val throwable: Throwable) : DeleteGroupError
     }
 
     sealed interface SetNameError {
+        object Cancelled : SetNameError, EventCancelledError
         object EntityNotFound : SetNameError
         object NameAlreadySet : SetNameError
         object InvalidName : SetNameError
@@ -397,12 +402,14 @@ interface GroupService : SharedPermissionService<GroupEntity, GroupPermissionEnt
     }
 
     sealed interface SetDefaultWeightError {
+        object Cancelled : SetDefaultWeightError, EventCancelledError
         object EntityNotFound : SetDefaultWeightError
         object WeightAlreadySet : SetDefaultWeightError
         data class Unexpected(val throwable: Throwable) : SetDefaultWeightError
     }
 
     sealed interface AddTargetError {
+        object Cancelled : AddTargetError, EventCancelledError
         object EntityNotFound : AddTargetError
         object TargetNotFound : AddTargetError
         object AlreadyInGroup : AddTargetError
@@ -410,6 +417,7 @@ interface GroupService : SharedPermissionService<GroupEntity, GroupPermissionEnt
     }
 
     sealed interface RemoveTargetError {
+        object Cancelled : RemoveTargetError, EventCancelledError
         object EntityNotFound : RemoveTargetError
         object TargetNotFound : RemoveTargetError
         object NotInGroup : RemoveTargetError

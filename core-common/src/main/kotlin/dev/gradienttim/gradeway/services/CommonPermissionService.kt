@@ -33,6 +33,10 @@ import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
+import dev.gradienttim.gradeway.event.eventSubjectOf
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.permission.*
+import dev.gradienttim.gradeway.events.template.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
@@ -42,6 +46,8 @@ import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.services.permission.PermissionInspectionService.*
+import dev.gradienttim.gradeway.spec.PermissionCreateSpec
+import dev.gradienttim.gradeway.spec.TemplateCreateSpec
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -63,12 +69,21 @@ class CommonPermissionService(
         value: String,
         type: PermissionEntity.Type,
     ): Either<PermissionService.CreatePermissionError, PermissionEntity> = gradeway.audited(actor) { audit ->
+        val spec = PermissionCreateSpec(value, type)
+        fireCancellable(
+            gradeway,
+            PermissionNodeCreateEvent(actor, spec),
+            PermissionService.CreatePermissionError.Cancelled,
+        )
         try {
             transaction(gradeway.database) {
                 DatabasePermissionEntity.new {
-                    this.value = value
-                    this.type = type
-                }.also { audit.created(it) }
+                    this.value = spec.value
+                    this.type = spec.type
+                }.also {
+                    audit.created(it)
+                    audit.emit(PermissionNodeCreatedEvent(actor, it.id.value, it.value, it.type))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -94,10 +109,16 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionEntity")
             raise(PermissionService.DeletePermissionError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PermissionNodeDeleteEvent(actor, entity),
+            PermissionService.DeletePermissionError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 audit.deleted(entity)
+                audit.emit(PermissionNodeDeletedEvent(actor, entity.id.value, entity.value))
                 entity.delete()
             }
         } catch (throwable: Throwable) {
@@ -136,10 +157,16 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionEntity")
             raise(PermissionService.UpdatePermissionValueError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PermissionNodeValueChangeEvent(actor, entity, value),
+            PermissionService.UpdatePermissionValueError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(PermissionNodeValueChangedEvent(actor, entity.id.value, entity.value, value))
                 entity.value = value
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -182,10 +209,16 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionEntity")
             raise(PermissionService.UpdatePermissionTypeError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            PermissionNodeTypeChangeEvent(actor, entity, type),
+            PermissionService.UpdatePermissionTypeError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(PermissionNodeTypeChangedEvent(actor, entity.id.value, entity.type, type))
                 entity.type = type
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -244,16 +277,23 @@ class CommonPermissionService(
     override fun createTemplate(
         actor: Actor,
         name: String,
+        builder: TemplateCreateSpec.() -> Unit,
     ): Either<PermissionService.CreateTemplateError, PermissionTemplateEntity> = gradeway.audited(actor) { audit ->
-        if (!name.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
+        val spec = TemplateCreateSpec(name).apply(builder)
+        fireCancellable(gradeway, TemplateCreateEvent(actor, spec), PermissionService.CreateTemplateError.Cancelled)
+        if (!spec.name.isNameValid(TableConstants.PERMISSION_TEMPLATES_TABLE_MAX_NAME_LENGTH)) {
             raise(PermissionService.CreateTemplateError.InvalidName)
         }
 
         try {
             transaction(gradeway.database) {
                 DatabasePermissionTemplateEntity.new {
-                    this.name = name
-                }.also { audit.created(it) }
+                    this.name = spec.name
+                    this.assignedTo = spec.assignedTo
+                }.also {
+                    audit.created(it)
+                    audit.emit(TemplateCreatedEvent(actor, it.id.value, it.name, it.assignedTo))
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.CreateTemplateError.Unexpected(throwable))
@@ -266,10 +306,12 @@ class CommonPermissionService(
     ): Either<PermissionService.DeleteTemplateError, PermissionTemplateEntity> = gradeway.audited(actor) { audit ->
         val entity = findTemplateById(id) as? DatabasePermissionTemplateEntity
             ?: raise(PermissionService.DeleteTemplateError.EntityNotFound)
+        fireCancellable(gradeway, TemplateDeleteEvent(actor, entity), PermissionService.DeleteTemplateError.Cancelled)
 
         try {
             transaction(gradeway.database) {
                 audit.deleted(entity)
+                audit.emit(TemplateDeletedEvent(actor, entity.id.value, entity.name))
                 entity.delete()
                 entity
             }
@@ -304,10 +346,16 @@ class CommonPermissionService(
         if (entity.name == name) {
             raise(PermissionService.SetNameTemplateError.NameAlreadySet)
         }
+        fireCancellable(
+            gradeway,
+            TemplateRenameEvent(actor, entity, name),
+            PermissionService.SetNameTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(TemplateRenamedEvent(actor, entity.id.value, entity.name, name))
                 entity.name = name
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -349,10 +397,16 @@ class CommonPermissionService(
         if (entity.assignedTo == assignedTo) {
             raise(PermissionService.SetAssignedToTemplateError.AlreadyAssignedTo)
         }
+        fireCancellable(
+            gradeway,
+            TemplateAssignedToChangeEvent(actor, entity, assignedTo),
+            PermissionService.SetAssignedToTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(TemplateAssignedToChangedEvent(actor, entity.id.value, entity.assignedTo, assignedTo))
                 entity.assignedTo = assignedTo
                 val flushed = entity.flush()
                 audit.updated(entity, before)
@@ -508,12 +562,27 @@ class CommonPermissionService(
         permission: PermissionEntity,
     ): Either<PermissionService.AddPermissionToTemplateError, PermissionTemplatePermissionEntity> =
         gradeway.audited(actor) { audit ->
+            fireCancellable(
+                gradeway,
+                TemplatePermissionAddEvent(actor, template, permission),
+                PermissionService.AddPermissionToTemplateError.Cancelled,
+            )
             try {
                 transaction(gradeway.database) {
                     DatabasePermissionTemplatePermissionEntity.new {
                         this.templateId = template.id
                         this.permissionId = permission.id
-                    }.also { audit.created(it) }
+                    }.also {
+                        audit.created(it)
+                        audit.emit(
+                            TemplatePermissionAddedEvent(
+                                actor,
+                                template.id.value,
+                                permission.id.value,
+                                permission.value,
+                            )
+                        )
+                    }
                 }
             } catch (throwable: Throwable) {
                 if (throwable.isIntegrityConstraintViolation()) {
@@ -635,8 +704,16 @@ class CommonPermissionService(
                 raise(PermissionService.RemovePermissionFromTemplateError.Unexpected(throwable))
             }
 
+            fireCancellable(
+                gradeway,
+                TemplatePermissionRemoveEvent(actor, template, permission),
+                PermissionService.RemovePermissionFromTemplateError.Cancelled,
+            )
             try {
                 audit.deleted(templatePermission)
+                audit.emit(
+                    TemplatePermissionRemovedEvent(actor, template.id.value, permission.id.value, permission.value)
+                )
                 templatePermission.delete()
             } catch (throwable: Throwable) {
                 raise(PermissionService.RemovePermissionFromTemplateError.Unexpected(throwable))
@@ -665,8 +742,14 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
     ): Either<PermissionService.ClearPermissionsFromTemplateError, Unit> = gradeway.audited(actor) { audit ->
+        fireCancellable(
+            gradeway,
+            TemplatePermissionsClearEvent(actor, template),
+            PermissionService.ClearPermissionsFromTemplateError.Cancelled,
+        )
         transaction(gradeway.database) {
             try {
+                audit.emit(TemplatePermissionsClearedEvent(actor, template.id.value))
                 template.permissions.filterIsInstance<DatabasePermissionTemplatePermissionEntity>().forEach {
                     audit.deleted(it)
                     it.delete()
@@ -750,13 +833,22 @@ class CommonPermissionService(
         if (!template.assignedTo.allowForRole) {
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
+        val subject = eventSubjectOf(role)
+        fireCancellable(
+            gradeway,
+            TemplateLinkEvent(actor, template, subject),
+            PermissionService.LinkTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 DatabaseRolePermissionTemplateEntity.new {
                     this.roleId = role.id
                     this.permissionTemplateId = template.id
-                }.also { audit.created(it) }
+                }.also {
+                    audit.created(it)
+                    audit.emit(TemplateLinkedEvent(actor, template.id.value, subject))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -870,9 +962,16 @@ class CommonPermissionService(
             if (entityTemplateEntity == null) {
                 raise(PermissionService.UnlinkTemplateError.NotLinked)
             }
+            val subject = eventSubjectOf(role)
+            fireCancellable(
+                gradeway,
+                TemplateUnlinkEvent(actor, template, subject),
+                PermissionService.UnlinkTemplateError.Cancelled,
+            )
 
             try {
                 audit.deleted(entityTemplateEntity)
+                audit.emit(TemplateUnlinkedEvent(actor, template.id.value, subject))
                 entityTemplateEntity.delete()
 
                 gradeway.messaging.publish(
@@ -974,7 +1073,7 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         role: RoleEntity,
-    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (!template.assignedTo.allowForRole) {
             raise(PermissionService.ApplyTemplateError.WrongAssignedTo)
         }
@@ -983,6 +1082,12 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(role)
+        fireCancellable(
+            gradeway,
+            TemplateApplyEvent(actor, template, subject),
+            PermissionService.ApplyTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -990,7 +1095,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .associate { it.value to true }
 
-                setRolePermissions(actor, role, permissions).isRight()
+                setRolePermissions(actor, role, permissions).isRight().also { applied ->
+                    if (applied) {
+                        audit.emit(TemplateAppliedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
@@ -1083,11 +1192,17 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         role: RoleEntity,
-    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (template !is DatabasePermissionTemplateEntity) {
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(role)
+        fireCancellable(
+            gradeway,
+            TemplateRevokeEvent(actor, template, subject),
+            PermissionService.RevokeTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -1095,7 +1210,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .map { it.value }
 
-                unsetRolePermissions(actor, role, permissions).isRight()
+                unsetRolePermissions(actor, role, permissions).isRight().also { revoked ->
+                    if (revoked) {
+                        audit.emit(TemplateRevokedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
@@ -1192,13 +1311,22 @@ class CommonPermissionService(
         if (!template.assignedTo.allowForPlayer) {
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
+        val subject = eventSubjectOf(player)
+        fireCancellable(
+            gradeway,
+            TemplateLinkEvent(actor, template, subject),
+            PermissionService.LinkTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 DatabasePlayerPermissionTemplateEntity.new {
                     this.playerId = player.id
                     this.permissionTemplateId = template.id
-                }.let { audit.created(it) }
+                }.let {
+                    audit.created(it)
+                    audit.emit(TemplateLinkedEvent(actor, template.id.value, subject))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -1309,10 +1437,17 @@ class CommonPermissionService(
         if (entityTemplateEntity == null) {
             raise(PermissionService.UnlinkTemplateError.NotLinked)
         }
+        val subject = eventSubjectOf(player)
+        fireCancellable(
+            gradeway,
+            TemplateUnlinkEvent(actor, template, subject),
+            PermissionService.UnlinkTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 audit.deleted(entityTemplateEntity)
+                audit.emit(TemplateUnlinkedEvent(actor, template.id.value, subject))
                 entityTemplateEntity.delete()
             }
         } catch (throwable: Throwable) {
@@ -1412,7 +1547,7 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         player: PlayerEntity,
-    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (!template.assignedTo.allowForPlayer) {
             raise(PermissionService.ApplyTemplateError.WrongAssignedTo)
         }
@@ -1421,6 +1556,12 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(player)
+        fireCancellable(
+            gradeway,
+            TemplateApplyEvent(actor, template, subject),
+            PermissionService.ApplyTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -1428,7 +1569,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .associate { it.value to true }
 
-                setPlayerPermissions(actor, player, permissions).isRight()
+                setPlayerPermissions(actor, player, permissions).isRight().also { applied ->
+                    if (applied) {
+                        audit.emit(TemplateAppliedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
@@ -1519,11 +1664,17 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         player: PlayerEntity,
-    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (template !is DatabasePermissionTemplateEntity) {
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(player)
+        fireCancellable(
+            gradeway,
+            TemplateRevokeEvent(actor, template, subject),
+            PermissionService.RevokeTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -1531,7 +1682,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .map { it.value }
 
-                unsetPlayerPermissions(actor, player, permissions).isRight()
+                unsetPlayerPermissions(actor, player, permissions).isRight().also { revoked ->
+                    if (revoked) {
+                        audit.emit(TemplateRevokedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
@@ -1627,13 +1782,22 @@ class CommonPermissionService(
         if (!template.assignedTo.allowForGroup) {
             raise(PermissionService.LinkTemplateError.WrongAssignedTo)
         }
+        val subject = eventSubjectOf(group)
+        fireCancellable(
+            gradeway,
+            TemplateLinkEvent(actor, template, subject),
+            PermissionService.LinkTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 DatabaseGroupPermissionTemplateEntity.new {
                     this.groupId = group.id
                     this.permissionTemplateId = template.id
-                }.let { audit.created(it) }
+                }.let {
+                    audit.created(it)
+                    audit.emit(TemplateLinkedEvent(actor, template.id.value, subject))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -1744,10 +1908,17 @@ class CommonPermissionService(
         if (entityTemplateEntity == null) {
             raise(PermissionService.UnlinkTemplateError.NotLinked)
         }
+        val subject = eventSubjectOf(group)
+        fireCancellable(
+            gradeway,
+            TemplateUnlinkEvent(actor, template, subject),
+            PermissionService.UnlinkTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 audit.deleted(entityTemplateEntity)
+                audit.emit(TemplateUnlinkedEvent(actor, template.id.value, subject))
                 entityTemplateEntity.delete()
             }
         } catch (throwable: Throwable) {
@@ -1847,7 +2018,7 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         group: GroupEntity,
-    ): Either<PermissionService.ApplyTemplateError, Boolean> = either {
+    ): Either<PermissionService.ApplyTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (!template.assignedTo.allowForGroup) {
             raise(PermissionService.ApplyTemplateError.WrongAssignedTo)
         }
@@ -1856,6 +2027,12 @@ class CommonPermissionService(
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(group)
+        fireCancellable(
+            gradeway,
+            TemplateApplyEvent(actor, template, subject),
+            PermissionService.ApplyTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -1863,7 +2040,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .associate { it.value to true }
 
-                setGroupPermissions(actor, group, permissions).isRight()
+                setGroupPermissions(actor, group, permissions).isRight().also { applied ->
+                    if (applied) {
+                        audit.emit(TemplateAppliedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.ApplyTemplateError.Unexpected(throwable))
@@ -1954,11 +2135,17 @@ class CommonPermissionService(
         actor: Actor,
         template: PermissionTemplateEntity,
         group: GroupEntity,
-    ): Either<PermissionService.RevokeTemplateError, Boolean> = either {
+    ): Either<PermissionService.RevokeTemplateError, Boolean> = gradeway.audited(actor) { audit ->
         if (template !is DatabasePermissionTemplateEntity) {
             val throwable = Throwable("Entity is not a type of DatabasePermissionTemplateEntity")
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
         }
+        val subject = eventSubjectOf(group)
+        fireCancellable(
+            gradeway,
+            TemplateRevokeEvent(actor, template, subject),
+            PermissionService.RevokeTemplateError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
@@ -1966,7 +2153,11 @@ class CommonPermissionService(
                     .map { it.permission }
                     .map { it.value }
 
-                unsetGroupPermissions(actor, group, permissions).isRight()
+                unsetGroupPermissions(actor, group, permissions).isRight().also { revoked ->
+                    if (revoked) {
+                        audit.emit(TemplateRevokedEvent(actor, template.id.value, subject))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             raise(PermissionService.RevokeTemplateError.Unexpected(throwable))
@@ -2625,11 +2816,14 @@ class CommonPermissionService(
         return getGroupPermissions(entity)
     }
 
-    private fun findOrCreatePermissionEntity(audit: AuditRecorder, permission: String): PermissionEntity {
+    private fun findOrCreatePermissionEntity(actor: Actor, audit: AuditRecorder, permission: String): PermissionEntity {
         return findPermissionByValue(permission) ?: DatabasePermissionEntity.new {
             this.value = permission
             this.type = PermissionEntity.Type.EQUALS
-        }.also { audit.created(it) }
+        }.also {
+            audit.created(it)
+            audit.emit(PermissionNodeCreatedEvent(actor, it.id.value, it.value, it.type))
+        }
     }
 
     private fun hasEntityPermission(
@@ -2708,7 +2902,7 @@ class CommonPermissionService(
             is PermissionTemplatePlayerLinkChangedPayload,
             is CacheFlushPayload -> gradeway.caches.invalidateEntityEffectivePermissions()
 
-            is TrackChangedPayload, is TrackStageChangedPayload -> Unit
+            is TrackChangedPayload, is TrackStageChangedPayload, is EventPayload -> Unit
         }
     }
 
@@ -2979,6 +3173,7 @@ class CommonPermissionService(
         enabled: Boolean,
         createNewPermission: (PermissionEntity) -> Auditable,
     ): Either<PermissionService.SetPermissionError, Unit> = gradeway.audited(actor) { audit ->
+        val assignEvent = PermissionsAssignEvent(actor, eventSubjectOf(entity), mapOf(permission to enabled))
         transaction(gradeway.database) {
             val existingPermission = entity.permissions.find { it.permission.value == permission }
             if (existingPermission != null) {
@@ -2994,6 +3189,7 @@ class CommonPermissionService(
                 if (!enabled && !isEnabled) {
                     raise(PermissionService.SetPermissionError.PermissionAlreadyDisabled)
                 }
+                fireCancellable(gradeway, assignEvent, PermissionService.SetPermissionError.Cancelled)
 
                 try {
                     val before = (existingPermission as? Auditable)?.snapshot()
@@ -3002,6 +3198,7 @@ class CommonPermissionService(
                     if (existingPermission is Auditable && before != null) {
                         audit.updated(existingPermission, before)
                     }
+                    audit.emit(PermissionsAssignedEvent(actor, assignEvent.subject, assignEvent.permissions))
 
                     publishPermissionChanged(entity, permission)
                 } catch (throwable: Throwable) {
@@ -3010,9 +3207,11 @@ class CommonPermissionService(
                 return@transaction
             }
 
+            fireCancellable(gradeway, assignEvent, PermissionService.SetPermissionError.Cancelled)
             try {
-                val permissionEntity = findOrCreatePermissionEntity(audit, permission)
+                val permissionEntity = findOrCreatePermissionEntity(actor, audit, permission)
                 audit.created(createNewPermission(permissionEntity))
+                audit.emit(PermissionsAssignedEvent(actor, assignEvent.subject, assignEvent.permissions))
 
                 publishPermissionChanged(entity, permission)
             } catch (throwable: Throwable) {
@@ -3027,13 +3226,19 @@ class CommonPermissionService(
         permissions: Map<String, Boolean>,
         createNewPermission: (PermissionEntity, Boolean) -> Auditable,
     ): Either<PermissionService.BulkSetPermissionError, Unit> = gradeway.audited(actor) { audit ->
+        val subject = eventSubjectOf(entity)
+        fireCancellable(
+            gradeway,
+            PermissionsAssignEvent(actor, subject, permissions),
+            PermissionService.BulkSetPermissionError.Cancelled,
+        )
         val createdPermissions = try {
             transaction(gradeway.database) {
                 val existingPermissions = entity.permissions
                 val created = mutableListOf<String>()
                 for ((permissionValue, enabled) in permissions) {
                     if (existingPermissions.any { it.permission.value == permissionValue }) continue
-                    val permissionEntity = findOrCreatePermissionEntity(audit, permissionValue)
+                    val permissionEntity = findOrCreatePermissionEntity(actor, audit, permissionValue)
                     audit.created(createNewPermission(permissionEntity, enabled))
                     created += permissionValue
                 }
@@ -3043,6 +3248,11 @@ class CommonPermissionService(
             raise(PermissionService.BulkSetPermissionError.Unexpected(throwable))
         }
 
+        if (createdPermissions.isNotEmpty()) {
+            audit.emit(
+                PermissionsAssignedEvent(actor, subject, createdPermissions.associateWith(permissions::getValue))
+            )
+        }
         createdPermissions.forEach { publishPermissionChanged(entity, it) }
     }
 
@@ -3060,8 +3270,15 @@ class CommonPermissionService(
                 val throwable = Throwable("Entity is not a database Entity")
                 raise(PermissionService.UnsetPermissionError.Unexpected(throwable))
             }
+            val subject = eventSubjectOf(entity)
+            fireCancellable(
+                gradeway,
+                PermissionsUnassignEvent(actor, subject, listOf(permission)),
+                PermissionService.UnsetPermissionError.Cancelled,
+            )
             try {
                 (entityPermission as? Auditable)?.let { audit.deleted(it) }
+                audit.emit(PermissionsUnassignedEvent(actor, subject, listOf(permission)))
                 entityPermission.delete()
 
                 publishPermissionChanged(entity, permission)
@@ -3076,6 +3293,12 @@ class CommonPermissionService(
         entity: PermissionReference<out SharedPermissionEntity>,
         permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit> = gradeway.audited(actor) { audit ->
+        val subject = eventSubjectOf(entity)
+        fireCancellable(
+            gradeway,
+            PermissionsUnassignEvent(actor, subject, permissions.toList()),
+            PermissionService.BulkUnsetPermissionError.Cancelled,
+        )
         val deletedPermissions = try {
             transaction(gradeway.database) {
                 val entityPermissions = entity.permissions.filter { it.permission.value in permissions }
@@ -3091,6 +3314,9 @@ class CommonPermissionService(
             raise(PermissionService.BulkUnsetPermissionError.Unexpected(throwable))
         }
 
+        if (deletedPermissions.isNotEmpty()) {
+            audit.emit(PermissionsUnassignedEvent(actor, subject, deletedPermissions))
+        }
         deletedPermissions.forEach { publishPermissionChanged(entity, it) }
     }
 
@@ -3098,8 +3324,15 @@ class CommonPermissionService(
         actor: Actor,
         entity: PermissionReference<out SharedPermissionEntity>,
     ): Either<PermissionService.ClearPermissionsError, Unit> = gradeway.audited(actor) { audit ->
+        val subject = eventSubjectOf(entity)
+        fireCancellable(
+            gradeway,
+            PermissionsClearEvent(actor, subject),
+            PermissionService.ClearPermissionsError.Cancelled,
+        )
         transaction(gradeway.database) {
             try {
+                audit.emit(PermissionsClearedEvent(actor, subject, entity.permissions.map { it.permission.value }))
                 entity.permissions.forEach { entityPermissionEntity ->
                     if (entityPermissionEntity is Entity<*>) {
                         (entityPermissionEntity as? Auditable)?.let { audit.deleted(it) }

@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributeChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.PlayerAttributesClearedPayload
@@ -52,7 +53,7 @@ class CommonAttributeServiceTest {
             .getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.attributes.clearPlayerAttributes(Actor.System, player).getOrElse { error(it.toString()) }
 
@@ -79,7 +80,7 @@ class CommonAttributeServiceTest {
         ).getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.attributes.removePlayerAttribute(Actor.System, player, key).getOrElse { error(it.toString()) }
 

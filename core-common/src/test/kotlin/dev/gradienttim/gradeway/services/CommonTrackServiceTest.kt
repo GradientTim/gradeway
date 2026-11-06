@@ -13,10 +13,7 @@ import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
-import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
-import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
-import dev.gradienttim.gradeway.messaging.payloads.TrackChangedPayload
-import dev.gradienttim.gradeway.messaging.payloads.TrackStageChangedPayload
+import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
@@ -86,7 +83,7 @@ class CommonTrackServiceTest {
     @Test
     fun `createTrack publishes a TrackChangedPayload`() {
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         val track = createTrack()
 
@@ -143,7 +140,7 @@ class CommonTrackServiceTest {
     fun `setSlug publishes an updated TrackChangedPayload`() {
         val track = createTrack()
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.tracks.setSlug(Actor.System, track, uniqueName("renamed")).getOrElse { error(it.toString()) }
 
@@ -248,7 +245,7 @@ class CommonTrackServiceTest {
     fun `addStage and removeStage publish TrackStageChangedPayloads`() {
         val track = createTrack()
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         val stage = gradeway.tracks.addStage(Actor.System, track, createRole()).getOrElse { error(it.toString()) }
         gradeway.tracks.removeStage(Actor.System, stage.id.value).getOrElse { error(it.toString()) }
@@ -353,7 +350,7 @@ class CommonTrackServiceTest {
         val track = createTrackWithStages(createRole(), createRole())
         val stage = gradeway.tracks.addStage(Actor.System, track, createRole()).getOrElse { error(it.toString()) }
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.tracks.moveStage(Actor.System, stage, 0).getOrElse { error(it.toString()) }
 

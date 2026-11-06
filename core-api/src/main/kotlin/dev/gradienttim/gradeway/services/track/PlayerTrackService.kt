@@ -9,6 +9,7 @@ import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.util.*
 
@@ -327,6 +328,7 @@ interface PlayerTrackService {
     fun listPlayerTracks(player: PlayerEntity): SizedIterable<TrackEntity>
 
     sealed interface PromotePlayerError {
+        object Cancelled : PromotePlayerError, EventCancelledError
         object EntityNotFound : PromotePlayerError
         object TargetNotFound : PromotePlayerError
         object MaximumStageReached : PromotePlayerError
@@ -335,6 +337,7 @@ interface PlayerTrackService {
     }
 
     sealed interface DemotePlayerError {
+        object Cancelled : DemotePlayerError, EventCancelledError
         object EntityNotFound : DemotePlayerError
         object TargetNotFound : DemotePlayerError
         object MinimumStageReached : DemotePlayerError

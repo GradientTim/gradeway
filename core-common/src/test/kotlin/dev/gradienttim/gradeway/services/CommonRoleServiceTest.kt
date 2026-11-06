@@ -100,7 +100,7 @@ class CommonRoleServiceTest {
         val parent = createRole()
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.roles.addParent(Actor.System, role, parent).getOrElse { error(it.toString()) }
 

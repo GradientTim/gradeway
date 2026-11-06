@@ -4,7 +4,10 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.platform
 
-import dev.gradienttim.gradeway.*
+import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.TestScheduler
+import dev.gradienttim.gradeway.TestStores
 import java.nio.file.Files
 import kotlin.io.path.writeText
 import kotlin.test.Test
@@ -31,7 +34,6 @@ class CommonEnvironmentTest {
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
             stores = TestStores(),
-            events = TestEventManager(),
             knownPermissionSource = KnownPermissionSource.NONE,
         )
         return CommonEnvironment(gradeway)

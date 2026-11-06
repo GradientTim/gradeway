@@ -11,6 +11,11 @@ import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.configs.PlatformConfig
 import dev.gradienttim.gradeway.constants.ScheduleConstants
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.event.handleRemoteEvent
+import dev.gradienttim.gradeway.events.lifecycle.GradewayDisabledEvent
+import dev.gradienttim.gradeway.events.lifecycle.GradewayEnabledEvent
+import dev.gradienttim.gradeway.events.lifecycle.GradewayLoadedEvent
+import dev.gradienttim.gradeway.events.lifecycle.GradewayReloadedEvent
 import dev.gradienttim.gradeway.managers.*
 import dev.gradienttim.gradeway.notification.drivers.console.ConsoleNotificationDriver
 import dev.gradienttim.gradeway.notification.drivers.discord.DiscordNotificationDriver
@@ -42,11 +47,11 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val directory: Path,
     override val defaultPlatformConfig: TPlatformConfig,
     override val platformConfigSerializer: KSerializer<TPlatformConfig>,
-    override val events: EventManager,
     private val knownPermissionSource: KnownPermissionSource,
 ) : GradewayLifecycle<TPlatformConfig>, KoinComponent {
     override val now: () -> Instant = { Instant.now() }
     override var state: GradewayState = GradewayState.UNLOADED
+    override val events: EventManager = CommonEventManager(logger)
     override val caches: Caches by inject()
     override val environment by lazy { CommonEnvironment(this) }
 
@@ -90,6 +95,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         drivers.load().bind()
         languages.load().bind()
         messaging.load().bind()
+        messaging.subscribe { payload -> handleRemoteEvent(payload) }
 
         drivers.registerDriver("console", DriverType.NOTIFICATION, ConsoleNotificationDriver())
         drivers.registerDriver("webhook", DriverType.NOTIFICATION, WebhookNotificationDriver())
@@ -97,6 +103,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         drivers.registerDriver("slack", DriverType.NOTIFICATION, SlackNotificationDriver())
 
         state = GradewayState.LOADED
+        events.fire(GradewayLoadedEvent())
     }.onLeft { throwable ->
         logger.panic(throwable)
         state = GradewayState.UNLOADED
@@ -128,6 +135,8 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         messaging.reload().bind()
         languages.reload().bind()
         notifications.reload().bind()
+
+        events.fire(GradewayReloadedEvent())
     }.onLeft { throwable ->
         logger.panic(throwable)
     }
@@ -150,6 +159,8 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
                 logger.warn("Failed to sweep expired player roles: $it")
             }
         }
+
+        events.fire(GradewayEnabledEvent())
     }.onLeft { throwable ->
         logger.panic(throwable)
     }
@@ -164,6 +175,8 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         messaging.disable().bind()
         confirmations.disable().bind()
         notifications.disable().bind()
+
+        events.fire(GradewayDisabledEvent())
     }.onLeft { throwable ->
         logger.panic(throwable)
     }

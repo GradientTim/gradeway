@@ -16,6 +16,8 @@ import dev.gradienttim.gradeway.database.models.role.DatabaseRoleGroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.group.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
@@ -23,6 +25,7 @@ import dev.gradienttim.gradeway.extensions.isUuid
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.services.GroupService.*
+import dev.gradienttim.gradeway.spec.GroupCreateSpec
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
@@ -35,19 +38,23 @@ class CommonGroupService(
     override fun create(
         actor: Actor,
         name: String,
-        builder: GroupEntity.() -> Unit,
+        builder: GroupCreateSpec.() -> Unit,
     ): Either<CreateGroupError, GroupEntity> = gradeway.audited(actor) { audit ->
-        if (!name.isNameValid(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
+        val spec = GroupCreateSpec(name).apply(builder)
+        fireCancellable(gradeway, GroupCreateEvent(actor, spec), CreateGroupError.Cancelled)
+        if (!spec.name.isNameValid(TableConstants.GROUPS_TABLE_MAX_NAME_LENGTH)) {
             raise(CreateGroupError.InvalidName)
         }
 
         transaction(gradeway.database) {
             try {
                 DatabaseGroupEntity.new {
-                    builder()
-
-                    this.name = name
-                }.also { audit.created(it) }
+                    this.name = spec.name
+                    this.defaultWeight = spec.defaultWeight
+                }.also {
+                    audit.created(it)
+                    audit.emit(GroupCreatedEvent(actor, it.id.value, it.name, it.defaultWeight))
+                }
             } catch (throwable: Throwable) {
                 raise(CreateGroupError.Unexpected(throwable))
             }
@@ -70,10 +77,12 @@ class CommonGroupService(
             val throwable = Throwable("Entity is not a type of DatabaseGroupEntity")
             raise(DeleteGroupError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, GroupDeleteEvent(actor, entity), DeleteGroupError.Cancelled)
 
         try {
             transaction(gradeway.database) {
                 audit.deleted(entity)
+                audit.emit(GroupDeletedEvent(actor, entity.id.value, entity.name))
                 entity.delete()
             }
         } catch (throwable: Throwable) {
@@ -115,10 +124,12 @@ class CommonGroupService(
             val throwable = Throwable("Entity is not a type of DatabaseGroupEntity")
             raise(SetNameError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, GroupRenameEvent(actor, entity, name), SetNameError.Cancelled)
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(GroupRenamedEvent(actor, entity.id.value, entity.name, name))
                 entity.name = name
                 entity.flush()
                 audit.updated(entity, before)
@@ -159,10 +170,16 @@ class CommonGroupService(
             val throwable = Throwable("Entity is not a type of DatabaseGroupEntity")
             raise(SetDefaultWeightError.Unexpected(throwable))
         }
+        fireCancellable(
+            gradeway,
+            GroupDefaultWeightChangeEvent(actor, entity, defaultWeight),
+            SetDefaultWeightError.Cancelled,
+        )
 
         try {
             transaction(gradeway.database) {
                 val before = entity.snapshot()
+                audit.emit(GroupDefaultWeightChangedEvent(actor, entity.id.value, entity.defaultWeight, defaultWeight))
                 entity.defaultWeight = defaultWeight
                 entity.flush()
                 audit.updated(entity, before)
@@ -283,12 +300,16 @@ class CommonGroupService(
         group: GroupEntity,
         role: RoleEntity,
     ): Either<AddTargetError, RoleGroupEntity> = gradeway.audited(actor) { audit ->
+        fireCancellable(gradeway, GroupRoleAddEvent(actor, group, role), AddTargetError.Cancelled)
         try {
             transaction(gradeway.database) {
                 DatabaseRoleGroupEntity.new {
                     this.roleId = role.id
                     this.groupId = group.id
-                }.also { audit.created(it) }
+                }.also {
+                    audit.created(it)
+                    audit.emit(GroupRoleAddedEvent(actor, group.id.value, role.id.value))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -364,8 +385,10 @@ class CommonGroupService(
                 raise(RemoveTargetError.Unexpected(throwable))
             }
 
+            fireCancellable(gradeway, GroupRoleRemoveEvent(actor, group, role), RemoveTargetError.Cancelled)
             try {
                 audit.deleted(roleGroupEntity)
+                audit.emit(GroupRoleRemovedEvent(actor, group.id.value, role.id.value))
                 roleGroupEntity.delete()
             } catch (throwable: Throwable) {
                 raise(RemoveTargetError.Unexpected(throwable))

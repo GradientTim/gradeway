@@ -15,7 +15,6 @@ import dev.gradienttim.gradeway.velocity.command.context.VelocityCommandContext
 import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
-import dev.gradienttim.gradeway.velocity.managers.VelocityEventManager
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
 import dev.gradienttim.gradeway.velocity.notification.VelocityIngameNotificationPlatform
 import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
@@ -40,7 +39,6 @@ class GradewayVelocityInstance(
             directory = directory,
             defaultPlatformConfig = VelocityPlatformConfig(),
             platformConfigSerializer = VelocityPlatformConfig.serializer(),
-            events = VelocityEventManager(plugin),
             knownPermissionSource = KnownPermissionSource.NONE,
         )
 

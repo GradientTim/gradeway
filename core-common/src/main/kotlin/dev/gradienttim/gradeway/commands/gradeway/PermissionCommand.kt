@@ -37,6 +37,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
         val actor = commandContext.sourceToActor(source)
         gradeway.permissions.createPermission(actor, value, type)
             .onLeft { error ->
+                if (commandContext.sendIfCancelled(source, error)) return@onLeft
                 if (error is CreatePermissionError.AlreadyExists) {
                     commandContext.sendTranslatedMessage(
                         source,
@@ -124,6 +125,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.permissions.deletePermission(actor, idOrValue)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeletePermissionError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -175,6 +177,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
 
                             gradeway.permissions.updatePermissionValue(actor, idOrValue, value)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is UpdatePermissionValueError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -249,6 +252,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
 
                             gradeway.permissions.updatePermissionType(actor, idOrValue, type)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is UpdatePermissionTypeError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -370,6 +374,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                     gradeway.permissions.createTemplate(actor, name)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is CreateTemplateError.InvalidName) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -430,6 +435,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                     requestConfirmation(source, context, gradeway, rootLiteral) {
                         gradeway.permissions.deleteTemplate(actor, template.id.value)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeleteTemplateError.EntityNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -481,6 +487,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                             gradeway.permissions.setTemplateName(actor, idOrName, value)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is SetNameTemplateError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -568,6 +575,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                             gradeway.permissions.setTemplateAssignedTo(actor, idOrName, assignedTo)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is SetAssignedToTemplateError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -688,6 +696,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                     gradeway.permissions.addPermissionToTemplate(actor, idOrName, permissionIdOrValue)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is AddPermissionToTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -761,6 +770,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                     gradeway.permissions.removePermissionFromTemplate(actor, idOrName, permissionIdOrValue)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemovePermissionFromTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -831,6 +841,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                 requestConfirmation(source, context, gradeway, rootLiteral) {
                     gradeway.permissions.clearPermissionsFromTemplate(actor, idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

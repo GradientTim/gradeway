@@ -13,6 +13,7 @@ import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import dev.gradienttim.gradeway.messaging.payloads.RolePermissionsClearedPayload
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
@@ -117,7 +118,7 @@ class CommonPermissionServiceCacheTest {
         ).getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.permissions.clearRolePermissions(Actor.System, role).getOrElse { error(it.toString()) }
 

@@ -10,8 +10,10 @@ import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.spec.RoleCreateSpec
 import java.util.*
 
 /**
@@ -25,12 +27,14 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
      *
      * @param actor The actor performing the operation.
      * @param name The name of the role to be created.
+     * @param builder Configures further properties of the role before it is created.
      * @return An instance of [Either] containing [CreateRoleError] if the creation fails,
-     *         or [Unit] if the creation succeeds.
+     *         or the created role if the creation succeeds.
      */
     fun create(
         actor: Actor,
         name: String,
+        builder: RoleCreateSpec.() -> Unit = {},
     ): Either<CreateRoleError, RoleEntity>
 
     /**
@@ -449,17 +453,20 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     ): Either<RemoveParentError, Unit>
 
     sealed interface CreateRoleError {
+        object Cancelled : CreateRoleError, EventCancelledError
         object EntityAlreadyExists : CreateRoleError
         object InvalidName : CreateRoleError
         data class Unexpected(val throwable: Throwable) : CreateRoleError
     }
 
     sealed interface DeleteRoleError {
+        object Cancelled : DeleteRoleError, EventCancelledError
         object EntityNotFound : DeleteRoleError
         data class Unexpected(val throwable: Throwable) : DeleteRoleError
     }
 
     sealed interface SetNameError {
+        object Cancelled : SetNameError, EventCancelledError
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         object NameAlreadySet : SetNameError
@@ -468,28 +475,33 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     }
 
     sealed interface SetWeightError {
+        object Cancelled : SetWeightError, EventCancelledError
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
     }
 
     sealed interface SetDefaultError {
+        object Cancelled : SetDefaultError, EventCancelledError
         object EntityNotFound : SetDefaultError
         object AlreadyDefault : SetDefaultError
         data class Unexpected(val throwable: Throwable) : SetDefaultError
     }
 
     sealed interface SetDefaultFlagError {
+        object Cancelled : SetDefaultFlagError, EventCancelledError
         object EntityNotFound : SetDefaultFlagError
         object FlagAlreadySet : SetDefaultFlagError
         data class Unexpected(val throwable: Throwable) : SetDefaultFlagError
     }
 
     sealed interface ClearDefaultError {
+        object Cancelled : ClearDefaultError, EventCancelledError
         object NoDefaultRole : ClearDefaultError
         data class Unexpected(val throwable: Throwable) : ClearDefaultError
     }
 
     sealed interface AddParentError {
+        object Cancelled : AddParentError, EventCancelledError
         object EntityNotFound : AddParentError
         object TargetNotFound : AddParentError
         object SelfReference : AddParentError
@@ -499,6 +511,7 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     }
 
     sealed interface RemoveParentError {
+        object Cancelled : RemoveParentError, EventCancelledError
         object EntityNotFound : RemoveParentError
         object TargetNotFound : RemoveParentError
         object NotParent : RemoveParentError

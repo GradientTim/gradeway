@@ -19,6 +19,9 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.track.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
@@ -27,6 +30,7 @@ import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.messaging.payloads.TrackChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.TrackStageChangedPayload
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
+import dev.gradienttim.gradeway.spec.TrackCreateSpec
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
@@ -41,15 +45,21 @@ class CommonTrackService(
     override fun createTrack(
         actor: Actor,
         slug: String,
+        builder: TrackCreateSpec.() -> Unit,
     ): Either<TrackService.CreateTrackError, DatabaseTrackEntity> = gradeway.audited(actor) { audit ->
-        if (!slug.isNameValid(TableConstants.TRACKS_TABLE_MAX_SLUG_LENGTH)) {
+        val spec = TrackCreateSpec(slug).apply(builder)
+        fireCancellable(gradeway, TrackCreateEvent(actor, spec), TrackService.CreateTrackError.Cancelled)
+        if (!spec.slug.isNameValid(TableConstants.TRACKS_TABLE_MAX_SLUG_LENGTH)) {
             raise(TrackService.CreateTrackError.InvalidSlug)
         }
         try {
             transaction(gradeway.database) {
                 DatabaseTrackEntity.new {
-                    this.slug = slug
-                }.also { audit.created(it) }
+                    this.slug = spec.slug
+                }.also {
+                    audit.created(it)
+                    audit.emit(TrackCreatedEvent(actor, it.id.value, it.slug))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -77,9 +87,11 @@ class CommonTrackService(
             val throwable = Throwable("Entity is not a type of DatabaseTrackEntity")
             raise(TrackService.DeleteTrackError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackDeleteEvent(actor, track), TrackService.DeleteTrackError.Cancelled)
         try {
             transaction(gradeway.database) {
                 audit.deleted(track)
+                audit.emit(TrackDeletedEvent(actor, track.id.value, track.slug))
                 track.delete()
             }
         } catch (throwable: Throwable) {
@@ -121,9 +133,11 @@ class CommonTrackService(
             val throwable = Throwable("Entity is not a type of DatabaseTrackEntity")
             raise(TrackService.SetSlugError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackSlugChangeEvent(actor, track, slug), TrackService.SetSlugError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val before = track.snapshot()
+                audit.emit(TrackSlugChangedEvent(actor, track.id.value, track.slug, slug))
                 track.slug = slug
                 track.flush()
                 audit.updated(track, before)
@@ -163,6 +177,7 @@ class CommonTrackService(
         track: TrackEntity,
         role: RoleEntity,
     ): Either<TrackService.AddStageError, DatabaseTrackStageEntity> = gradeway.audited(actor) { audit ->
+        fireCancellable(gradeway, TrackStageAddEvent(actor, track, role), TrackService.AddStageError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val maxPosition = TrackStagesTable.position.max()
@@ -175,7 +190,10 @@ class CommonTrackService(
                     this.trackId = track.id
                     this.roleId = role.id
                     this.position = nextPosition
-                }.also { audit.created(it) }
+                }.also {
+                    audit.created(it)
+                    audit.emit(TrackStageAddedEvent(actor, track.id.value, it.id.value, role.id.value, nextPosition))
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -215,9 +233,11 @@ class CommonTrackService(
             val throwable = Throwable("Entity is not a type of DatabaseTrackStageEntity")
             raise(TrackService.RemoveStageError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackStageRemoveEvent(actor, stage), TrackService.RemoveStageError.Cancelled)
         try {
             transaction(gradeway.database) {
                 audit.deleted(stage)
+                audit.emit(TrackStageRemovedEvent(actor, stage.trackId.value, stage.id.value, stage.roleId.value))
                 stage.delete()
             }
         } catch (throwable: Throwable) {
@@ -262,6 +282,12 @@ class CommonTrackService(
                 if (index == currentIndex) {
                     raise(TrackService.MoveStageError.AlreadyAtPosition)
                 }
+                fireCancellable(
+                    gradeway,
+                    TrackStageMoveEvent(actor, stage, index),
+                    TrackService.MoveStageError.Cancelled,
+                )
+                audit.emit(TrackStageMovedEvent(actor, stage.trackId.value, stage.id.value, currentIndex, index))
 
                 stageIds.add(index, stageIds.removeAt(currentIndex))
 
@@ -373,7 +399,7 @@ class CommonTrackService(
         actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-    ): Either<PlayerTrackService.PromotePlayerError, Unit> = either {
+    ): Either<PlayerTrackService.PromotePlayerError, Unit> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
                 val currentStage = findPlayersCurrentStage(player, track)
@@ -383,9 +409,26 @@ class CommonTrackService(
                     findPlayersNextStage(player, track)
                         ?: raise(PlayerTrackService.PromotePlayerError.MaximumStageReached)
                 }
+                fireCancellable(
+                    gradeway,
+                    PlayerPromoteEvent(actor, player, track, currentStage?.role, targetStage.role),
+                    PlayerTrackService.PromotePlayerError.Cancelled,
+                )
                 moveToStage(actor, player, currentStage, targetStage)
+                audit.emit(
+                    PlayerPromotedEvent(
+                        actor,
+                        player.id.value,
+                        track.id.value,
+                        currentStage?.roleId?.value,
+                        targetStage.roleId.value,
+                    )
+                )
             }
         }) { throwable ->
+            if (throwable is StageChangeCancelledException) {
+                raise(PlayerTrackService.PromotePlayerError.Cancelled)
+            }
             raise(PlayerTrackService.PromotePlayerError.Unexpected(throwable))
         }
     }
@@ -424,16 +467,33 @@ class CommonTrackService(
         actor: Actor,
         player: PlayerEntity,
         track: TrackEntity,
-    ): Either<PlayerTrackService.DemotePlayerError, Unit> = either {
+    ): Either<PlayerTrackService.DemotePlayerError, Unit> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
                 val currentStage = findPlayersCurrentStage(player, track)
                     ?: raise(PlayerTrackService.DemotePlayerError.MinimumStageReached)
                 val targetStage = findPlayersPreviousStage(player, track)
                     ?: raise(PlayerTrackService.DemotePlayerError.MinimumStageReached)
+                fireCancellable(
+                    gradeway,
+                    PlayerDemoteEvent(actor, player, track, currentStage.role, targetStage.role),
+                    PlayerTrackService.DemotePlayerError.Cancelled,
+                )
                 moveToStage(actor, player, currentStage, targetStage)
+                audit.emit(
+                    PlayerDemotedEvent(
+                        actor,
+                        player.id.value,
+                        track.id.value,
+                        currentStage.roleId.value,
+                        targetStage.roleId.value,
+                    )
+                )
             }
         }) { throwable ->
+            if (throwable is StageChangeCancelledException) {
+                raise(PlayerTrackService.DemotePlayerError.Cancelled)
+            }
             raise(PlayerTrackService.DemotePlayerError.Unexpected(throwable))
         }
     }
@@ -612,9 +672,17 @@ class CommonTrackService(
         cause: (E) -> Throwable?
     ) {
         onLeft { failure ->
+            if (failure is EventCancelledError) {
+                throw StageChangeCancelledException()
+            }
             if (!isTolerated(failure)) {
                 throw cause(failure) ?: IllegalStateException("$message: ${failure::class.simpleName}")
             }
         }
     }
 }
+
+/**
+ * Thrown when a role change made while moving a player along a track was canceled by a listener.
+ */
+private class StageChangeCancelledException : RuntimeException("A role change of the stage move was cancelled")

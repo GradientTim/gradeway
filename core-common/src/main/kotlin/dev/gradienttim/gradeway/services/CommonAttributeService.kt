@@ -19,6 +19,9 @@ import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.event.eventSubjectOf
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.attribute.*
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.AttributeReference
@@ -351,9 +354,20 @@ class CommonAttributeService(
         attribute: Attribute<TValue>,
         createEntityAttribute: () -> TAttributeEntity,
     ): Either<AttributeService.AddAttributeError, TAttributeEntity> = gradeway.audited(actor) { audit ->
+        val subject = eventSubjectOf(entity)
+        fireCancellable(
+            gradeway,
+            AttributeAddEvent(actor, subject, attribute),
+            AttributeService.AddAttributeError.Cancelled,
+        )
         try {
             transaction(gradeway.database) {
-                createEntityAttribute().also { audit.created(it) }
+                createEntityAttribute().also { created ->
+                    audit.created(created)
+                    if (created is SharedAttributeEntity) {
+                        audit.emit(AttributeAddedEvent(actor, subject, created.key, created.type, created.value))
+                    }
+                }
             }
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
@@ -385,8 +399,16 @@ class CommonAttributeService(
                 val attributeType = AttributeTypeRegistry.find(attribute.type) as? AttributeType<TValue>
                     ?: raise(AttributeService.UpdateAttributeError.AttributeTypeNotRegistered(attribute.type))
 
+                val subject = eventSubjectOf(entity)
+                fireCancellable(
+                    gradeway,
+                    AttributeUpdateEvent(actor, subject, key, value),
+                    AttributeService.UpdateAttributeError.Cancelled,
+                )
+
                 try {
                     val before = (attribute as? Auditable)?.snapshot()
+                    val previousValue = attribute.value
                     var tempValue = value
                     if (attributeType.unsafe) {
                         tempValue = attributeType.deserialize(value.toString()) ?: attributeType.fallback(key)
@@ -397,6 +419,7 @@ class CommonAttributeService(
                     if (attribute is Auditable && before != null) {
                         audit.updated(attribute, before)
                     }
+                    audit.emit(AttributeUpdatedEvent(actor, subject, key, previousValue, attribute.value))
 
                     attribute
                 } catch (throwable: Throwable) {
@@ -421,8 +444,16 @@ class CommonAttributeService(
                 raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
             }
 
+            val subject = eventSubjectOf(entity)
+            fireCancellable(
+                gradeway,
+                AttributeRemoveEvent(actor, subject, key),
+                AttributeService.RemoveAttributeError.Cancelled,
+            )
+
             try {
                 (attribute as? Auditable)?.let { audit.deleted(it) }
+                audit.emit(AttributeRemovedEvent(actor, subject, key))
                 attribute.delete()
             } catch (throwable: Throwable) {
                 raise(AttributeService.RemoveAttributeError.Unexpected(throwable))
@@ -439,7 +470,15 @@ class CommonAttributeService(
                 raise(AttributeService.ClearAttributesError.NoAttributesFound)
             }
 
+            val subject = eventSubjectOf(entity)
+            fireCancellable(
+                gradeway,
+                AttributesClearEvent(actor, subject),
+                AttributeService.ClearAttributesError.Cancelled,
+            )
+
             try {
+                audit.emit(AttributesClearedEvent(actor, subject, entity.attributes.map { it.key }))
                 entity.attributes.forEach { attributeEntity ->
                     if (attributeEntity is Entity<*>) {
                         (attributeEntity as? Auditable)?.let { audit.deleted(it) }

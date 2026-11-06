@@ -18,6 +18,8 @@ import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackEntity
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackStageEntity
+import dev.gradienttim.gradeway.events.lifecycle.BackupExportedEvent
+import dev.gradienttim.gradeway.events.lifecycle.BackupImportedEvent
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.extensions.limitedTo
 import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
@@ -131,9 +133,11 @@ class CommonBackupManager(val gradeway: CommonGradeway<*>) : BackupManager {
         }
 
         file
+    }.onRight { path ->
+        gradeway.events.fire(BackupExportedEvent(path))
     }
 
-    override fun import(fileName: String, wipe: Boolean): Either<BackupManager.ImportError, Unit> = either {
+    override fun import(fileName: String, wipe: Boolean): Either<BackupManager.ImportError, Unit> = either<_, Unit> {
         val file = directory.resolveWithinDirectory(fileName)
         if (file == null || !Files.exists(file)) {
             raise(BackupManager.ImportError.FileNotFound)
@@ -185,6 +189,8 @@ class CommonBackupManager(val gradeway: CommonGradeway<*>) : BackupManager {
         // payloads the services normally would, so every server's effective-permission and
         // effective-weight caches need to be dropped in full now that the import committed.
         gradeway.messaging.publish(CacheFlushPayload)
+    }.onRight {
+        gradeway.events.fire(BackupImportedEvent(fileName, wipe))
     }
 
     @OptIn(ExperimentalSerializationApi::class)

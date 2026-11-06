@@ -37,6 +37,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
         gradeway.groups.create(actor, name) {
             this.defaultWeight = defaultWeight
         }.onLeft { error ->
+            if (commandContext.sendIfCancelled(source, error)) return@onLeft
             if (error is GroupService.CreateGroupError.InvalidName) {
                 commandContext.sendTranslatedMessage(
                     source,
@@ -107,6 +108,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.groups.delete(actor, idOrName)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is GroupService.DeleteGroupError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -218,6 +220,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
 
                             gradeway.groups.setName(actor, idOrName, name)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is GroupService.SetNameError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -287,6 +290,7 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
 
                             gradeway.groups.setDefaultWeight(actor, idOrName, defaultWeight)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is GroupService.SetDefaultWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -501,6 +505,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
 
                     gradeway.groups.addRoleToGroup(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is GroupService.AddTargetError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -588,6 +593,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
 
                     gradeway.groups.removeRoleFromGroup(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is GroupService.RemoveTargetError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

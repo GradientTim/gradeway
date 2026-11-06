@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.GroupRoleChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
@@ -116,7 +117,7 @@ class CommonGroupServiceTest {
         val role = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.groups.addRoleToGroup(Actor.System, group, role).getOrElse { error(it.toString()) }
 
@@ -145,7 +146,7 @@ class CommonGroupServiceTest {
         gradeway.groups.addRoleToGroup(Actor.System, group, role).getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.groups.removeRoleFromGroup(Actor.System, group, role).getOrElse { error(it.toString()) }
 

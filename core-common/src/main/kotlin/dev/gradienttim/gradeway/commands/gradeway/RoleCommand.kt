@@ -43,6 +43,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     gradeway.roles.create(actor, name)
                         .onLeft { error ->
+                            if (commandContext.sendIfCancelled(source, error)) return@execute
                             if (error is CreateRoleError.EntityAlreadyExists) {
                                 commandContext.sendTranslatedMessage(
                                     source,
@@ -113,6 +114,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.roles.delete(actor, role.id.value)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeleteRoleError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -276,6 +278,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                         gradeway.roles.setDefault(actor, idOrName)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is SetDefaultError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -329,6 +332,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                     gradeway.roles.clearDefault(actor)
                         .onLeft { error ->
+                            if (commandContext.sendIfCancelled(source, error)) return@execute
                             if (error is ClearDefaultError.NoDefaultRole) {
                                 commandContext.sendTranslatedMessage(
                                     source,
@@ -523,6 +527,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                             gradeway.roles.setName(actor, idOrName, name)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is SetNameError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -604,6 +609,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                             gradeway.roles.setDefaultFlag(actor, idOrName, isDefault)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is SetDefaultFlagError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -675,6 +681,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
 
                             gradeway.roles.setWeight(actor, idOrName, weight)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is SetWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,

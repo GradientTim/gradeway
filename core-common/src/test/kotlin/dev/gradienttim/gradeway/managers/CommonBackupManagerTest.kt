@@ -11,6 +11,7 @@ import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import kotlinx.serialization.json.*
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
@@ -78,7 +79,7 @@ class CommonBackupManagerTest {
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.backups.import(file.name, wipe = true).getOrElse { error(it.toString()) }
 

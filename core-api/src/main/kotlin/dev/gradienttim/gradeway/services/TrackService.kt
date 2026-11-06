@@ -9,7 +9,9 @@ import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
+import dev.gradienttim.gradeway.spec.TrackCreateSpec
 import java.util.*
 
 interface TrackService : PlayerTrackService {
@@ -23,12 +25,14 @@ interface TrackService : PlayerTrackService {
      * @param actor The actor performing the operation.
      * @param slug A unique, human-readable identifier for the track to be created.
      *             It should be concise, URL-friendly, and not already in use.
+     * @param builder Configures further properties of the track before it is created.
      * @return Either a `TrackEntity` representing the newly created track or
      *         a `CreateTrackError` if the operation fails.
      */
     fun createTrack(
         actor: Actor,
         slug: String,
+        builder: TrackCreateSpec.() -> Unit = {},
     ): Either<CreateTrackError, TrackEntity>
 
     /**
@@ -296,17 +300,20 @@ interface TrackService : PlayerTrackService {
     fun findStageByRole(trackId: UUID, roleId: UUID): TrackStageEntity?
 
     sealed interface CreateTrackError {
+        object Cancelled : CreateTrackError, EventCancelledError
         object InvalidSlug : CreateTrackError
         object EntityAlreadyExists : CreateTrackError
         data class Unexpected(val throwable: Throwable) : CreateTrackError
     }
 
     sealed interface DeleteTrackError {
+        object Cancelled : DeleteTrackError, EventCancelledError
         object EntityNotFound : DeleteTrackError
         data class Unexpected(val throwable: Throwable) : DeleteTrackError
     }
 
     sealed interface SetSlugError {
+        object Cancelled : SetSlugError, EventCancelledError
         object EntityNotFound : SetSlugError
         object InvalidSlug : SetSlugError
         object SlugAlreadySet : SetSlugError
@@ -315,6 +322,7 @@ interface TrackService : PlayerTrackService {
     }
 
     sealed interface AddStageError {
+        object Cancelled : AddStageError, EventCancelledError
         object EntityNotFound : AddStageError
         object TargetNotFound : AddStageError
         object AlreadyExists : AddStageError
@@ -322,11 +330,13 @@ interface TrackService : PlayerTrackService {
     }
 
     sealed interface RemoveStageError {
+        object Cancelled : RemoveStageError, EventCancelledError
         object EntityNotFound : RemoveStageError
         data class Unexpected(val throwable: Throwable) : RemoveStageError
     }
 
     sealed interface MoveStageError {
+        object Cancelled : MoveStageError, EventCancelledError
         object EntityNotFound : MoveStageError
         data class InvalidPosition(val stageCount: Int) : MoveStageError
         object AlreadyAtPosition : MoveStageError

@@ -17,6 +17,11 @@ import dev.gradienttim.gradeway.utilities.lifecycle.*
  */
 interface MessagingManager : Loadable, Unloadable, Reloadable, Enableable, Disableable {
     /**
+     * The identifier this server uses on the messaging broker, unique per running instance.
+     */
+    val serverId: String
+
+    /**
      * Publishes a [MessagingPayload] to every other server connected to the same messaging
      * broker.
      *

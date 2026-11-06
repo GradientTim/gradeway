@@ -49,6 +49,7 @@ internal fun <TCommandSource> requestConfirmation(
             )
         }
     ).onLeft { error ->
+        if (context.sendIfCancelled(source, error)) return@onLeft
         if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
             context.sendTranslatedMessage(
                 source,
@@ -264,6 +265,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                     handleAdd(context.sourceToActor(source), idOrName, targetUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is AddParentError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -371,6 +373,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                     handleRemove(context.sourceToActor(source), idOrName, targetUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemoveParentError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -470,6 +473,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                     handleSetPermission(context.sourceToActor(source), idOrName, permission, true)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@onLeft
                             renderSetPermissionError(
                                 source,
                                 context,
@@ -499,6 +503,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleSetPermission(context.sourceToActor(source), idOrName, permission, status)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@onLeft
                                 renderSetPermissionError(source, context, entityType, idOrName, permission, error)
                             }
                             .onRight {
@@ -526,6 +531,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                     handleUnsetPermission(context.sourceToActor(source), idOrName, permission)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is UnsetPermissionError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -584,6 +590,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                 requestConfirmation(source, context, gradeway, rootLiteral) {
                     handleClearPermissions(context.sourceToActor(source), idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearPermissionsError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -641,6 +648,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleLinkTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is LinkTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -724,6 +732,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleUnlinkTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is UnlinkTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -796,6 +805,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleApplyTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is ApplyTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -868,6 +878,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleRevokeTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is RevokeTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -1021,6 +1032,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                             handleAddAttribute(context.sourceToActor(source), idOrName, attribute)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is AddAttributeError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -1085,6 +1097,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                         handleUpdateAttribute(context.sourceToActor(source), idOrName, key, value)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is UpdateAttributeError.EntityNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -1157,6 +1170,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
 
                     handleRemoveAttribute(context.sourceToActor(source), idOrName, key)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemoveAttributeError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -1215,6 +1229,7 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                 requestConfirmation(source, context, gradeway, rootLiteral) {
                     handleClearAttributes(context.sourceToActor(source), idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearAttributesError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

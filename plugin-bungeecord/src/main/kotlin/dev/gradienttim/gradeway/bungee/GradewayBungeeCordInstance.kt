@@ -11,7 +11,6 @@ import dev.gradienttim.gradeway.bungee.command.context.BungeeCommandContext
 import dev.gradienttim.gradeway.bungee.config.BungeeCordPlatformConfig
 import dev.gradienttim.gradeway.bungee.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bungee.listeners.PermissionListener
-import dev.gradienttim.gradeway.bungee.managers.BungeeCordEventManager
 import dev.gradienttim.gradeway.bungee.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bungee.notification.BungeeCordIngameNotificationPlatform
 import dev.gradienttim.gradeway.bungee.platform.BungeeCordKnownPermissionSource
@@ -43,7 +42,6 @@ class GradewayBungeeCordInstance(
             directory = directory,
             defaultPlatformConfig = BungeeCordPlatformConfig(),
             platformConfigSerializer = BungeeCordPlatformConfig.serializer(),
-            events = BungeeCordEventManager(),
             knownPermissionSource = BungeeCordKnownPermissionSource(plugin.proxy),
         )
 

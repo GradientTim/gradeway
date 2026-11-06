@@ -35,7 +35,6 @@ class CommonDatabaseManagerTest {
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
             stores = TestStores(),
-            events = TestEventManager(),
             knownPermissionSource = KnownPermissionSource.NONE,
         )
         instance.load().getOrElse { error(it.toString()) }

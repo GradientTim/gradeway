@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.services
 import arrow.core.Either
 import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.permission.*
 import java.util.*
 
@@ -191,38 +192,45 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     fun findPermissionByIdOrValue(value: String): PermissionEntity?
 
     sealed interface CreatePermissionError {
+        object Cancelled : CreatePermissionError, EventCancelledError
         object AlreadyExists : CreatePermissionError
         data class Unexpected(val throwable: Throwable) : CreatePermissionError
     }
 
     sealed interface DeletePermissionError {
+        object Cancelled : DeletePermissionError, EventCancelledError
         object EntityNotFound : DeletePermissionError
         data class Unexpected(val throwable: Throwable) : DeletePermissionError
     }
 
     sealed interface UpdatePermissionValueError {
+        object Cancelled : UpdatePermissionValueError, EventCancelledError
         object EntityNotFound : UpdatePermissionValueError
         object ValueAlreadySet : UpdatePermissionValueError
         data class Unexpected(val throwable: Throwable) : UpdatePermissionValueError
     }
 
     sealed interface UpdatePermissionTypeError {
+        object Cancelled : UpdatePermissionTypeError, EventCancelledError
         object EntityNotFound : UpdatePermissionTypeError
         object TypeAlreadySet : UpdatePermissionTypeError
         data class Unexpected(val throwable: Throwable) : UpdatePermissionTypeError
     }
 
     sealed interface CreateTemplateError {
+        object Cancelled : CreateTemplateError, EventCancelledError
         object InvalidName : CreateTemplateError
         data class Unexpected(val throwable: Throwable) : CreateTemplateError
     }
 
     sealed interface DeleteTemplateError {
+        object Cancelled : DeleteTemplateError, EventCancelledError
         object EntityNotFound : DeleteTemplateError
         data class Unexpected(val throwable: Throwable) : DeleteTemplateError
     }
 
     sealed interface SetNameTemplateError {
+        object Cancelled : SetNameTemplateError, EventCancelledError
         object EntityNotFound : SetNameTemplateError
         object InvalidName : SetNameTemplateError
         object NameAlreadySet : SetNameTemplateError
@@ -230,12 +238,14 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface SetAssignedToTemplateError {
+        object Cancelled : SetAssignedToTemplateError, EventCancelledError
         object EntityNotFound : SetAssignedToTemplateError
         object AlreadyAssignedTo : SetAssignedToTemplateError
         data class Unexpected(val throwable: Throwable) : SetAssignedToTemplateError
     }
 
     sealed interface AddPermissionToTemplateError {
+        object Cancelled : AddPermissionToTemplateError, EventCancelledError
         object EntityNotFound : AddPermissionToTemplateError
         object TargetNotFound : AddPermissionToTemplateError
         object PermissionAlreadyExists : AddPermissionToTemplateError
@@ -243,6 +253,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface RemovePermissionFromTemplateError {
+        object Cancelled : RemovePermissionFromTemplateError, EventCancelledError
         object EntityNotFound : RemovePermissionFromTemplateError
         object TargetNotFound : RemovePermissionFromTemplateError
         object PermissionNotExists : RemovePermissionFromTemplateError
@@ -250,11 +261,13 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface ClearPermissionsFromTemplateError {
+        object Cancelled : ClearPermissionsFromTemplateError, EventCancelledError
         object EntityNotFound : ClearPermissionsFromTemplateError
         data class Unexpected(val throwable: Throwable) : ClearPermissionsFromTemplateError
     }
 
     sealed interface LinkTemplateError {
+        object Cancelled : LinkTemplateError, EventCancelledError
         object TargetNotFound : LinkTemplateError
         object TemplateNotFound : LinkTemplateError
         object AlreadyLinked : LinkTemplateError
@@ -263,6 +276,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface UnlinkTemplateError {
+        object Cancelled : UnlinkTemplateError, EventCancelledError
         object TargetNotFound : UnlinkTemplateError
         object TemplateNotFound : UnlinkTemplateError
         object NotLinked : UnlinkTemplateError
@@ -270,6 +284,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface ApplyTemplateError {
+        object Cancelled : ApplyTemplateError, EventCancelledError
         object TargetNotFound : ApplyTemplateError
         object TemplateNotFound : ApplyTemplateError
         object WrongAssignedTo : ApplyTemplateError
@@ -277,12 +292,14 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface RevokeTemplateError {
+        object Cancelled : RevokeTemplateError, EventCancelledError
         object TargetNotFound : RevokeTemplateError
         object TemplateNotFound : RevokeTemplateError
         data class Unexpected(val throwable: Throwable) : RevokeTemplateError
     }
 
     sealed interface SetPermissionError {
+        object Cancelled : SetPermissionError, EventCancelledError
         object EntityNotFound : SetPermissionError
         object PermissionAlreadyEnabled : SetPermissionError
         object PermissionAlreadyDisabled : SetPermissionError
@@ -290,22 +307,26 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface BulkSetPermissionError {
+        object Cancelled : BulkSetPermissionError, EventCancelledError
         object EntityNotFound : BulkSetPermissionError
         data class Unexpected(val throwable: Throwable) : BulkSetPermissionError
     }
 
     sealed interface UnsetPermissionError {
+        object Cancelled : UnsetPermissionError, EventCancelledError
         object EntityNotFound : UnsetPermissionError
         object PermissionNotFound : UnsetPermissionError
         data class Unexpected(val throwable: Throwable) : UnsetPermissionError
     }
 
     sealed interface BulkUnsetPermissionError {
+        object Cancelled : BulkUnsetPermissionError, EventCancelledError
         object EntityNotFound : BulkUnsetPermissionError
         data class Unexpected(val throwable: Throwable) : BulkUnsetPermissionError
     }
 
     sealed interface ClearPermissionsError {
+        object Cancelled : ClearPermissionsError, EventCancelledError
         object EntityNotFound : ClearPermissionsError
         data class Unexpected(val throwable: Throwable) : ClearPermissionsError
     }

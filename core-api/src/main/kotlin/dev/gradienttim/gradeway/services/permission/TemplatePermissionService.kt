@@ -16,6 +16,7 @@ import dev.gradienttim.gradeway.entity.role.RolePermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.services.PermissionService.CreateTemplateError
 import dev.gradienttim.gradeway.services.PermissionService.DeleteTemplateError
+import dev.gradienttim.gradeway.spec.TemplateCreateSpec
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -29,12 +30,14 @@ interface TemplatePermissionService {
      *
      * @param actor The actor performing the operation.
      * @param name The name of the template to be created.
+     * @param builder Configures further properties of the template before it is created.
      * @return Either a CreateTemplateError indicating why the template could not be created,
      * or a PermissionTemplateEntity representing the successfully created template.
      */
     fun createTemplate(
         actor: Actor,
         name: String,
+        builder: TemplateCreateSpec.() -> Unit = {},
     ): Either<CreateTemplateError, PermissionTemplateEntity>
 
     /**

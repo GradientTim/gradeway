@@ -293,16 +293,9 @@ interface GradewayLifecycle<TPlatformConfig : PlatformConfig> : Gradeway<TPlatfo
     val backups: BackupManager
 
     /**
-     * Manages the lifecycle events within the Gradeway system.
+     * The event bus other plugins subscribe to, to listen to and cancel Gradeway changes.
      *
-     * This property represents an instance of [EventManager], which provides functionality for handling and dispatching
-     * events of type [dev.gradienttim.gradeway.event.Event] throughout the Gradeway ecosystem. It enables the system to initiate, propagate, and
-     * react to various lifecycle events, abstracting the event-handling logic into a centralized manager.
-     *
-     * Typical scenarios where this property is used include:
-     * - Triggering specific lifecycle events tied to the system's operational states.
-     * - Enabling communication and synchronization between different components of the Gradeway infrastructure.
-     * - Extending the system's behavior by introducing custom events and their associated handling logic.
+     * @see EventManager
      */
     val events: EventManager
 }

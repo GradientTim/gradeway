@@ -33,7 +33,7 @@ import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 
 class CommonMessagingManager(val gradeway: CommonGradeway<*>) : MessagingManager {
-    private val serverId: String = UUID.randomUUID().toString()
+    override val serverId: String = UUID.randomUUID().toString()
     private val listeners = CopyOnWriteArrayList<(MessagingPayload) -> Unit>()
 
     private var broker: MessagingBroker? = null

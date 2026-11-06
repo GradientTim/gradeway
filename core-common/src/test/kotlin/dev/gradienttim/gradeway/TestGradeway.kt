@@ -6,8 +6,6 @@ package dev.gradienttim.gradeway
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.driver.meta.DriverType
-import dev.gradienttim.gradeway.event.Event
-import dev.gradienttim.gradeway.managers.EventManager
 import dev.gradienttim.gradeway.platform.CommonLogger
 import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import dev.gradienttim.gradeway.platform.Scheduler
@@ -24,7 +22,6 @@ fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
         defaultPlatformConfig = TestPlatformConfig(),
         platformConfigSerializer = TestPlatformConfig.serializer(),
         stores = TestStores(),
-        events = TestEventManager(),
         knownPermissionSource = KnownPermissionSource.NONE,
     )
 
@@ -84,6 +81,3 @@ class TestStores : Stores {
     override val notification = MemoryUuidBooleanStore()
 }
 
-class TestEventManager : EventManager {
-    override fun <TEvent : Event> fire(event: TEvent) = Unit
-}

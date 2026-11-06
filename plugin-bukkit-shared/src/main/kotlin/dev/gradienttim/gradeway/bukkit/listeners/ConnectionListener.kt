@@ -98,7 +98,8 @@ class ConnectionListener(
             is RoleAttributeChangedPayload,
             is RoleAttributesClearedPayload,
             is TrackStageChangedPayload,
-            is TrackChangedPayload -> Unit
+            is TrackChangedPayload,
+            is EventPayload -> Unit
         }
     }
 

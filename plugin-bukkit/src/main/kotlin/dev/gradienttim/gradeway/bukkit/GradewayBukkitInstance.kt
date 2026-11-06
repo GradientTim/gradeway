@@ -10,7 +10,7 @@ import dev.gradienttim.gradeway.bukkit.command.BukkitBrigadierCommand
 import dev.gradienttim.gradeway.bukkit.command.context.BukkitCommandContext
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
-import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
+import dev.gradienttim.gradeway.bukkit.listeners.PluginLifecycleListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.notification.SpigotIngameNotificationPlatform
 import dev.gradienttim.gradeway.bukkit.platform.BukkitKnownPermissionSource
@@ -44,7 +44,6 @@ class GradewayBukkitInstance(
             directory = directory,
             defaultPlatformConfig = BukkitPlatformConfig(),
             platformConfigSerializer = BukkitPlatformConfig.serializer(),
-            events = BukkitEventManager(plugin),
             knownPermissionSource = BukkitKnownPermissionSource(plugin.server),
         )
 
@@ -91,6 +90,7 @@ class GradewayBukkitInstance(
 
     private fun registerEvents() {
         plugin.server.pluginManager.registerEvents(ConnectionListener(plugin.server, gradeway), plugin)
+        plugin.server.pluginManager.registerEvents(PluginLifecycleListener(gradeway), plugin)
     }
 
     private fun registerCommands() {

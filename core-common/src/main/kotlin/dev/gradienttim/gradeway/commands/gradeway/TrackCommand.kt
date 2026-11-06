@@ -47,6 +47,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                     gradeway.tracks.createTrack(actor, slug)
                         .onLeft { error ->
+                            if (commandContext.sendIfCancelled(source, error)) return@execute
                             if (error is CreateTrackError.InvalidSlug) {
                                 commandContext.sendTranslatedMessage(
                                     source,
@@ -105,6 +106,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
                         gradeway.tracks.deleteTrack(actor, idOrSlug)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeleteTrackError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -223,6 +225,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                             gradeway.tracks.setSlug(actor, idOrSlug, slug)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is SetSlugError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -319,6 +322,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                                 gradeway.tracks.addStage(actor, idOrSlug, roleUuid)
                                     .onLeft { error ->
+                                        if (commandContext.sendIfCancelled(source, error)) return@execute
                                         if (error is AddStageError.EntityNotFound) {
                                             commandContext.sendTranslatedMessage(
                                                 source,
@@ -421,6 +425,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                                 gradeway.tracks.removeStage(actor, stage)
                                     .onLeft { error ->
+                                        if (commandContext.sendIfCancelled(source, error)) return@execute
                                         if (error is RemoveStageError.EntityNotFound) {
                                             commandContext.sendTranslatedMessage(
                                                 source,
@@ -500,6 +505,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                                     gradeway.tracks.moveStage(actor, stage, position - 1)
                                         .onLeft { error ->
+                                            if (commandContext.sendIfCancelled(source, error)) return@execute
                                             if (error is MoveStageError.EntityNotFound) {
                                                 commandContext.sendTranslatedMessage(
                                                     source,
@@ -683,6 +689,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                         gradeway.tracks.promotePlayer(actor, player, track)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is PromotePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -792,6 +799,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                         gradeway.tracks.demotePlayer(actor, player, track)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is DemotePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,

@@ -7,7 +7,7 @@ package dev.gradienttim.gradeway.paper
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
-import dev.gradienttim.gradeway.bukkit.managers.BukkitEventManager
+import dev.gradienttim.gradeway.bukkit.listeners.PluginLifecycleListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
 import dev.gradienttim.gradeway.bukkit.platform.BukkitStores
@@ -35,7 +35,6 @@ class GradewayPlugin : JavaPlugin() {
         directory = dataFolder.toPath(),
         defaultPlatformConfig = BukkitPlatformConfig(),
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
-        events = BukkitEventManager(this),
         knownPermissionSource = PaperKnownPermissionSource(server),
     )
 
@@ -79,6 +78,7 @@ class GradewayPlugin : JavaPlugin() {
 
     private fun registerEvents() {
         server.pluginManager.registerEvents(ConnectionListener(server, gradeway), this)
+        server.pluginManager.registerEvents(PluginLifecycleListener(gradeway), this)
     }
 
     private fun registerCommands() {

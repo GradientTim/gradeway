@@ -10,9 +10,11 @@ import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.player.RolePlayerService
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.spec.PlayerCreateSpec
 import java.util.*
 
 /**
@@ -27,13 +29,15 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * @param actor The actor performing the operation.
      * @param id The unique identifier of the player to be created.
      * @param name The name of the player to be created.
+     * @param builder Configures further properties of the player before it is created.
      * @return An instance of [Either] containing [CreatePlayerError] if the creation fails,
-     *         or [Unit] if the creation succeeds.
+     *         or the created player if the creation succeeds.
      */
     fun create(
         actor: Actor,
         id: UUID,
         name: String,
+        builder: PlayerCreateSpec.() -> Unit = {},
     ): Either<CreatePlayerError, PlayerEntity>
 
     /**
@@ -264,28 +268,33 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
     sealed interface CreatePlayerError {
+        object Cancelled : CreatePlayerError, EventCancelledError
         object EntityAlreadyExists : CreatePlayerError
         object InvalidName : CreatePlayerError
         data class Unexpected(val throwable: Throwable) : CreatePlayerError
     }
 
     sealed interface DeletePlayerError {
+        object Cancelled : DeletePlayerError, EventCancelledError
         object EntityNotFound : DeletePlayerError
         data class Unexpected(val throwable: Throwable) : DeletePlayerError
     }
 
     sealed interface SetNameError {
+        object Cancelled : SetNameError, EventCancelledError
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         data class Unexpected(val throwable: Throwable) : SetNameError
     }
 
     sealed interface SetWeightError {
+        object Cancelled : SetWeightError, EventCancelledError
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
     }
 
     sealed interface AddRoleError {
+        object Cancelled : AddRoleError, EventCancelledError
         object EntityNotFound : AddRoleError
         object TargetNotFound : AddRoleError
         object AlreadyExists : AddRoleError
@@ -294,6 +303,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface RemoveRoleError {
+        object Cancelled : RemoveRoleError, EventCancelledError
         object EntityNotFound : RemoveRoleError
         object TargetNotFound : RemoveRoleError
         object NotExists : RemoveRoleError
@@ -301,6 +311,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetRoleUntilAtError {
+        object Cancelled : SetRoleUntilAtError, EventCancelledError
         object EntityNotFound : SetRoleUntilAtError
         object TargetNotFound : SetRoleUntilAtError
         object RelationNotFound : SetRoleUntilAtError
@@ -309,6 +320,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetRolePausedAtError {
+        object Cancelled : SetRolePausedAtError, EventCancelledError
         object EntityNotFound : SetRolePausedAtError
         object TargetNotFound : SetRolePausedAtError
         object RelationNotFound : SetRolePausedAtError
@@ -317,6 +329,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface PauseRoleError {
+        object Cancelled : PauseRoleError, EventCancelledError
         object EntityNotFound : PauseRoleError
         object TargetNotFound : PauseRoleError
         object RelationNotFound : PauseRoleError
@@ -325,6 +338,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface ResumeRoleError {
+        object Cancelled : ResumeRoleError, EventCancelledError
         object EntityNotFound : ResumeRoleError
         object TargetNotFound : ResumeRoleError
         object RelationNotFound : ResumeRoleError
@@ -333,6 +347,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetPrimaryRoleError {
+        object Cancelled : SetPrimaryRoleError, EventCancelledError
         object EntityNotFound : SetPrimaryRoleError
         object TargetNotFound : SetPrimaryRoleError
         object AlreadyPrimary : SetPrimaryRoleError
@@ -340,11 +355,13 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface ApplyDefaultRoleError {
+        object Cancelled : ApplyDefaultRoleError, EventCancelledError
         object EntityNotFound : ApplyDefaultRoleError
         data class Unexpected(val throwable: Throwable) : ApplyDefaultRoleError
     }
 
     sealed interface ClearPrimaryRoleError {
+        object Cancelled : ClearPrimaryRoleError, EventCancelledError
         object EntityNotFound : ClearPrimaryRoleError
         object NoPrimaryRole : ClearPrimaryRoleError
         data class Unexpected(val throwable: Throwable) : ClearPrimaryRoleError

@@ -101,7 +101,7 @@ class CommonPlayerServiceTest {
         val role = createRole()
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.players.addRole(Actor.System, player, role, null).getOrElse { error(it.toString()) }
 

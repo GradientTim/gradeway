@@ -9,6 +9,8 @@ import arrow.core.raise.Raise
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.constants.ActionConstants
+import dev.gradienttim.gradeway.event.PostEvent
+import dev.gradienttim.gradeway.event.dispatchPostEvents
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -19,6 +21,7 @@ import kotlinx.serialization.json.JsonObject
  */
 internal class AuditRecorder {
     private val entries = mutableListOf<Pair<String, Snapshot>>()
+    private val postEvents = mutableListOf<PostEvent>()
 
     /**
      * Records the creation of [entity]. Call it after the entity has been created.
@@ -43,6 +46,17 @@ internal class AuditRecorder {
         if (before != after) {
             entries += ActionConstants.UPDATE to Snapshot(entity.target, before, after)
         }
+    }
+
+    /**
+     * Queues [event] to be fired once the operation succeeded. Discarded when the operation raises.
+     */
+    fun emit(event: PostEvent) {
+        postEvents += event
+    }
+
+    fun dispatch(gradeway: CommonGradeway<*>) {
+        gradeway.dispatchPostEvents(postEvents.toList())
     }
 
     fun write(gradeway: CommonGradeway<*>, actor: Actor) {
@@ -75,5 +89,8 @@ internal inline fun <E, T> CommonGradeway<*>.audited(
     block: Raise<E>.(audit: AuditRecorder) -> T,
 ): Either<E, T> {
     val recorder = AuditRecorder()
-    return either { block(recorder) }.onRight { recorder.write(this, actor) }
+    return either { block(recorder) }.onRight {
+        recorder.write(this, actor)
+        recorder.dispatch(this)
+    }
 }
