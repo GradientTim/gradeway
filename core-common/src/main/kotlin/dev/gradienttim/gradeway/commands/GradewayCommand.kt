@@ -33,6 +33,8 @@ fun <TCommandSource> createGradewayCommand(
         backupCommand(literal, gradeway, commandContext)
         migrationCommand(literal, gradeway, commandContext)
         permissionCommand(literal, gradeway, commandContext)
+        whyCommand(gradeway, commandContext)
+        whoCanCommand(literal, gradeway, commandContext)
         confirmationCommand(gradeway, commandContext)
         notificationCommand(gradeway, commandContext)
 

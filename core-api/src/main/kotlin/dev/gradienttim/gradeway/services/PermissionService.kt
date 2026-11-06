@@ -5,12 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.entity.permission.PermissionEntity
-import dev.gradienttim.gradeway.services.permission.GroupPermissionService
-import dev.gradienttim.gradeway.services.permission.PlayerPermissionService
-import dev.gradienttim.gradeway.services.permission.RolePermissionService
-import dev.gradienttim.gradeway.services.permission.TemplatePermissionService
 import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.entity.permission.PermissionEntity
+import dev.gradienttim.gradeway.services.permission.*
 import java.util.*
 
 /**
@@ -22,7 +19,7 @@ import java.util.*
  * setting, unsetting, or clearing permissions.
  */
 interface PermissionService : TemplatePermissionService, RolePermissionService, PlayerPermissionService,
-    GroupPermissionService {
+    GroupPermissionService, PermissionInspectionService {
     /**
      * Creates a new permission entity with the given value and type.
      *

@@ -20,7 +20,7 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 class CommonLogService(
     val gradeway: CommonGradeway<*>,

@@ -4,12 +4,12 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.velocity.listeners
 
-import dev.gradienttim.gradeway.audit.Actor
 import com.velocitypowered.api.event.PostOrder
 import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.connection.LoginEvent
 import dev.gradienttim.gradeway.GradewayLifecycle
+import dev.gradienttim.gradeway.audit.Actor
 
 class ConnectionListener(val gradeway: GradewayLifecycle<*>) {
     @Subscribe(order = PostOrder.EARLY, priority = Short.MAX_VALUE)

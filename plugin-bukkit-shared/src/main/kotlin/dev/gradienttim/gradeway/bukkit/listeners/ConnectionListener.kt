@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.bukkit.listeners
 
-import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.GradewayLifecycle
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.messaging.payloads.*

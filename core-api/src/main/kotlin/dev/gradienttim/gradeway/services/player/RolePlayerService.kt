@@ -5,11 +5,11 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.player
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.services.PlayerService
-import dev.gradienttim.gradeway.audit.Actor
 import java.time.Instant
 import java.util.*
 

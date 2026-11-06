@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.reference
 
-import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
 import org.jetbrains.exposed.v1.jdbc.SizedIterable

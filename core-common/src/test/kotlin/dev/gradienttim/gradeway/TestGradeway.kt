@@ -6,8 +6,13 @@ package dev.gradienttim.gradeway
 
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.event.Event
+import dev.gradienttim.gradeway.managers.EventManager
 import dev.gradienttim.gradeway.platform.CommonLogger
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import dev.gradienttim.gradeway.platform.Scheduler
+import dev.gradienttim.gradeway.platform.Stores
+import dev.gradienttim.gradeway.platform.stores.MemoryUuidBooleanStore
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
@@ -18,6 +23,9 @@ fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
         directory = Files.createTempDirectory("gradeway-test"),
         defaultPlatformConfig = TestPlatformConfig(),
         platformConfigSerializer = TestPlatformConfig.serializer(),
+        stores = TestStores(),
+        events = TestEventManager(),
+        knownPermissionSource = KnownPermissionSource.NONE,
     )
 
     gradeway.load()
@@ -70,4 +78,12 @@ class TestScheduler : Scheduler {
     class TestGradewayTask : Scheduler.Task {
         override fun cancel(): Boolean = true
     }
+}
+
+class TestStores : Stores {
+    override val notification = MemoryUuidBooleanStore()
+}
+
+class TestEventManager : EventManager {
+    override fun <TEvent : Event> fire(event: TEvent) = Unit
 }

@@ -4,15 +4,15 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.player
 
-import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Auditable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.AttributeReference
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
 import dev.gradienttim.gradeway.reference.TrackReference
 import dev.gradienttim.gradeway.services.PlayerService
-import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.time.Instant

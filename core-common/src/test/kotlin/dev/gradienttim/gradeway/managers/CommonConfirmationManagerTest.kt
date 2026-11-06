@@ -5,10 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
-import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.TestPlatformConfig
-import dev.gradienttim.gradeway.TestScheduler
+import dev.gradienttim.gradeway.*
 import dev.gradienttim.gradeway.platform.CommonLogger
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import java.nio.file.Files
 import java.util.*
 import kotlin.test.*
@@ -26,6 +25,9 @@ class CommonConfirmationManagerTest {
             directory = Files.createTempDirectory("confirmation-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
+            stores = TestStores(),
+            events = TestEventManager(),
+            knownPermissionSource = KnownPermissionSource.NONE,
         )
         instance.load().getOrElse { error(it.toString()) }
         gradeway = instance

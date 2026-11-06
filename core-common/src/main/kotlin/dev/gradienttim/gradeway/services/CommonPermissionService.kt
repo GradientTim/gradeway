@@ -16,13 +16,13 @@ import dev.gradienttim.gradeway.database.models.group.DatabaseGroupPermissionEnt
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupPermissionTemplateEntity
 import dev.gradienttim.gradeway.database.models.group.GroupPermissionTemplatesTable
 import dev.gradienttim.gradeway.database.models.permission.*
-import dev.gradienttim.gradeway.database.models.player.DatabasePlayerPermissionEntity
-import dev.gradienttim.gradeway.database.models.player.DatabasePlayerPermissionTemplateEntity
-import dev.gradienttim.gradeway.database.models.player.PlayerPermissionTemplatesTable
+import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.DatabaseRolePermissionEntity
 import dev.gradienttim.gradeway.database.models.role.DatabaseRolePermissionTemplateEntity
 import dev.gradienttim.gradeway.database.models.role.RolePermissionTemplatesTable
+import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.entity.SharedPermissionEntity
+import dev.gradienttim.gradeway.entity.SharedPermissionTemplateEntity
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
@@ -37,12 +37,16 @@ import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.extensions.isUuid
+import dev.gradienttim.gradeway.internal.PermissionGrantCollector
 import dev.gradienttim.gradeway.messaging.payloads.*
 import dev.gradienttim.gradeway.reference.PermissionReference
+import dev.gradienttim.gradeway.reference.PermissionTemplateReference
+import dev.gradienttim.gradeway.services.permission.PermissionInspectionService.*
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.dao.Entity
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import java.util.*
 
@@ -2790,6 +2794,149 @@ class CommonPermissionService(
     override fun hasEffectivePlayerPermission(idOrName: String, permission: String): Boolean {
         val entity = gradeway.players.findByIdOrName(idOrName) ?: return false
         return hasEffectivePlayerPermission(entity, permission)
+    }
+
+    override fun explainPlayerPermission(id: UUID, permission: String): List<PermissionGrant> {
+        val entity = gradeway.players.findById(id) ?: return emptyList()
+        return explainPlayerPermission(entity, permission)
+    }
+
+    override fun explainPlayerPermission(entity: PlayerEntity, permission: String): List<PermissionGrant> {
+        if (!gradeway.permissions.hasEffectivePlayerPermission(entity.id.value, permission)) {
+            return emptyList()
+        }
+
+        return transaction(gradeway.database) {
+            val collector = PermissionGrantCollector(permission, gradeway)
+            val path = listOf(GrantSource.Player(entity.id.value, entity.name))
+
+            collector.collectOwn(path, entity)
+            collector.collectTemplates(path, entity)
+
+            entity.roles
+                .filter { it.pausedAt == null && (it.untilAt == null || it.untilAt!! > gradeway.now()) }
+                .forEach { playerRole -> collector.collectRole(path, playerRole.role, emptySet()) }
+
+            collector.result()
+        }
+    }
+
+    override fun explainRolePermission(id: UUID, permission: String): List<PermissionGrant> {
+        val entity = gradeway.roles.findById(id) ?: return emptyList()
+        return explainRolePermission(entity, permission)
+    }
+
+    override fun explainRolePermission(entity: RoleEntity, permission: String): List<PermissionGrant> {
+        return transaction(gradeway.database) {
+            val collector = PermissionGrantCollector(permission, gradeway)
+            collector.collectRole(emptyList(), entity, emptySet())
+            collector.result()
+        }
+    }
+
+    override fun findPermissionHolders(permission: String): PermissionHolders {
+        return transaction(gradeway.database) {
+            val matchingPermissionIds = DatabasePermissionEntity.all()
+                .filter { it.validatePermission(permission) }
+                .map { it.id }
+            val matchingTemplateIds = if (matchingPermissionIds.isEmpty()) {
+                emptyList()
+            } else {
+                PermissionTemplatePermissionsTable
+                    .select(PermissionTemplatePermissionsTable.templateId)
+                    .where { PermissionTemplatePermissionsTable.permissionId inList matchingPermissionIds }
+                    .map { it[PermissionTemplatePermissionsTable.templateId] }
+                    .distinct()
+            }
+
+            val roles = findRoleHolders(permission)
+            val players = findPlayerHolders(
+                matchingPermissionIds = matchingPermissionIds.map { it.value },
+                matchingTemplateIds = matchingTemplateIds.map { it.value },
+                holderRoleIds = roles.map { it.id },
+            )
+
+            PermissionHolders(roles = roles, players = players)
+        }
+    }
+
+    private fun findRoleHolders(permission: String): List<PermissionHolder> {
+        return RolesTable
+            .select(RolesTable.id)
+            .map { it[RolesTable.id].value }
+            .filter { roleId -> gradeway.permissions.hasEffectiveRolePermission(roleId, permission) }
+            .mapNotNull { roleId -> gradeway.roles.findById(roleId) }
+            .map { role ->
+                PermissionHolder(
+                    id = role.id.value,
+                    name = role.name,
+                    direct = holdsDirectly(role, permission),
+                )
+            }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    private fun findPlayerHolders(
+        matchingPermissionIds: List<UUID>,
+        matchingTemplateIds: List<UUID>,
+        holderRoleIds: List<UUID>,
+    ): List<PermissionHolder> {
+        val directIds = mutableSetOf<UUID>()
+
+        if (matchingPermissionIds.isNotEmpty()) {
+            directIds += PlayerPermissionsTable
+                .select(PlayerPermissionsTable.playerId)
+                .where {
+                    (PlayerPermissionsTable.permissionId inList matchingPermissionIds) and
+                            (PlayerPermissionsTable.isEnabled eq true)
+                }
+                .map { it[PlayerPermissionsTable.playerId].value }
+        }
+
+        if (matchingTemplateIds.isNotEmpty()) {
+            directIds += PlayerPermissionTemplatesTable
+                .select(PlayerPermissionTemplatesTable.playerId)
+                .where { PlayerPermissionTemplatesTable.permissionTemplateId inList matchingTemplateIds }
+                .map { it[PlayerPermissionTemplatesTable.playerId].value }
+        }
+
+        val roleHolderIds = if (holderRoleIds.isEmpty()) {
+            emptySet()
+        } else {
+            val now = gradeway.now()
+            PlayerRolesTable
+                .select(PlayerRolesTable.playerId)
+                .where {
+                    (PlayerRolesTable.roleId inList holderRoleIds) and
+                            PlayerRolesTable.pausedAt.isNull() and
+                            (PlayerRolesTable.untilAt.isNull() or (PlayerRolesTable.untilAt greater now))
+                }
+                .map { it[PlayerRolesTable.playerId].value }
+                .toSet()
+        }
+
+        val holderIds = directIds + roleHolderIds
+        if (holderIds.isEmpty()) {
+            return emptyList()
+        }
+
+        return PlayersTable
+            .select(PlayersTable.id, PlayersTable.name)
+            .where { PlayersTable.id inList holderIds }
+            .map { row ->
+                val id = row[PlayersTable.id].value
+                PermissionHolder(id = id, name = row[PlayersTable.name], direct = id in directIds)
+            }
+            .sortedBy { it.name.lowercase() }
+    }
+
+    private fun <TEntity> holdsDirectly(entity: TEntity, permission: String): Boolean
+            where TEntity : PermissionReference<out SharedPermissionEntity>,
+                  TEntity : PermissionTemplateReference<out SharedPermissionTemplateEntity> {
+        val ownMatch = entity.permissions.any { it.isEnabled && it.permission.validatePermission(permission) }
+        return ownMatch || entity.permissionTemplates.any { link ->
+            link.permissionTemplate.permissions.any { it.permission.validatePermission(permission) }
+        }
     }
 
     /**

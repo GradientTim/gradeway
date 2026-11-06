@@ -4,10 +4,10 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.platform
 
-import dev.gradienttim.gradeway.audit.Actor
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.disposeTestGradeway

@@ -5,10 +5,10 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.track
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
-import dev.gradienttim.gradeway.audit.Actor
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import java.util.*
 

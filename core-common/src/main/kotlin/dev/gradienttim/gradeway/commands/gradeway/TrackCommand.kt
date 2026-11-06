@@ -6,13 +6,8 @@ package dev.gradienttim.gradeway.commands.gradeway
 
 import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.command.context.CommandContext
-import dev.gradienttim.gradeway.command.execute
-import dev.gradienttim.gradeway.command.intParam
-import dev.gradienttim.gradeway.command.integer
-import dev.gradienttim.gradeway.command.literal
-import dev.gradienttim.gradeway.command.string
-import dev.gradienttim.gradeway.command.stringParam
 import dev.gradienttim.gradeway.commands.extensions.*
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.database.models.track.TrackStagesTable

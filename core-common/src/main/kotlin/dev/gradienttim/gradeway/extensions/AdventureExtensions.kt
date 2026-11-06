@@ -10,7 +10,7 @@ import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.translation.Argument
-import java.util.UUID
+import java.util.*
 
 fun UUID.toIdArgument(): ComponentLike = Argument.tagResolver(
     Placeholder.unparsed("id", toString()),

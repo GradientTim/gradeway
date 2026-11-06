@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.bungee.listeners
 
-import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.GradewayLifecycle
+import dev.gradienttim.gradeway.audit.Actor
 import net.md_5.bungee.api.event.PlayerDisconnectEvent
 import net.md_5.bungee.api.event.PostLoginEvent
 import net.md_5.bungee.api.plugin.Listener

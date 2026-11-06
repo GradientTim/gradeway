@@ -10,11 +10,7 @@ import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.commands.extensions.*
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
-import dev.gradienttim.gradeway.database.models.player.PlayerAttributesTable
-import dev.gradienttim.gradeway.database.models.player.PlayerPermissionTemplatesTable
-import dev.gradienttim.gradeway.database.models.player.PlayerPermissionsTable
-import dev.gradienttim.gradeway.database.models.player.PlayerRolesTable
-import dev.gradienttim.gradeway.database.models.player.PlayersTable
+import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.formatUTC
@@ -24,11 +20,7 @@ import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.utilities.TimeParser
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.translation.Argument
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.innerJoin
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.lowerCase
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction

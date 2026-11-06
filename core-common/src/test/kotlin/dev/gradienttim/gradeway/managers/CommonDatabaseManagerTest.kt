@@ -5,14 +5,12 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.managers
 
 import arrow.core.getOrElse
-import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.TestDatabaseDriver
-import dev.gradienttim.gradeway.TestPlatformConfig
-import dev.gradienttim.gradeway.TestScheduler
+import dev.gradienttim.gradeway.*
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import dev.gradienttim.gradeway.throwables.driver.DriverBlankIdentifierThrowable
 import dev.gradienttim.gradeway.throwables.driver.DriverNotFoundThrowable
 import dev.gradienttim.gradeway.throwables.driver.DriverUnsupportedAdapterThrowable
@@ -36,6 +34,9 @@ class CommonDatabaseManagerTest {
             directory = Files.createTempDirectory("database-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
+            stores = TestStores(),
+            events = TestEventManager(),
+            knownPermissionSource = KnownPermissionSource.NONE,
         )
         instance.load().getOrElse { error(it.toString()) }
         gradeway = instance

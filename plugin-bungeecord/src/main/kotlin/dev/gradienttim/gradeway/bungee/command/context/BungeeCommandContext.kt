@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.bungee.command.context
 
-import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.command.context.CommandContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer

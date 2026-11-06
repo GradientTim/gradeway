@@ -6,8 +6,8 @@ package dev.gradienttim.gradeway.velocity.command.context
 
 import com.velocitypowered.api.command.CommandSource
 import com.velocitypowered.api.proxy.Player
-import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.command.context.CommandContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
 import java.util.*

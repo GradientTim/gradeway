@@ -5,8 +5,8 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.shared
 
 import arrow.core.Either
-import dev.gradienttim.gradeway.services.PermissionService
 import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.services.PermissionService
 import java.util.*
 
 /**

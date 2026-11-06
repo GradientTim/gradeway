@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.log
 
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents a log entry that captures audit information about actions performed in the system.

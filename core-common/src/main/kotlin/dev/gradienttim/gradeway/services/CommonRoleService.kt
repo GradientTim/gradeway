@@ -9,6 +9,9 @@ import arrow.core.raise.catch
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.AuditRecorder
+import dev.gradienttim.gradeway.audit.audited
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleParentEntity
@@ -19,9 +22,6 @@ import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
-import dev.gradienttim.gradeway.audit.Actor
-import dev.gradienttim.gradeway.audit.AuditRecorder
-import dev.gradienttim.gradeway.audit.audited
 import net.kyori.adventure.key.Key
 import org.jetbrains.exposed.v1.core.Op
 import org.jetbrains.exposed.v1.core.SortOrder

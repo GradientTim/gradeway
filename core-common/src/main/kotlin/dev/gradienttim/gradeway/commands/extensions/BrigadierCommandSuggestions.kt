@@ -7,7 +7,6 @@ package dev.gradienttim.gradeway.commands.extensions
 import com.mojang.brigadier.LiteralMessage
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
-import dev.gradienttim.gradeway.command.suggest
 import dev.gradienttim.gradeway.registries.AttributeTypeRegistry
 import java.util.*
 

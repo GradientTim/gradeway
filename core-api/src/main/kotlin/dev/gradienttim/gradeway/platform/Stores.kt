@@ -5,7 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.platform
 
 import dev.gradienttim.gradeway.utilities.Store
-import java.util.UUID
+import java.util.*
 
 /**
  * Provides access to various key-value stores for managing application data.

@@ -12,12 +12,7 @@ import dev.gradienttim.gradeway.commands.extensions.*
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.database.models.player.PlayerRolesTable
-import dev.gradienttim.gradeway.database.models.role.RoleAttributesTable
-import dev.gradienttim.gradeway.database.models.role.RoleGroupsTable
-import dev.gradienttim.gradeway.database.models.role.RoleParentsTable
-import dev.gradienttim.gradeway.database.models.role.RolePermissionTemplatesTable
-import dev.gradienttim.gradeway.database.models.role.RolePermissionsTable
-import dev.gradienttim.gradeway.database.models.role.RolesTable
+import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.formatUTC
 import dev.gradienttim.gradeway.extensions.likeAsStr
@@ -29,7 +24,6 @@ import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.util.*
 
 internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
     rootLiteral: String,

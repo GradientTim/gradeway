@@ -5,20 +5,9 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.notification.drivers.slack
 
 import dev.gradienttim.gradeway.audit.AuditNotification
-import dev.gradienttim.gradeway.notification.Notification
-import dev.gradienttim.gradeway.notification.NotificationHttpClient
-import dev.gradienttim.gradeway.notification.NotificationNotifier
-import dev.gradienttim.gradeway.notification.actorLabel
-import dev.gradienttim.gradeway.notification.targetLabel
-import dev.gradienttim.gradeway.notification.title
-import dev.gradienttim.gradeway.notification.toPrettyString
+import dev.gradienttim.gradeway.notification.*
 import dev.gradienttim.gradeway.platform.Logger
-import kotlinx.serialization.json.JsonArrayBuilder
-import kotlinx.serialization.json.addJsonObject
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.json.*
 
 class SlackNotificationNotifier(
     logger: Logger,

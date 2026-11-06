@@ -22,15 +22,10 @@ import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.GroupService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.translation.Argument
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.innerJoin
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.lowerCase
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.util.*
 
 internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
     rootLiteral: String,

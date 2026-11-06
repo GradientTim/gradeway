@@ -6,14 +6,13 @@ package dev.gradienttim.gradeway.extensions
 
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.flattener.ComponentFlattener
 import net.kyori.adventure.text.minimessage.translation.Argument
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
-import net.kyori.adventure.text.flattener.ComponentFlattener
 import java.io.IOException
 import java.nio.file.Files
 import java.time.Instant
-import java.util.Locale
-import java.util.Properties
+import java.util.*
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.writeText

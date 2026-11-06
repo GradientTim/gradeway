@@ -8,6 +8,8 @@ import arrow.core.Either
 import arrow.core.raise.catch
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.audited
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackEntity
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackStageEntity
@@ -25,8 +27,6 @@ import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.messaging.payloads.TrackChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.TrackStageChangedPayload
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
-import dev.gradienttim.gradeway.audit.Actor
-import dev.gradienttim.gradeway.audit.audited
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized

@@ -4,8 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.group
 
-import dev.gradienttim.gradeway.entity.SharedPermissionEntity
 import dev.gradienttim.gradeway.audit.Auditable
+import dev.gradienttim.gradeway.entity.SharedPermissionEntity
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
