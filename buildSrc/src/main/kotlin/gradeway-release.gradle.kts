@@ -16,6 +16,11 @@ val supportedMinecraftVersions = arrayOf(
     "26.3",
 )
 
+val supportedVelocityVersions = arrayOf(
+    "4.3.0",
+    "4.3.1"
+)
+
 val hangarApiKey = findProperty("gradeway.hangar.apiKey") as? String
 val modrinthToken = findProperty("gradeway.modrinth.token") as? String
 
@@ -23,17 +28,19 @@ val readMeContent = rootProject.file("README.md").readText()
 
 val shadowJarFile = tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile }
 
+data class ModuleInfo(val loaders: List<String>, val prettyName: String)
+
 // the mappings for Modrinth loader types
-val moduleLoaders = when (project.name) {
-    "plugin-bukkit" -> listOf("bukkit", "spigot")
-    "plugin-paper" -> listOf("paper", "purpur", "folia")
-    "plugin-bungeecord" -> listOf("bungeecord")
-    "plugin-velocity" -> listOf("velocity")
-    else -> emptyList()
+val moduleInfo = when (project.name) {
+    "plugin-bukkit" -> ModuleInfo(listOf("bukkit", "spigot"), "Bukkit")
+    "plugin-paper" -> ModuleInfo(listOf("paper", "purpur", "folia"), "Paper")
+    "plugin-bungeecord" -> ModuleInfo(listOf("bungeecord"), "BungeeCord")
+    "plugin-velocity" -> ModuleInfo(listOf("velocity"), "Velocity")
+    else -> null
 }
 
 if (modrinthToken != null) {
-    require(moduleLoaders.isNotEmpty()) {
+    require(moduleInfo != null) {
         "No Modrinth loader mapped for project '${project.name}' - add one to moduleLoaders in gradeway-release.gradle.kts"
     }
 
@@ -43,11 +50,12 @@ if (modrinthToken != null) {
         projectId.set("gradeway")
         versionType.set("release")
         versionNumber.set(moduleVersion)
+        versionName.set(moduleVersion + " - " + moduleInfo.prettyName)
 
         uploadFile.set(shadowJarFile)
         syncBodyFrom = readMeContent
 
-        loaders.addAll(moduleLoaders)
+        loaders.addAll(moduleInfo.loaders)
         gameVersions.addAll(*supportedMinecraftVersions)
     }
 }
@@ -73,13 +81,12 @@ if (hangarSupported) {
                     }
                 }
 
-//                TODO: check which versions are accepted.
-//                if (project.name == "plugin-velocity") {
-//                    velocity {
-//                        jar = shadowJarFile
-//                        platformVersions.addAll(*supportedMinecraftVersions)
-//                    }
-//                }
+                if (project.name == "plugin-velocity") {
+                    velocity {
+                        jar = shadowJarFile
+                        platformVersions.addAll(*supportedVelocityVersions)
+                    }
+                }
             }
         }
     }

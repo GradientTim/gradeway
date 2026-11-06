@@ -11,8 +11,8 @@ plugins {
 dependencies {
     implementation(project(":core-common"))
 
-    compileOnly("com.velocitypowered:velocity-api:4.3.0")
-    kapt("com.velocitypowered:velocity-api:4.3.0")
+    compileOnly("com.velocitypowered:velocity-api:4.3.1")
+    kapt("com.velocitypowered:velocity-api:4.3.1")
 }
 
 gradewayArtifactMetadata {
