@@ -34,8 +34,28 @@ Coming from LuckPerms? Import your existing data with one command.
 - **Promotion tracks** – define a ladder like `trial → mod → admin` and promote or demote players along it.
 - **Permission templates** – build a reusable set of permissions once and apply it to any role or player.
 - **Safe by default** – destructive commands ask for confirmation, and full backups export and import with one command.
-- **Use the database you already run** – Postgres, MySQL, MariaDB, SQLite, SQL Server, Oracle, or H2, plus Redis for
-  cross-server messaging.
+- **Works with what you already have** – plug in the database you already run, from SQLite on a single server to
+  MySQL or Postgres for a whole network.
+
+## How it works
+
+Gradeway is built around a few simple ideas:
+
+1. **Players get roles.** A role like `vip` or `mod` is a bundle of permissions. Give a player a role – forever or
+   for a limited time – and they get everything in it.
+2. **Roles can build on each other.** Let `admin` inherit everything from `mod`, put related roles into a **group**
+   so they share permissions, or reuse a **template** wherever you need the same set again.
+3. **Every server shares one database.** Change something on one server and Gradeway tells all the others, so the
+   whole network updates right away.
+
+```text
+Steve ──► vip (30 days) ──► essentials.fly
+      │                 └─► essentials.home
+      └─► default ────────► essentials.spawn
+```
+
+When Steve runs a command, Gradeway looks at all his roles and answers one question: is he allowed? If you ever
+wonder *why* the answer is yes or no, `/gradeway why` shows you the path it took.
 
 ## See it in action
 
@@ -77,6 +97,17 @@ detail.
 3. Start your server and fill in your database credentials in the generated config.
 
 The full [installation guide](https://docs.gradienttim.dev/gradeway/admin/install) covers every platform and option.
+
+### Which setup do I need?
+
+| Your setup                | Database                                 | Messaging                            |
+|---------------------------|------------------------------------------|--------------------------------------|
+| **One server**            | SQLite or H2 – no database server needed | Not needed, you can turn it off      |
+| **Proxy + a few servers** | MySQL, MariaDB, or Postgres              | Plugin Messaging (built in) or Redis |
+| **Large network**         | MySQL, MariaDB, or Postgres              | Redis                                |
+
+Plugin Messaging works without any extra software, but it can only reach a server while a player is online there.
+Redis keeps every server in sync at all times, so it's the better choice once your network grows.
 
 ## Compatibility
 
