@@ -70,10 +70,23 @@ if (modrinthToken != null) {
     }
 }
 
-val hangarSupported = !releaseDebugMode && hangarApiKey != null &&
-        project.name in listOf("plugin-paper", "plugin-velocity")
+configurations.consumable("releaseJar") {
+    outgoing.artifact(shadowJarFile)
+}
+
+// Hangar keeps all platforms of a version in one entry, so plugin-paper uploads the Velocity jar too
+val hangarSupported = !releaseDebugMode && hangarApiKey != null && project.name == "plugin-paper"
 
 if (hangarSupported) {
+    val velocityRelease = configurations.dependencyScope("velocityRelease")
+    val velocityReleaseJar = configurations.resolvable("velocityReleaseJar") {
+        extendsFrom(velocityRelease.get())
+    }
+
+    dependencies {
+        add(velocityRelease.name, project(path = ":plugin-velocity", configuration = "releaseJar"))
+    }
+
     hangarPublish {
         publications.register("plugin") {
             id = "gradeway"
@@ -86,18 +99,14 @@ if (hangarSupported) {
             pages.resourcePage(readMeContent)
 
             platforms {
-                if (project.name == "plugin-paper") {
-                    paper {
-                        jar = shadowJarFile
-                        platformVersions.addAll(*supportedMinecraftVersions)
-                    }
+                paper {
+                    jar = shadowJarFile
+                    platformVersions.addAll(*supportedMinecraftVersions)
                 }
 
-                if (project.name == "plugin-velocity") {
-                    velocity {
-                        jar = shadowJarFile
-                        platformVersions.addAll(*supportedVelocityVersions)
-                    }
+                velocity {
+                    jar = layout.file(velocityReleaseJar.flatMap { it.elements }.map { it.single().asFile })
+                    platformVersions.addAll(*supportedVelocityVersions)
                 }
             }
         }

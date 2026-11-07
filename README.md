@@ -19,11 +19,12 @@ Coming from LuckPerms? Import your existing data with one command.
 <a href="https://hangar.papermc.io/GradientTim/gradeway" target="_blank">
 <img alt="hangar" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/hangar_vector.svg">
 </a>
-<!-- modrinth_exclude.end -->
 
 > [!NOTE]
 > Gradeway is in active development (0.x). It's ready to try, but expect changes between releases – back up your data
 > before upgrading.
+
+<!-- modrinth_exclude.end -->
 
 ***
 
