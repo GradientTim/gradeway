@@ -4,22 +4,73 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.paper.command.context
 
+import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.command.context.CommandContext
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
+import org.bukkit.command.BlockCommandSender
+import org.bukkit.command.ConsoleCommandSender
+import org.bukkit.command.RemoteConsoleCommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import org.bukkit.entity.minecart.CommandMinecart
 import java.util.*
 
-class PaperCommandContext : CommandContext<CommandSourceStack> {
+class PaperCommandContext(val gradeway: CommonGradeway<BukkitPlatformConfig>) : CommandContext<CommandSourceStack> {
     override fun sourceToUUID(source: CommandSourceStack): UUID {
         val sender = source.sender
         if (sender is Player) return sender.uniqueId
         return super.sourceToUUID(source)
     }
 
+    override fun sourceToActor(source: CommandSourceStack): Actor {
+        return when (val sender = source.executor ?: source.sender) {
+            is Player -> Actor.Player(sender.uniqueId)
+            is ConsoleCommandSender -> Actor.Console
+            is BlockCommandSender -> {
+                val block = sender.block
+                Actor.CommandBlock(
+                    block.world.name,
+                    block.location.blockX,
+                    block.location.blockY,
+                    block.location.blockZ
+                )
+            }
+
+            is CommandMinecart -> Actor.CommandMinecart(
+                sender.entityId,
+                sender.uniqueId,
+                sender.world.name,
+                sender.location.blockX,
+                sender.location.blockY,
+                sender.location.blockZ
+            )
+
+            is RemoteConsoleCommandSender -> Actor.Rcon(sender.address.toString())
+
+            is Entity -> Actor.Entity(
+                sender.uniqueId,
+                sender.type.key.toString(),
+                sender.world.name,
+                sender.location.blockX,
+                sender.location.blockY,
+                sender.location.blockZ
+            )
+
+            else -> Actor.Console
+        }
+    }
+
     override fun hasPermission(source: CommandSourceStack, permission: String): Boolean {
-        return source.sender.hasPermission(permission)
+        val sender = source.executor ?: source.sender
+        return when (sender) {
+            is BlockCommandSender, is CommandMinecart -> !gradeway.configs.platformEntry.config.disableCommandBlocks
+            is RemoteConsoleCommandSender -> !gradeway.configs.platformEntry.config.disableRemoteConsole
+            else -> sender.hasPermission(permission)
+        }
     }
 
     override fun sendMessage(source: CommandSourceStack, component: Component) {

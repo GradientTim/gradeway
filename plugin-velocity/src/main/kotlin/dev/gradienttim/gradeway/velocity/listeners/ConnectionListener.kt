@@ -9,16 +9,17 @@ import com.velocitypowered.api.event.Subscribe
 import com.velocitypowered.api.event.connection.DisconnectEvent
 import com.velocitypowered.api.event.connection.LoginEvent
 import dev.gradienttim.gradeway.GradewayLifecycle
+import dev.gradienttim.gradeway.audit.Actor
 
 class ConnectionListener(val gradeway: GradewayLifecycle<*>) {
     @Subscribe(order = PostOrder.EARLY, priority = Short.MAX_VALUE)
     fun onLogin(event: LoginEvent) {
         val player = event.player
-        val firstJoin = gradeway.players.create(player.uniqueId, player.username).isRight()
+        val firstJoin = gradeway.players.create(Actor.System, player.uniqueId, player.username).isRight()
 
-        gradeway.players.removeExpiredRoles(player.uniqueId)
+        gradeway.players.removeExpiredRoles(Actor.System, player.uniqueId)
             .onLeft { error -> gradeway.logger.error("Failed to remove expired roles for ${player.username}: $error") }
-        gradeway.players.applyDefaultRole(player.uniqueId, firstJoin)
+        gradeway.players.applyDefaultRole(Actor.System, player.uniqueId, firstJoin)
             .onLeft { error ->
                 gradeway.logger.error("Failed to apply the default role for ${player.username}: $error")
             }

@@ -10,6 +10,7 @@ import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.database.models.group.GroupPermissionTemplatesTable
 import dev.gradienttim.gradeway.database.models.group.GroupPermissionsTable
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
+import dev.gradienttim.gradeway.database.models.log.AuditLogsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatePermissionsTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTable
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
@@ -68,6 +69,7 @@ class CommonDatabaseManager(val gradeway: CommonGradeway<*>) : DatabaseManager {
                     RolePermissionTemplatesTable,
                     TracksTable,
                     TrackStagesTable,
+                    AuditLogsTable,
                 )
 
                 val tableStates = tables.map { it to it.exists() }

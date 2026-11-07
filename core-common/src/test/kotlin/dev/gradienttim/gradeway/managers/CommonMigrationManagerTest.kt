@@ -9,7 +9,9 @@ import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
 import dev.gradienttim.gradeway.TestScheduler
+import dev.gradienttim.gradeway.TestStores
 import dev.gradienttim.gradeway.platform.CommonLogger
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
 import dev.gradienttim.gradeway.strategy.MigrationStrategy
 import java.io.File
@@ -37,6 +39,8 @@ class CommonMigrationManagerTest {
             directory = Files.createTempDirectory("migration-manager-test"),
             defaultPlatformConfig = TestPlatformConfig(),
             platformConfigSerializer = TestPlatformConfig.serializer(),
+            stores = TestStores(),
+            knownPermissionSource = KnownPermissionSource.NONE,
         )
         return gradeway to CommonMigrationManager(gradeway)
     }

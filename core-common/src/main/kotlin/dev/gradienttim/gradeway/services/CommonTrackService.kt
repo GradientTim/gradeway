@@ -8,6 +8,8 @@ import arrow.core.Either
 import arrow.core.raise.catch
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.audited
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackEntity
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackStageEntity
@@ -17,6 +19,9 @@ import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
+import dev.gradienttim.gradeway.event.fireCancellable
+import dev.gradienttim.gradeway.events.track.*
 import dev.gradienttim.gradeway.extensions.eqAsStr
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
@@ -25,6 +30,7 @@ import dev.gradienttim.gradeway.messaging.payloads.MessagingAction
 import dev.gradienttim.gradeway.messaging.payloads.TrackChangedPayload
 import dev.gradienttim.gradeway.messaging.payloads.TrackStageChangedPayload
 import dev.gradienttim.gradeway.services.track.PlayerTrackService
+import dev.gradienttim.gradeway.spec.TrackCreateSpec
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
 import org.jetbrains.exposed.v1.jdbc.emptySized
@@ -36,14 +42,23 @@ import java.util.*
 class CommonTrackService(
     val gradeway: CommonGradeway<*>
 ) : TrackService {
-    override fun createTrack(slug: String): Either<TrackService.CreateTrackError, DatabaseTrackEntity> = either {
-        if (!slug.isNameValid(TableConstants.TRACKS_TABLE_MAX_SLUG_LENGTH)) {
+    override fun createTrack(
+        actor: Actor,
+        slug: String,
+        builder: TrackCreateSpec.() -> Unit,
+    ): Either<TrackService.CreateTrackError, DatabaseTrackEntity> = gradeway.audited(actor) { audit ->
+        val spec = TrackCreateSpec(slug).apply(builder)
+        fireCancellable(gradeway, TrackCreateEvent(actor, spec), TrackService.CreateTrackError.Cancelled)
+        if (!spec.slug.isNameValid(TableConstants.TRACKS_TABLE_MAX_SLUG_LENGTH)) {
             raise(TrackService.CreateTrackError.InvalidSlug)
         }
         try {
             transaction(gradeway.database) {
                 DatabaseTrackEntity.new {
-                    this.slug = slug
+                    this.slug = spec.slug
+                }.also {
+                    audit.created(it)
+                    audit.emit(TrackCreatedEvent(actor, it.id.value, it.slug))
                 }
             }
         } catch (throwable: Throwable) {
@@ -56,18 +71,27 @@ class CommonTrackService(
         gradeway.messaging.publish(TrackChangedPayload(track.id.value.toString(), MessagingAction.CREATED))
     }
 
-    override fun deleteTrack(id: UUID): Either<TrackService.DeleteTrackError, Unit> = either {
+    override fun deleteTrack(
+        actor: Actor,
+        id: UUID,
+    ): Either<TrackService.DeleteTrackError, Unit> = either {
         val entity = findTrackById(id) ?: raise(TrackService.DeleteTrackError.EntityNotFound)
-        return deleteTrack(entity)
+        return deleteTrack(actor, entity)
     }
 
-    override fun deleteTrack(track: TrackEntity): Either<TrackService.DeleteTrackError, Unit> = either {
+    override fun deleteTrack(
+        actor: Actor,
+        track: TrackEntity,
+    ): Either<TrackService.DeleteTrackError, Unit> = gradeway.audited(actor) { audit ->
         if (track !is DatabaseTrackEntity) {
             val throwable = Throwable("Entity is not a type of DatabaseTrackEntity")
             raise(TrackService.DeleteTrackError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackDeleteEvent(actor, track), TrackService.DeleteTrackError.Cancelled)
         try {
             transaction(gradeway.database) {
+                audit.deleted(track)
+                audit.emit(TrackDeletedEvent(actor, track.id.value, track.slug))
                 track.delete()
             }
         } catch (throwable: Throwable) {
@@ -77,17 +101,28 @@ class CommonTrackService(
         gradeway.messaging.publish(TrackChangedPayload(track.id.value.toString(), MessagingAction.DELETED))
     }
 
-    override fun deleteTrack(idOrSlug: String): Either<TrackService.DeleteTrackError, Unit> = either {
+    override fun deleteTrack(
+        actor: Actor,
+        idOrSlug: String,
+    ): Either<TrackService.DeleteTrackError, Unit> = either {
         val entity = findTrackByIdOrSlug(idOrSlug) ?: raise(TrackService.DeleteTrackError.EntityNotFound)
-        return deleteTrack(entity)
+        return deleteTrack(actor, entity)
     }
 
-    override fun setSlug(id: UUID, slug: String): Either<TrackService.SetSlugError, Unit> = either {
+    override fun setSlug(
+        actor: Actor,
+        id: UUID,
+        slug: String,
+    ): Either<TrackService.SetSlugError, Unit> = either {
         val entity = findTrackById(id) ?: raise(TrackService.SetSlugError.EntityNotFound)
-        return setSlug(entity, slug)
+        return setSlug(actor, entity, slug)
     }
 
-    override fun setSlug(track: TrackEntity, slug: String): Either<TrackService.SetSlugError, Unit> = either {
+    override fun setSlug(
+        actor: Actor,
+        track: TrackEntity,
+        slug: String,
+    ): Either<TrackService.SetSlugError, Unit> = gradeway.audited(actor) { audit ->
         if (!slug.isNameValid(TableConstants.TRACKS_TABLE_MAX_SLUG_LENGTH)) {
             raise(TrackService.SetSlugError.InvalidSlug)
         }
@@ -98,12 +133,15 @@ class CommonTrackService(
             val throwable = Throwable("Entity is not a type of DatabaseTrackEntity")
             raise(TrackService.SetSlugError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackSlugChangeEvent(actor, track, slug), TrackService.SetSlugError.Cancelled)
         try {
             transaction(gradeway.database) {
+                val before = track.snapshot()
+                audit.emit(TrackSlugChangedEvent(actor, track.id.value, track.slug, slug))
                 track.slug = slug
                 track.flush()
+                audit.updated(track, before)
             }
-            Unit
         } catch (throwable: Throwable) {
             if (throwable.isIntegrityConstraintViolation()) {
                 raise(TrackService.SetSlugError.SlugAlreadyExists)
@@ -114,22 +152,32 @@ class CommonTrackService(
         gradeway.messaging.publish(TrackChangedPayload(track.id.value.toString(), MessagingAction.UPDATED))
     }
 
-    override fun setSlug(idOrSlug: String, slug: String): Either<TrackService.SetSlugError, Unit> = either {
+    override fun setSlug(
+        actor: Actor,
+        idOrSlug: String,
+        slug: String,
+    ): Either<TrackService.SetSlugError, Unit> = either {
         val entity = findTrackByIdOrSlug(idOrSlug) ?: raise(TrackService.SetSlugError.EntityNotFound)
-        return setSlug(entity, slug)
+        return setSlug(actor, entity, slug)
     }
 
-    override fun addStage(trackId: UUID, roleId: UUID): Either<TrackService.AddStageError, TrackStageEntity> =
+    override fun addStage(
+        actor: Actor,
+        trackId: UUID,
+        roleId: UUID,
+    ): Either<TrackService.AddStageError, TrackStageEntity> =
         either {
             val track = findTrackById(trackId) ?: raise(TrackService.AddStageError.EntityNotFound)
             val role = gradeway.roles.findById(roleId) ?: raise(TrackService.AddStageError.TargetNotFound)
-            return addStage(track, role)
+            return addStage(actor, track, role)
         }
 
     override fun addStage(
+        actor: Actor,
         track: TrackEntity,
-        role: RoleEntity
-    ): Either<TrackService.AddStageError, DatabaseTrackStageEntity> = either {
+        role: RoleEntity,
+    ): Either<TrackService.AddStageError, DatabaseTrackStageEntity> = gradeway.audited(actor) { audit ->
+        fireCancellable(gradeway, TrackStageAddEvent(actor, track, role), TrackService.AddStageError.Cancelled)
         try {
             transaction(gradeway.database) {
                 val maxPosition = TrackStagesTable.position.max()
@@ -142,6 +190,9 @@ class CommonTrackService(
                     this.trackId = track.id
                     this.roleId = role.id
                     this.position = nextPosition
+                }.also {
+                    audit.created(it)
+                    audit.emit(TrackStageAddedEvent(actor, track.id.value, it.id.value, role.id.value, nextPosition))
                 }
             }
         } catch (throwable: Throwable) {
@@ -157,26 +208,36 @@ class CommonTrackService(
     }
 
     override fun addStage(
+        actor: Actor,
         trackIdOrSlug: String,
-        roleId: UUID
+        roleId: UUID,
     ): Either<TrackService.AddStageError, TrackStageEntity> = either {
         val track = findTrackByIdOrSlug(trackIdOrSlug) ?: raise(TrackService.AddStageError.EntityNotFound)
         val role = gradeway.roles.findById(roleId) ?: raise(TrackService.AddStageError.TargetNotFound)
-        return addStage(track, role)
+        return addStage(actor, track, role)
     }
 
-    override fun removeStage(stageId: UUID): Either<TrackService.RemoveStageError, Unit> = either {
+    override fun removeStage(
+        actor: Actor,
+        stageId: UUID,
+    ): Either<TrackService.RemoveStageError, Unit> = either {
         val entity = findStageById(stageId) ?: raise(TrackService.RemoveStageError.EntityNotFound)
-        return removeStage(entity)
+        return removeStage(actor, entity)
     }
 
-    override fun removeStage(stage: TrackStageEntity): Either<TrackService.RemoveStageError, Unit> = either {
+    override fun removeStage(
+        actor: Actor,
+        stage: TrackStageEntity,
+    ): Either<TrackService.RemoveStageError, Unit> = gradeway.audited(actor) { audit ->
         if (stage !is DatabaseTrackStageEntity) {
             val throwable = Throwable("Entity is not a type of DatabaseTrackStageEntity")
             raise(TrackService.RemoveStageError.Unexpected(throwable))
         }
+        fireCancellable(gradeway, TrackStageRemoveEvent(actor, stage), TrackService.RemoveStageError.Cancelled)
         try {
             transaction(gradeway.database) {
+                audit.deleted(stage)
+                audit.emit(TrackStageRemovedEvent(actor, stage.trackId.value, stage.id.value, stage.roleId.value))
                 stage.delete()
             }
         } catch (throwable: Throwable) {
@@ -188,15 +249,20 @@ class CommonTrackService(
         )
     }
 
-    override fun moveStage(stageId: UUID, index: Int): Either<TrackService.MoveStageError, TrackStageEntity> = either {
+    override fun moveStage(
+        actor: Actor,
+        stageId: UUID,
+        index: Int,
+    ): Either<TrackService.MoveStageError, TrackStageEntity> = either {
         val entity = findStageById(stageId) ?: raise(TrackService.MoveStageError.EntityNotFound)
-        return moveStage(entity, index)
+        return moveStage(actor, entity, index)
     }
 
     override fun moveStage(
+        actor: Actor,
         stage: TrackStageEntity,
-        index: Int
-    ): Either<TrackService.MoveStageError, TrackStageEntity> = either {
+        index: Int,
+    ): Either<TrackService.MoveStageError, TrackStageEntity> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
                 val stageIds = TrackStagesTable
@@ -216,14 +282,32 @@ class CommonTrackService(
                 if (index == currentIndex) {
                     raise(TrackService.MoveStageError.AlreadyAtPosition)
                 }
+                fireCancellable(
+                    gradeway,
+                    TrackStageMoveEvent(actor, stage, index),
+                    TrackService.MoveStageError.Cancelled,
+                )
+                audit.emit(TrackStageMovedEvent(actor, stage.trackId.value, stage.id.value, currentIndex, index))
 
                 stageIds.add(index, stageIds.removeAt(currentIndex))
+
+                // Positions are rewritten through DSL updates that bypass the DAO cache, so every stage of the
+                // track is snapshotted first and refreshed afterwards to record each one that actually moved.
+                val stages = DatabaseTrackStageEntity
+                    .find { TrackStagesTable.trackId eqId stage.trackId.value }
+                    .toList()
+                val before = stages.associateWith { it.snapshot() }
 
                 stageIds.forEachIndexed { position, id ->
                     TrackStagesTable.update({ TrackStagesTable.id eq id }) { it[this.position] = -(position + 1) }
                 }
                 stageIds.forEachIndexed { position, id ->
                     TrackStagesTable.update({ TrackStagesTable.id eq id }) { it[this.position] = position }
+                }
+
+                stages.forEach { movedStage ->
+                    movedStage.refresh()
+                    audit.updated(movedStage, before.getValue(movedStage))
                 }
 
                 DatabaseTrackStageEntity.findById(stage.id.value)?.also { it.refresh() }
@@ -282,36 +366,40 @@ class CommonTrackService(
     }
 
     override fun promotePlayer(
+        actor: Actor,
         playerId: UUID,
-        trackId: UUID
+        trackId: UUID,
     ): Either<PlayerTrackService.PromotePlayerError, Unit> = either {
         val player = gradeway.players.findById(playerId)
             ?: raise(PlayerTrackService.PromotePlayerError.EntityNotFound)
         val track = findTrackById(trackId) ?: raise(PlayerTrackService.PromotePlayerError.TargetNotFound)
-        return promotePlayer(player, track)
+        return promotePlayer(actor, player, track)
     }
 
     override fun promotePlayer(
+        actor: Actor,
         playerId: UUID,
-        track: TrackEntity
+        track: TrackEntity,
     ): Either<PlayerTrackService.PromotePlayerError, Unit> = either {
         val player = gradeway.players.findById(playerId)
             ?: raise(PlayerTrackService.PromotePlayerError.EntityNotFound)
-        return promotePlayer(player, track)
+        return promotePlayer(actor, player, track)
     }
 
     override fun promotePlayer(
+        actor: Actor,
         player: PlayerEntity,
-        trackId: UUID
+        trackId: UUID,
     ): Either<PlayerTrackService.PromotePlayerError, Unit> = either {
         val track = findTrackById(trackId) ?: raise(PlayerTrackService.PromotePlayerError.TargetNotFound)
-        return promotePlayer(player, track)
+        return promotePlayer(actor, player, track)
     }
 
     override fun promotePlayer(
+        actor: Actor,
         player: PlayerEntity,
-        track: TrackEntity
-    ): Either<PlayerTrackService.PromotePlayerError, Unit> = either {
+        track: TrackEntity,
+    ): Either<PlayerTrackService.PromotePlayerError, Unit> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
                 val currentStage = findPlayersCurrentStage(player, track)
@@ -321,53 +409,91 @@ class CommonTrackService(
                     findPlayersNextStage(player, track)
                         ?: raise(PlayerTrackService.PromotePlayerError.MaximumStageReached)
                 }
-                moveToStage(player, currentStage, targetStage)
+                fireCancellable(
+                    gradeway,
+                    PlayerPromoteEvent(actor, player, track, currentStage?.role, targetStage.role),
+                    PlayerTrackService.PromotePlayerError.Cancelled,
+                )
+                moveToStage(actor, player, currentStage, targetStage)
+                audit.emit(
+                    PlayerPromotedEvent(
+                        actor,
+                        player.id.value,
+                        track.id.value,
+                        currentStage?.roleId?.value,
+                        targetStage.roleId.value,
+                    )
+                )
             }
         }) { throwable ->
+            if (throwable is StageChangeCancelledException) {
+                raise(PlayerTrackService.PromotePlayerError.Cancelled)
+            }
             raise(PlayerTrackService.PromotePlayerError.Unexpected(throwable))
         }
     }
 
     override fun demotePlayer(
+        actor: Actor,
         playerId: UUID,
-        trackId: UUID
+        trackId: UUID,
     ): Either<PlayerTrackService.DemotePlayerError, Unit> = either {
         val player = gradeway.players.findById(playerId)
             ?: raise(PlayerTrackService.DemotePlayerError.EntityNotFound)
         val track = findTrackById(trackId) ?: raise(PlayerTrackService.DemotePlayerError.TargetNotFound)
-        return demotePlayer(player, track)
+        return demotePlayer(actor, player, track)
     }
 
     override fun demotePlayer(
+        actor: Actor,
         playerId: UUID,
-        track: TrackEntity
+        track: TrackEntity,
     ): Either<PlayerTrackService.DemotePlayerError, Unit> = either {
         val player = gradeway.players.findById(playerId)
             ?: raise(PlayerTrackService.DemotePlayerError.EntityNotFound)
-        return demotePlayer(player, track)
+        return demotePlayer(actor, player, track)
     }
 
     override fun demotePlayer(
+        actor: Actor,
         player: PlayerEntity,
-        trackId: UUID
+        trackId: UUID,
     ): Either<PlayerTrackService.DemotePlayerError, Unit> = either {
         val track = findTrackById(trackId) ?: raise(PlayerTrackService.DemotePlayerError.TargetNotFound)
-        return demotePlayer(player, track)
+        return demotePlayer(actor, player, track)
     }
 
     override fun demotePlayer(
+        actor: Actor,
         player: PlayerEntity,
-        track: TrackEntity
-    ): Either<PlayerTrackService.DemotePlayerError, Unit> = either {
+        track: TrackEntity,
+    ): Either<PlayerTrackService.DemotePlayerError, Unit> = gradeway.audited(actor) { audit ->
         catch({
             transaction(gradeway.database) {
                 val currentStage = findPlayersCurrentStage(player, track)
                     ?: raise(PlayerTrackService.DemotePlayerError.MinimumStageReached)
                 val targetStage = findPlayersPreviousStage(player, track)
                     ?: raise(PlayerTrackService.DemotePlayerError.MinimumStageReached)
-                moveToStage(player, currentStage, targetStage)
+                fireCancellable(
+                    gradeway,
+                    PlayerDemoteEvent(actor, player, track, currentStage.role, targetStage.role),
+                    PlayerTrackService.DemotePlayerError.Cancelled,
+                )
+                moveToStage(actor, player, currentStage, targetStage)
+                audit.emit(
+                    PlayerDemotedEvent(
+                        actor,
+                        player.id.value,
+                        track.id.value,
+                        currentStage.roleId.value,
+                        targetStage.roleId.value,
+                    )
+                )
             }
         }) { throwable ->
+            if (throwable is StageChangeCancelledException) {
+                raise(PlayerTrackService.DemotePlayerError.Cancelled)
+            }
             raise(PlayerTrackService.DemotePlayerError.Unexpected(throwable))
         }
     }
@@ -512,14 +638,19 @@ class CommonTrackService(
         }
     }
 
-    private fun moveToStage(player: PlayerEntity, currentStage: TrackStageEntity?, targetStage: TrackStageEntity) {
+    private fun moveToStage(
+        actor: Actor,
+        player: PlayerEntity,
+        currentStage: TrackStageEntity?,
+        targetStage: TrackStageEntity,
+    ) {
         val targetRole = targetStage.role
-        gradeway.players.addRole(player, targetRole).throwUnless(
+        gradeway.players.addRole(actor, player, targetRole).throwUnless(
             message = "Failed to add role ${targetRole.id.value}",
             isTolerated = { it is PlayerService.AddRoleError.AlreadyExists },
             cause = { (it as? PlayerService.AddRoleError.Unexpected)?.throwable }
         )
-        gradeway.players.setPrimaryRole(player, targetRole).throwUnless(
+        gradeway.players.setPrimaryRole(actor, player, targetRole).throwUnless(
             message = "Failed to set primary role ${targetRole.id.value}",
             isTolerated = { it is PlayerService.SetPrimaryRoleError.AlreadyPrimary },
             cause = { (it as? PlayerService.SetPrimaryRoleError.Unexpected)?.throwable }
@@ -528,7 +659,7 @@ class CommonTrackService(
             return
         }
         val currentRole = currentStage.role
-        gradeway.players.removeRole(player, currentRole).throwUnless(
+        gradeway.players.removeRole(actor, player, currentRole).throwUnless(
             message = "Failed to remove role ${currentRole.id.value}",
             isTolerated = { it is PlayerService.RemoveRoleError.NotExists },
             cause = { (it as? PlayerService.RemoveRoleError.Unexpected)?.throwable }
@@ -541,9 +672,17 @@ class CommonTrackService(
         cause: (E) -> Throwable?
     ) {
         onLeft { failure ->
+            if (failure is EventCancelledError) {
+                throw StageChangeCancelledException()
+            }
             if (!isTolerated(failure)) {
                 throw cause(failure) ?: IllegalStateException("$message: ${failure::class.simpleName}")
             }
         }
     }
 }
+
+/**
+ * Thrown when a role change made while moving a player along a track was canceled by a listener.
+ */
+private class StageChangeCancelledException : RuntimeException("A role change of the stage move was cancelled")

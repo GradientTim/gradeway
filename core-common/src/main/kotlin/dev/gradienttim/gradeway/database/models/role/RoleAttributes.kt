@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.database.models.role
 
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.columns.adventureKey
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
@@ -67,6 +68,8 @@ class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttr
         }
     }
 
+    override val target by lazy { Target.roleAttribute(id.value) }
+
     override var roleId by RoleAttributesTable.roleId
 
     override var type by RoleAttributesTable.type
@@ -80,4 +83,14 @@ class DatabaseRoleAttributeEntity(id: EntityID<UUID>) : UUIDEntity(id), RoleAttr
 
     override val attribute: Attribute<*>
         get() = Attribute.createUnsafe(type, key, value)
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("roleId", roleId.value.toString())
+        put("type", type)
+        put("key", key.asString())
+        put("value", value)
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
+    }
 }

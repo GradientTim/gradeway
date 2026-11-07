@@ -7,14 +7,18 @@ package dev.gradienttim.gradeway.bungee
 import com.mojang.brigadier.CommandDispatcher
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bungee.command.BungeeBrigadierCommand
-import dev.gradienttim.gradeway.bungee.command.BungeeCommandContext
+import dev.gradienttim.gradeway.bungee.command.context.BungeeCommandContext
 import dev.gradienttim.gradeway.bungee.config.BungeeCordPlatformConfig
 import dev.gradienttim.gradeway.bungee.listeners.ConnectionListener
 import dev.gradienttim.gradeway.bungee.listeners.PermissionListener
 import dev.gradienttim.gradeway.bungee.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bungee.notification.BungeeCordIngameNotificationPlatform
+import dev.gradienttim.gradeway.bungee.platform.BungeeCordKnownPermissionSource
 import dev.gradienttim.gradeway.bungee.platform.BungeeCordScheduler
+import dev.gradienttim.gradeway.bungee.platform.BungeeCordStores
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
 import net.md_5.bungee.api.CommandSender
 import java.nio.file.Path
@@ -33,10 +37,12 @@ class GradewayBungeeCordInstance(
 
         gradeway = CommonGradeway(
             logger = CommonLogger.fromJavaLogger(logger),
+            stores = BungeeCordStores(),
             scheduler = BungeeCordScheduler(plugin),
             directory = directory,
             defaultPlatformConfig = BungeeCordPlatformConfig(),
             platformConfigSerializer = BungeeCordPlatformConfig.serializer(),
+            knownPermissionSource = BungeeCordKnownPermissionSource(plugin.proxy),
         )
 
         gradeway.load()
@@ -48,6 +54,14 @@ class GradewayBungeeCordInstance(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
                     driver = PluginMessageDriver(plugin)
+                )
+
+                gradeway.drivers.registerDriver(
+                    id = IngameNotificationDriver.ID,
+                    type = DriverType.NOTIFICATION,
+                    driver = IngameNotificationDriver(
+                        BungeeCordIngameNotificationPlatform(plugin.proxy, BungeeCommandContext())
+                    )
                 )
 
                 gradeway.enable()

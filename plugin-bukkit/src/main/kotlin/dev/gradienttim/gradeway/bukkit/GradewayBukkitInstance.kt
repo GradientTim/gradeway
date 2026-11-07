@@ -7,13 +7,18 @@ package dev.gradienttim.gradeway.bukkit
 import com.mojang.brigadier.CommandDispatcher
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.bukkit.command.BukkitBrigadierCommand
-import dev.gradienttim.gradeway.bukkit.command.BukkitCommandContext
+import dev.gradienttim.gradeway.bukkit.command.context.BukkitCommandContext
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
 import dev.gradienttim.gradeway.bukkit.listeners.ConnectionListener
+import dev.gradienttim.gradeway.bukkit.listeners.PluginLifecycleListener
 import dev.gradienttim.gradeway.bukkit.messaging.PluginMessageDriver
+import dev.gradienttim.gradeway.bukkit.notification.SpigotIngameNotificationPlatform
+import dev.gradienttim.gradeway.bukkit.platform.BukkitKnownPermissionSource
 import dev.gradienttim.gradeway.bukkit.platform.BukkitScheduler
+import dev.gradienttim.gradeway.bukkit.platform.BukkitStores
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
 import org.bukkit.command.CommandSender
 import java.nio.file.Path
@@ -32,10 +37,14 @@ class GradewayBukkitInstance(
 
         gradeway = CommonGradeway(
             logger = CommonLogger.fromJavaLogger(logger),
+            stores = BukkitStores(
+                persistentNotifications = { gradeway.configs.platformEntry.config.notification.persistent },
+            ),
             scheduler = BukkitScheduler(plugin),
             directory = directory,
             defaultPlatformConfig = BukkitPlatformConfig(),
             platformConfigSerializer = BukkitPlatformConfig.serializer(),
+            knownPermissionSource = BukkitKnownPermissionSource(plugin.server),
         )
 
         gradeway.load()
@@ -47,6 +56,14 @@ class GradewayBukkitInstance(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
                     driver = PluginMessageDriver(plugin)
+                )
+
+                gradeway.drivers.registerDriver(
+                    id = IngameNotificationDriver.ID,
+                    type = DriverType.NOTIFICATION,
+                    driver = IngameNotificationDriver(
+                        SpigotIngameNotificationPlatform(plugin.server, BukkitCommandContext(gradeway))
+                    )
                 )
 
                 gradeway.enable()
@@ -73,10 +90,11 @@ class GradewayBukkitInstance(
 
     private fun registerEvents() {
         plugin.server.pluginManager.registerEvents(ConnectionListener(plugin.server, gradeway), plugin)
+        plugin.server.pluginManager.registerEvents(PluginLifecycleListener(gradeway), plugin)
     }
 
     private fun registerCommands() {
-        val commandContext = BukkitCommandContext()
+        val commandContext = BukkitCommandContext(gradeway)
 
         registerGradewayCommand(commandContext)
     }

@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.role
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.permission.DatabasePermissionEntity
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
@@ -65,6 +66,8 @@ class DatabaseRolePermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(
         }
     }
 
+    override val target by lazy { Target.rolePermission(roleId.value, permissionId.value) }
+
     override var roleId by RolePermissionsTable.roleId
     override var permissionId by RolePermissionsTable.permissionId
 
@@ -72,4 +75,10 @@ class DatabaseRolePermissionEntity(id: EntityID<CompositeID>) : CompositeEntity(
 
     override val role by DatabaseRoleEntity referencedOn RolePermissionsTable.roleId
     override val permission by DatabasePermissionEntity referencedOn RolePermissionsTable.permissionId
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("roleId", roleId.value.toString())
+        put("permissionId", permissionId.value.toString())
+        put("isEnabled", isEnabled)
+    }
 }

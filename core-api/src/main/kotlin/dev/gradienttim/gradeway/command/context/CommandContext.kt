@@ -4,9 +4,10 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.command.context
 
+import dev.gradienttim.gradeway.audit.Actor
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.TranslatableComponent
-import java.util.UUID
+import java.util.*
 
 /**
  * Represents the context in which a command is executed. This interface enables
@@ -23,6 +24,19 @@ interface CommandContext<TCommandSource> {
      * @return The UUID associated with the given command source.
      */
     fun sourceToUUID(source: TCommandSource): UUID = EMPTY_UUID
+
+    /**
+     * Converts the provided command source into an actor representation.
+     *
+     * This method translates the given command source into an instance of the `Actor` type,
+     * which represents the entity or system responsible for initiating actions or events.
+     *
+     * @param source The command source to be converted into an actor. Typically, it represents
+     *               the entity or system that triggered the command, such as a player, console,
+     *               command block, or API.
+     * @return An instance of `Actor` representing the given command source.
+     */
+    fun sourceToActor(source: TCommandSource): Actor
 
     /**
      * Checks if the given command source has the specified permission.

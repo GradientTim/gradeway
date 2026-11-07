@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.group.GroupEntity
 import dev.gradienttim.gradeway.entity.group.GroupPermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
@@ -21,6 +22,7 @@ interface GroupPermissionService {
     /**
      * Sets a specific permission for a group, identified by their unique identifier, to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the group.
      * @param permission The name of the permission to modify.
      * @param enabled Whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -28,14 +30,16 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermission(
+        actor: Actor,
         id: UUID,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a group, identified by their associated [GroupEntity], to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [GroupEntity] representing the group for whom the permission is being modified.
      * @param permission The name of the permission to modify.
      * @param enabled A flag indicating whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -43,14 +47,16 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermission(
+        actor: Actor,
         entity: GroupEntity,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a group, identified by their unique identifier or name, to either enable or disabled.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the group.
      * @param permission The name of the permission to modify.
      * @param enabled Whether the permission should be enabled (true) or disabled (false). Defaults to true.
@@ -58,14 +64,16 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a group, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the group whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -73,13 +81,15 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermissions(
+        actor: Actor,
         id: UUID,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a group, identified by their associated [GroupEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [GroupEntity] representing the group whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -87,13 +97,15 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermissions(
+        actor: Actor,
         entity: GroupEntity,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Sets multiple permissions for a group, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the group whose permissions are being modified.
      * @param permissions A map where each key is the name of a permission and the corresponding value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -101,111 +113,139 @@ interface GroupPermissionService {
      *         or `true` if the update succeeds.
      */
     fun setGroupPermissions(
+        actor: Actor,
         idOrName: String,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a group, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the group from whom the permission will be revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetGroupPermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetGroupPermission(
+        actor: Actor,
+        id: UUID,
+        permission: String,
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a group, identified by their associated [GroupEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [GroupEntity] representing the group whose permission is being revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetGroupPermission(
+        actor: Actor,
         entity: GroupEntity,
-        permission: String
+        permission: String,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes a specific permission for a group, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the group from whom the permission will be revoked.
      * @param permission The name of the permission to be revoked.
      * @return An [Either] containing a [PermissionService.UnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetGroupPermission(
+        actor: Actor,
         idOrName: String,
-        permission: String
+        permission: String,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a group, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the group whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified group.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetGroupPermissions(
+        actor: Actor,
         id: UUID,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a group, identified by their associated [GroupEntity].
      *
+     * @param actor The actor performing the operation.
      * @param entity The [GroupEntity] representing the group whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified group.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetGroupPermissions(
+        actor: Actor,
         entity: GroupEntity,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Revokes multiple permissions for a group, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the group whose permissions will be revoked.
      * @param permissions A collection of permission names to be revoked for the specified group.
      * @return An [Either] containing a [PermissionService.BulkUnsetPermissionError] if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetGroupPermissions(
+        actor: Actor,
         idOrName: String,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a specific group, identified by their unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the group whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        actor: Actor,
+        id: UUID,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Removes all permissions associated with the specified group.
      *
+     * @param actor The actor performing the operation.
      * @param entity The [GroupEntity] representing the group whose permissions should be cleared.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(entity: GroupEntity): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        actor: Actor,
+        entity: GroupEntity,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a specific group, identified by their unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the group whose permissions should be removed.
      * @return An [Either] containing a [PermissionService.ClearPermissionsError] if an error occurs,
      *         or `Unit` if the update succeeds.
      */
-    fun clearGroupPermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearGroupPermissions(
+        actor: Actor,
+        idOrName: String,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks if a group, identified by their unique identifier, has a specific permission.

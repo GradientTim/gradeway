@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.services.attribute
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
@@ -22,56 +23,65 @@ interface PlayerAttributeService {
     /**
      * Adds a new attribute to a player identified by their unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player.
      * @param attribute The attribute to be added to the player.
      * @return An [Either] containing [AttributeService.AddAttributeError] in case of a failure, or [Unit] on success.
      */
     fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         id: UUID,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds a new attribute to the given player entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity to which the attribute will be added.
      * @param attribute The attribute to be added to the player.
      * @return An [Either] containing [AttributeService.AddAttributeError] if the operation fails, or [Unit] if successful.
      */
     fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         entity: PlayerEntity,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Adds a new attribute to a player identified by their unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player.
      * @param attribute The attribute to be added to the player.
      * @return An [Either] containing [AttributeService.AddAttributeError] in case of a failure, or [Unit] on success.
      */
     fun <TValue : Any> addPlayerAttribute(
+        actor: Actor,
         idOrName: String,
-        attribute: Attribute<TValue>
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the attribute of a player identified by their unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose attribute is being updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to set for the specified attribute.
      * @return An [Either] containing [AttributeService.UpdateAttributeError] in case of an error, or [Unit] if the operation succeeds.
      */
     fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         id: UUID,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the specified attribute of a player entity with a new value.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity whose attribute is being updated.
      * @param key The key that identifies the attribute to be updated.
      * @param value The new value to set for the specified attribute.
@@ -79,81 +89,111 @@ interface PlayerAttributeService {
      *         or [Unit] if the update is successful.
      */
     fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         entity: PlayerEntity,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Updates the attribute of a player identified by their unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose attribute is being updated.
      * @param key The key identifying the attribute to be updated.
      * @param value The new value to set for the specified attribute.
      * @return An [Either] containing [AttributeService.UpdateAttributeError] in case of an error, or [Unit] if the operation succeeds.
      */
     fun <TValue : Any> updatePlayerAttribute(
+        actor: Actor,
         idOrName: String,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
      * Removes a specific attribute from a player identified by their unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose attribute is to be removed.
      * @param key The key that identifies the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] in case of a failure,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(id: UUID, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        actor: Actor,
+        id: UUID,
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes a specific attribute from the specified player entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity from which the attribute is to be removed.
      * @param key The key that identifies the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] if the operation fails,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(entity: PlayerEntity, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        actor: Actor,
+        entity: PlayerEntity,
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Removes a specific attribute from a player identified by their unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose attribute is to be removed.
      * @param key The key that identifies the attribute to be removed.
      * @return An [Either] containing [AttributeService.RemoveAttributeError] in case of a failure,
      *         or [Unit] if the attribute is successfully removed.
      */
-    fun removePlayerAttribute(idOrName: String, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removePlayerAttribute(
+        actor: Actor,
+        idOrName: String,
+        key: Key,
+    ): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Clears all attributes associated with the player identified by their unique ID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose attributes are to be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(id: UUID): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        actor: Actor,
+        id: UUID,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the given player entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity whose attributes are to be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(entity: PlayerEntity): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        actor: Actor,
+        entity: PlayerEntity,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Clears all attributes associated with the player identified by their unique ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose attributes are to be cleared.
      * @return An [Either] containing [AttributeService.ClearAttributesError] if the operation fails,
      *         or [Unit] if the attributes are successfully cleared.
      */
-    fun clearPlayerAttributes(idOrName: String): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearPlayerAttributes(
+        actor: Actor,
+        idOrName: String,
+    ): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Checks if a player identified by their unique ID has a specific attribute.

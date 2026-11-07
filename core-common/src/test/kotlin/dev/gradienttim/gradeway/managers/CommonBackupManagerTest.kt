@@ -7,17 +7,13 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.int
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.long
-import kotlinx.serialization.json.put
+import kotlinx.serialization.json.*
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
@@ -25,11 +21,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream
 import java.nio.file.Path
 import java.util.*
-import kotlin.io.path.createDirectories
-import kotlin.io.path.inputStream
-import kotlin.io.path.name
-import kotlin.io.path.outputStream
-import kotlin.io.path.writeBytes
+import kotlin.io.path.*
 import kotlin.test.*
 
 class CommonBackupManagerTest {
@@ -44,23 +36,27 @@ class CommonBackupManagerTest {
 
     @Test
     fun `export then import restores the exported graph`() {
-        val parentRole = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
-        val childRole = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
-        gradeway.roles.addParent(childRole, parentRole).getOrElse { error(it.toString()) }
+        val parentRole = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
+        val childRole = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
+        gradeway.roles.addParent(Actor.System, childRole, parentRole).getOrElse { error(it.toString()) }
         val permissionValue = "gradeway.test.${UUID.randomUUID()}"
-        gradeway.roles.setPermission(parentRole, permissionValue, true).getOrElse { error(it.toString()) }
-        val player = gradeway.players.create(UUID.randomUUID(), uniqueName("player")).getOrElse { error(it.toString()) }
-        gradeway.players.addRole(player, childRole, null).getOrElse { error(it.toString()) }
-        val group = gradeway.groups.create(uniqueName("group")).getOrElse { error(it.toString()) }
-        gradeway.groups.addRoleToGroup(group, parentRole).getOrElse { error(it.toString()) }
-        val track = gradeway.tracks.createTrack(uniqueName("track")).getOrElse { error(it.toString()) }
-        gradeway.tracks.addStage(track, childRole).getOrElse { error(it.toString()) }
-        val stage = gradeway.tracks.addStage(track, parentRole).getOrElse { error(it.toString()) }
+        gradeway.roles.setPermission(Actor.System, parentRole, permissionValue, true).getOrElse { error(it.toString()) }
+        val player = gradeway.players.create(
+            Actor.System,
+            UUID.randomUUID(),
+            uniqueName("player"),
+        ).getOrElse { error(it.toString()) }
+        gradeway.players.addRole(Actor.System, player, childRole, null).getOrElse { error(it.toString()) }
+        val group = gradeway.groups.create(Actor.System, uniqueName("group")).getOrElse { error(it.toString()) }
+        gradeway.groups.addRoleToGroup(Actor.System, group, parentRole).getOrElse { error(it.toString()) }
+        val track = gradeway.tracks.createTrack(Actor.System, uniqueName("track")).getOrElse { error(it.toString()) }
+        gradeway.tracks.addStage(Actor.System, track, childRole).getOrElse { error(it.toString()) }
+        val stage = gradeway.tracks.addStage(Actor.System, track, parentRole).getOrElse { error(it.toString()) }
 
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
 
         // Added only after the export, so it must be gone once wipe=true import restores the archive.
-        val extraneousRole = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        val extraneousRole = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
 
         gradeway.backups.import(file.name, wipe = true).getOrElse { error(it.toString()) }
 
@@ -79,11 +75,11 @@ class CommonBackupManagerTest {
 
     @Test
     fun `import publishes a CacheFlushPayload`() {
-        gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         gradeway.backups.import(file.name, wipe = true).getOrElse { error(it.toString()) }
 
@@ -112,7 +108,7 @@ class CommonBackupManagerTest {
 
     @Test
     fun `export writes a manifest followed by one json lines entry per table`() {
-        repeat(3) { gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) } }
+        repeat(3) { gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) } }
 
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
         val entries = readArchive(file)
@@ -134,7 +130,10 @@ class CommonBackupManagerTest {
 
     @Test
     fun `export and import stream tables larger than one batch`() {
-        val roles = List(2500) { gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) } }
+        val roles = List(2500) { gradeway.roles.create(
+            Actor.System,
+            uniqueName("role"),
+        ).getOrElse { error(it.toString()) } }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
 
         val manifest = Json.parseToJsonElement(readArchive(file).getValue("manifest.json")).jsonObject
@@ -156,7 +155,7 @@ class CommonBackupManagerTest {
 
     @Test
     fun `import restores a legacy archive without a manifest`() {
-        val role = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
         val legacy = rewriteArchive(file, "legacy.tar.gz") { entries ->
             entries.filterKeys { it != "manifest.json" }
@@ -166,7 +165,7 @@ class CommonBackupManagerTest {
                 }
         }
 
-        gradeway.roles.delete(role.id.value).getOrElse { error(it.toString()) }
+        gradeway.roles.delete(Actor.System, role.id.value).getOrElse { error(it.toString()) }
         gradeway.backups.import(legacy.name, wipe = true).getOrElse { error(it.toString()) }
 
         assertTrue(gradeway.roles.existsById(role.id.value))
@@ -174,7 +173,7 @@ class CommonBackupManagerTest {
 
     @Test
     fun `import rejects a newer format version without touching existing data`() {
-        val role = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
         val future = rewriteArchive(file, "future.tar.gz") { entries ->
             entries + ("manifest.json" to rewriteManifest(entries) { put("formatVersion", 99) })
@@ -188,7 +187,7 @@ class CommonBackupManagerTest {
 
     @Test
     fun `import rolls back when an entry has fewer rows than the manifest declares`() {
-        val role = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
         val truncated = rewriteArchive(file, "truncated.tar.gz") { entries ->
             entries + ("roles.jsonl" to entries.getValue("roles.jsonl").lines().drop(1).joinToString("\n"))
@@ -202,7 +201,7 @@ class CommonBackupManagerTest {
 
     @Test
     fun `import rolls back when an entry listed in the manifest is missing`() {
-        val role = gradeway.roles.create(uniqueName("role")).getOrElse { error(it.toString()) }
+        val role = gradeway.roles.create(Actor.System, uniqueName("role")).getOrElse { error(it.toString()) }
         val file = gradeway.backups.export().getOrElse { error(it.toString()) }
         val incomplete = rewriteArchive(file, "incomplete.tar.gz") { entries ->
             entries.filterKeys { it != "tracks.jsonl" && it != "track_stages.jsonl" }

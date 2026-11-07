@@ -3,7 +3,7 @@ project:
   name: Gradeway
   content_type: software
   repository: https://github.com/GradientTim/gradeway
-  version: 0.3.0
+  version: 0.4.0
   license: MIT
 ai_usage:
   used: true
@@ -33,9 +33,9 @@ ai_usage:
     code_review: false
     code_generation: true
   code_proportion:
-    ai_generated_percent: 18
-    ai_assisted_percent: 23
-    human_only_percent: 59
+    ai_generated_percent: 17
+    ai_assisted_percent: 20
+    human_only_percent: 63
 declaration:
   declared_by: Tim Kiesel
   date: '2026-07-29'

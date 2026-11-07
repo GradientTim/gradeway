@@ -8,13 +8,17 @@ import com.velocitypowered.api.command.BrigadierCommand
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.commands.createGradewayCommand
 import dev.gradienttim.gradeway.driver.meta.DriverType
+import dev.gradienttim.gradeway.notification.drivers.ingame.IngameNotificationDriver
 import dev.gradienttim.gradeway.platform.CommonLogger
-import dev.gradienttim.gradeway.velocity.command.VelocityCommandContext
+import dev.gradienttim.gradeway.platform.KnownPermissionSource
+import dev.gradienttim.gradeway.velocity.command.context.VelocityCommandContext
 import dev.gradienttim.gradeway.velocity.config.VelocityPlatformConfig
 import dev.gradienttim.gradeway.velocity.listeners.ConnectionListener
 import dev.gradienttim.gradeway.velocity.listeners.PermissionListener
 import dev.gradienttim.gradeway.velocity.messaging.VelocityPluginMessageDriver
+import dev.gradienttim.gradeway.velocity.notification.VelocityIngameNotificationPlatform
 import dev.gradienttim.gradeway.velocity.platform.VelocityScheduler
+import dev.gradienttim.gradeway.velocity.platform.VelocityStores
 import org.slf4j.Logger
 import java.nio.file.Path
 
@@ -30,10 +34,12 @@ class GradewayVelocityInstance(
 
         gradeway = CommonGradeway(
             logger = CommonLogger.fromSlf4jLogger(logger),
+            stores = VelocityStores(),
             scheduler = VelocityScheduler(plugin),
             directory = directory,
             defaultPlatformConfig = VelocityPlatformConfig(),
             platformConfigSerializer = VelocityPlatformConfig.serializer(),
+            knownPermissionSource = KnownPermissionSource.NONE,
         )
 
         gradeway.load()
@@ -45,6 +51,12 @@ class GradewayVelocityInstance(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
                     driver = VelocityPluginMessageDriver(plugin.server, this)
+                )
+
+                gradeway.drivers.registerDriver(
+                    id = IngameNotificationDriver.ID,
+                    type = DriverType.NOTIFICATION,
+                    driver = IngameNotificationDriver(VelocityIngameNotificationPlatform(plugin.server))
                 )
 
                 gradeway.enable()

@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.reference
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.entity.track.TrackStageEntity
 import dev.gradienttim.gradeway.services.track.PlayerTrackService.DemotePlayerError
@@ -28,11 +29,12 @@ interface TrackReference {
      * the track not being found, the target stage not being available, reaching the
      * maximum stage, or encountering an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @param trackId The unique identifier of the track to be promoted.
      * @return An [Either] containing either a [PromotePlayerError] if the promotion fails,
      *         or [Unit] if the promotion is successful.
      */
-    fun promote(trackId: UUID): Either<PromotePlayerError, Unit>
+    fun promote(actor: Actor, trackId: UUID): Either<PromotePlayerError, Unit>
 
     /**
      * Promotes the given track to its next stage.
@@ -42,11 +44,12 @@ interface TrackReference {
      * is not found, the target stage is unavailable, the maximum stage has been reached, or
      * an unexpected error occurs.
      *
+     * @param actor The actor performing the operation.
      * @param track The [TrackEntity] representing the track to be promoted.
      * @return An [Either] containing a [PromotePlayerError] if the promotion fails, or [Unit]
      *         if the promotion is successful.
      */
-    fun promote(track: TrackEntity): Either<PromotePlayerError, Unit>
+    fun promote(actor: Actor, track: TrackEntity): Either<PromotePlayerError, Unit>
 
     /**
      * Demotes the track identified by the given track ID to its previous stage.
@@ -56,10 +59,11 @@ interface TrackReference {
      * the track not being found, the target stage not being available, reaching the
      * minimum stage, or encountering an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @param trackId The unique identifier of the track to be demoted.
      * @return An [Either] containing a [DemotePlayerError] if the demotion fails, or [Unit] if the demotion is successful.
      */
-    fun demote(trackId: UUID): Either<DemotePlayerError, Unit>
+    fun demote(actor: Actor, trackId: UUID): Either<DemotePlayerError, Unit>
 
     /**
      * Demotes the given track to its previous stage.
@@ -69,10 +73,11 @@ interface TrackReference {
      * being found, the target stage not being available, reaching the minimum stage, or
      * encountering an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @param track The [TrackEntity] representing the track to be demoted.
      * @return An [Either] containing a [DemotePlayerError] if the demotion fails, or [Unit] if the demotion is successful.
      */
-    fun demote(track: TrackEntity): Either<DemotePlayerError, Unit>
+    fun demote(actor: Actor, track: TrackEntity): Either<DemotePlayerError, Unit>
 
     /**
      * Retrieves the current stage of the track specified by the given track ID.

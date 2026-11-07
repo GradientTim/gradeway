@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
@@ -21,6 +22,7 @@ interface RolePermissionService {
      * Sets a specific permission for a role identified by its UUID.
      * The permission can be enabled or disabled based on the `enabled` parameter.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role.
      * @param permission The name of the permission to be set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -28,15 +30,17 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermission(
+        actor: Actor,
         id: UUID,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a role entity. The permission can be enabled or disabled
      * depending on the value of the `enabled` parameter.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity for which the permission is to be set.
      * @param permission The name of the permission to be set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -44,15 +48,17 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermission(
+        actor: Actor,
         entity: RoleEntity,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Sets a specific permission for a role identified by its unique identifier or name.
      * The permission can be enabled or disabled based on the `enabled` parameter.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role.
      * @param permission The name of the permission to be set.
      * @param enabled A flag indicating whether the permission should be enabled or disabled. Defaults to true.
@@ -60,15 +66,17 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermission(
+        actor: Actor,
         idOrName: String,
         permission: String,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ): Either<PermissionService.SetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a role identified by its UUID.
      * Each permission in the map can be enabled or disabled based on its associated value.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role.
      * @param permissions A map where the key is the name of the permission and the value is a boolean
      * indicating whether the permission should be enabled (true) or disabled (false).
@@ -76,14 +84,16 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermissions(
+        actor: Actor,
         id: UUID,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a given role entity.
      * Each permission in the map can either be enabled or disabled based on its associated value.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity to which the permissions will be assigned.
      * @param permissions A map where each key represents a permission name, and each value is a boolean
      *                    indicating whether the permission should be enabled (true) or disabled (false).
@@ -91,14 +101,16 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermissions(
+        actor: Actor,
         entity: RoleEntity,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Assigns multiple permissions to a role identified by its unique identifier or name.
      * Each permission in the map can be enabled or disabled based on its associated value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role.
      * @param permissions A map where the key is the name of the permission and the value is a boolean
      * indicating whether the permission should be enabled (true) or disabled (false).
@@ -106,117 +118,145 @@ interface RolePermissionService {
      *         or `true` if the update succeeds.
      */
     fun setRolePermissions(
+        actor: Actor,
         idOrName: String,
-        permissions: Map<String, Boolean>
+        permissions: Map<String, Boolean>,
     ): Either<PermissionService.BulkSetPermissionError, Unit>
 
     /**
      * Removes a specific permission from a role identified by its UUID.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role from which the permission should be removed.
      * @param permission The name of the permission to be unset.
      * @return Either an instance of `PermissionService.UnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun unsetRolePermission(id: UUID, permission: String): Either<PermissionService.UnsetPermissionError, Unit>
+    fun unsetRolePermission(
+        actor: Actor,
+        id: UUID,
+        permission: String,
+    ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes a specific permission from the given role entity.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity from which the permission should be removed.
      * @param permission The name of the permission to be unset.
      * @return Either an instance of `PermissionService.UnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermission(
+        actor: Actor,
         entity: RoleEntity,
-        permission: String
+        permission: String,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes a specific permission from a role identified by its unique identifier or name.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role from which the permission should be removed.
      * @param permission The name of the permission to be unset.
      * @return Either an instance of `PermissionService.UnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermission(
+        actor: Actor,
         idOrName: String,
-        permission: String
+        permission: String,
     ): Either<PermissionService.UnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from a role identified by its UUID.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role from which the permissions should be removed.
      * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
+        actor: Actor,
         id: UUID,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from the given role entity.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity from which the permissions should be removed.
      * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
+        actor: Actor,
         entity: RoleEntity,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Removes multiple permissions from a role identified by its unique identifier or name.
      * If the operation fails, an error indicating the cause will be returned.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role from which the permissions should be removed.
      * @param permissions A collection of permission names to be unset.
      * @return Either an instance of `PermissionService.BulkUnsetPermissionError` if an error occurs,
      *         or `true` if the update succeeds.
      */
     fun unsetRolePermissions(
+        actor: Actor,
         idOrName: String,
-        permissions: Collection<String>
+        permissions: Collection<String>,
     ): Either<PermissionService.BulkUnsetPermissionError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role whose permissions need to be cleared.
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(id: UUID): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        actor: Actor,
+        id: UUID,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with the provided role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity whose permissions need to be cleared.
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(entity: RoleEntity): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        actor: Actor,
+        entity: RoleEntity,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Clears all permissions associated with a role identified by its unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role whose permissions need to be cleared.
      * @return Either an instance of `PermissionService.ClearPermissionsError` if an error occurs,
      *         or `true` if the update succeeds.
      */
-    fun clearRolePermissions(idOrName: String): Either<PermissionService.ClearPermissionsError, Unit>
+    fun clearRolePermissions(
+        actor: Actor,
+        idOrName: String,
+    ): Either<PermissionService.ClearPermissionsError, Unit>
 
     /**
      * Checks whether an entity with the given ID has the specified role permission.

@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.group
 
+import dev.gradienttim.gradeway.audit.Auditable
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.reference.PermissionReference
 import dev.gradienttim.gradeway.reference.PermissionTemplateReference
@@ -28,7 +29,7 @@ import java.util.*
  * - `createdAt` and `updatedAt`: Timestamps indicating when the group was created and last updated.
  * - `roles`: A collection of roles associated with the group.
  */
-interface GroupEntity : PermissionReference<GroupPermissionEntity>,
+interface GroupEntity : Auditable, PermissionReference<GroupPermissionEntity>,
     PermissionTemplateReference<GroupPermissionTemplateEntity> {
     /**
      * A unique identifier for a `GroupEntity`.

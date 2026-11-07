@@ -43,6 +43,7 @@ jobs:
         run: |
           mkdir -p release-artifacts
           find . -path "*/build/libs/*.jar" \
+            ! -path "./buildSrc/*" \
             ! -name "*-sources.jar" \
             ! -name "*-javadoc.jar" \
             -exec cp {} release-artifacts/ \;

@@ -5,11 +5,10 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
-import dev.gradienttim.gradeway.services.permission.GroupPermissionService
-import dev.gradienttim.gradeway.services.permission.PlayerPermissionService
-import dev.gradienttim.gradeway.services.permission.RolePermissionService
-import dev.gradienttim.gradeway.services.permission.TemplatePermissionService
+import dev.gradienttim.gradeway.event.EventCancelledError
+import dev.gradienttim.gradeway.services.permission.*
 import java.util.*
 
 /**
@@ -21,103 +20,140 @@ import java.util.*
  * setting, unsetting, or clearing permissions.
  */
 interface PermissionService : TemplatePermissionService, RolePermissionService, PlayerPermissionService,
-    GroupPermissionService {
+    GroupPermissionService, PermissionInspectionService {
     /**
      * Creates a new permission entity with the given value and type.
      *
+     * @param actor The actor performing the operation.
      * @param value The string value representing the permission.
      * @param type The type of the permission. Defaults to `PermissionEntity.Type.EQUALS`.
      * @return Either a `CreatePermissionError` if the creation fails, or the created `PermissionEntity`.
      */
     fun createPermission(
+        actor: Actor,
         value: String,
-        type: PermissionEntity.Type = PermissionEntity.Type.EQUALS
+        type: PermissionEntity.Type = PermissionEntity.Type.EQUALS,
     ): Either<CreatePermissionError, PermissionEntity>
 
     /**
      * Deletes a permission entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
-    fun deletePermission(id: UUID): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        actor: Actor,
+        id: UUID,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes the given permission entity from the system.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity to be deleted.
      * @return Either a `DeletePermissionError` if the deletion fails, or `Unit` if the operation succeeds.
      */
-    fun deletePermission(entity: PermissionEntity): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        actor: Actor,
+        entity: PermissionEntity,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Deletes a permission entity identified by the provided string, which can represent either the
      * unique identifier (UUID) of the entity or its value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue The unique identifier (UUID) or the value associated with the permission entity to be deleted.
      * @return Either a [DeletePermissionError] if the deletion fails or [Unit] if the operation succeeds.
      */
-    fun deletePermission(idOrValue: String): Either<DeletePermissionError, Unit>
+    fun deletePermission(
+        actor: Actor,
+        idOrValue: String,
+    ): Either<DeletePermissionError, Unit>
 
     /**
      * Updates the value of a permission entity identified by the given UUID.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity to be updated.
      * @param value The new value to be set for the permission entity.
      * @return Either an [UpdatePermissionValueError] if the update operation fails, or a [Boolean] indicating
      *         success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(id: UUID, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        actor: Actor,
+        id: UUID,
+        value: String,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of the given permission entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity whose value is to be updated.
      * @param value The new value to assign to the permission entity.
      * @return Either an [UpdatePermissionValueError] if the update operation fails,
      *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(entity: PermissionEntity, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        actor: Actor,
+        entity: PermissionEntity,
+        value: String,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the value of a permission entity identified by either its unique identifier (UUID)
      * or its current value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue A string representing either the unique identifier (UUID) or the current
      *                  value of the permission entity to be updated.
      * @param value The new value to set for the permission entity.
      * @return Either an [UpdatePermissionValueError] if the update operation fails, or a
      *         [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionValue(idOrValue: String, value: String): Either<UpdatePermissionValueError, Boolean>
+    fun updatePermissionValue(
+        actor: Actor,
+        idOrValue: String,
+        value: String,
+    ): Either<UpdatePermissionValueError, Boolean>
 
     /**
      * Updates the type of permission entity identified by the given unique identifier (UUID).
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier (UUID) of the permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
      * @return Either an [UpdatePermissionTypeError] if the update operation fails, or a [Boolean]
      *         indicating success (`true`) or failure (`false`) of the update.
      */
-    fun updatePermissionType(id: UUID, type: PermissionEntity.Type): Either<UpdatePermissionTypeError, Boolean>
+    fun updatePermissionType(
+        actor: Actor,
+        id: UUID,
+        type: PermissionEntity.Type,
+    ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
      * Updates the type of the given permission entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
      * @return Either an [UpdatePermissionTypeError] if the update operation fails,
      *         or a [Boolean] indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionType(
+        actor: Actor,
         entity: PermissionEntity,
-        type: PermissionEntity.Type
+        type: PermissionEntity.Type,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
      * Updates the type of permission entity identified by either its unique identifier (UUID)
      * or its current value.
      *
+     * @param actor The actor performing the operation.
      * @param idOrValue A string representing either the unique identifier (UUID) or the current
      *                  value of the permission entity whose type is to be updated.
      * @param type The new type to assign to the permission entity.
@@ -125,8 +161,9 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
      *         indicating success (`true`) or failure (`false`) of the update.
      */
     fun updatePermissionType(
+        actor: Actor,
         idOrValue: String,
-        type: PermissionEntity.Type
+        type: PermissionEntity.Type,
     ): Either<UpdatePermissionTypeError, Boolean>
 
     /**
@@ -155,38 +192,45 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     fun findPermissionByIdOrValue(value: String): PermissionEntity?
 
     sealed interface CreatePermissionError {
+        object Cancelled : CreatePermissionError, EventCancelledError
         object AlreadyExists : CreatePermissionError
         data class Unexpected(val throwable: Throwable) : CreatePermissionError
     }
 
     sealed interface DeletePermissionError {
+        object Cancelled : DeletePermissionError, EventCancelledError
         object EntityNotFound : DeletePermissionError
         data class Unexpected(val throwable: Throwable) : DeletePermissionError
     }
 
     sealed interface UpdatePermissionValueError {
+        object Cancelled : UpdatePermissionValueError, EventCancelledError
         object EntityNotFound : UpdatePermissionValueError
         object ValueAlreadySet : UpdatePermissionValueError
         data class Unexpected(val throwable: Throwable) : UpdatePermissionValueError
     }
 
     sealed interface UpdatePermissionTypeError {
+        object Cancelled : UpdatePermissionTypeError, EventCancelledError
         object EntityNotFound : UpdatePermissionTypeError
         object TypeAlreadySet : UpdatePermissionTypeError
         data class Unexpected(val throwable: Throwable) : UpdatePermissionTypeError
     }
 
     sealed interface CreateTemplateError {
+        object Cancelled : CreateTemplateError, EventCancelledError
         object InvalidName : CreateTemplateError
         data class Unexpected(val throwable: Throwable) : CreateTemplateError
     }
 
     sealed interface DeleteTemplateError {
+        object Cancelled : DeleteTemplateError, EventCancelledError
         object EntityNotFound : DeleteTemplateError
         data class Unexpected(val throwable: Throwable) : DeleteTemplateError
     }
 
     sealed interface SetNameTemplateError {
+        object Cancelled : SetNameTemplateError, EventCancelledError
         object EntityNotFound : SetNameTemplateError
         object InvalidName : SetNameTemplateError
         object NameAlreadySet : SetNameTemplateError
@@ -194,12 +238,14 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface SetAssignedToTemplateError {
+        object Cancelled : SetAssignedToTemplateError, EventCancelledError
         object EntityNotFound : SetAssignedToTemplateError
         object AlreadyAssignedTo : SetAssignedToTemplateError
         data class Unexpected(val throwable: Throwable) : SetAssignedToTemplateError
     }
 
     sealed interface AddPermissionToTemplateError {
+        object Cancelled : AddPermissionToTemplateError, EventCancelledError
         object EntityNotFound : AddPermissionToTemplateError
         object TargetNotFound : AddPermissionToTemplateError
         object PermissionAlreadyExists : AddPermissionToTemplateError
@@ -207,6 +253,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface RemovePermissionFromTemplateError {
+        object Cancelled : RemovePermissionFromTemplateError, EventCancelledError
         object EntityNotFound : RemovePermissionFromTemplateError
         object TargetNotFound : RemovePermissionFromTemplateError
         object PermissionNotExists : RemovePermissionFromTemplateError
@@ -214,11 +261,13 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface ClearPermissionsFromTemplateError {
+        object Cancelled : ClearPermissionsFromTemplateError, EventCancelledError
         object EntityNotFound : ClearPermissionsFromTemplateError
         data class Unexpected(val throwable: Throwable) : ClearPermissionsFromTemplateError
     }
 
     sealed interface LinkTemplateError {
+        object Cancelled : LinkTemplateError, EventCancelledError
         object TargetNotFound : LinkTemplateError
         object TemplateNotFound : LinkTemplateError
         object AlreadyLinked : LinkTemplateError
@@ -227,6 +276,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface UnlinkTemplateError {
+        object Cancelled : UnlinkTemplateError, EventCancelledError
         object TargetNotFound : UnlinkTemplateError
         object TemplateNotFound : UnlinkTemplateError
         object NotLinked : UnlinkTemplateError
@@ -234,6 +284,7 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface ApplyTemplateError {
+        object Cancelled : ApplyTemplateError, EventCancelledError
         object TargetNotFound : ApplyTemplateError
         object TemplateNotFound : ApplyTemplateError
         object WrongAssignedTo : ApplyTemplateError
@@ -241,12 +292,14 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface RevokeTemplateError {
+        object Cancelled : RevokeTemplateError, EventCancelledError
         object TargetNotFound : RevokeTemplateError
         object TemplateNotFound : RevokeTemplateError
         data class Unexpected(val throwable: Throwable) : RevokeTemplateError
     }
 
     sealed interface SetPermissionError {
+        object Cancelled : SetPermissionError, EventCancelledError
         object EntityNotFound : SetPermissionError
         object PermissionAlreadyEnabled : SetPermissionError
         object PermissionAlreadyDisabled : SetPermissionError
@@ -254,22 +307,26 @@ interface PermissionService : TemplatePermissionService, RolePermissionService, 
     }
 
     sealed interface BulkSetPermissionError {
+        object Cancelled : BulkSetPermissionError, EventCancelledError
         object EntityNotFound : BulkSetPermissionError
         data class Unexpected(val throwable: Throwable) : BulkSetPermissionError
     }
 
     sealed interface UnsetPermissionError {
+        object Cancelled : UnsetPermissionError, EventCancelledError
         object EntityNotFound : UnsetPermissionError
         object PermissionNotFound : UnsetPermissionError
         data class Unexpected(val throwable: Throwable) : UnsetPermissionError
     }
 
     sealed interface BulkUnsetPermissionError {
+        object Cancelled : BulkUnsetPermissionError, EventCancelledError
         object EntityNotFound : BulkUnsetPermissionError
         data class Unexpected(val throwable: Throwable) : BulkUnsetPermissionError
     }
 
     sealed interface ClearPermissionsError {
+        object Cancelled : ClearPermissionsError, EventCancelledError
         object EntityNotFound : ClearPermissionsError
         data class Unexpected(val throwable: Throwable) : ClearPermissionsError
     }

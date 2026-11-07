@@ -5,13 +5,16 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.player.PlayerAttributeEntity
 import dev.gradienttim.gradeway.entity.player.PlayerEntity
 import dev.gradienttim.gradeway.entity.player.PlayerPermissionEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.player.RolePlayerService
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.spec.PlayerCreateSpec
 import java.util.*
 
 /**
@@ -23,71 +26,107 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     /**
      * Creates a new player with the specified unique identifier and name.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player to be created.
      * @param name The name of the player to be created.
+     * @param builder Configures further properties of the player before it is created.
      * @return An instance of [Either] containing [CreatePlayerError] if the creation fails,
-     *         or [Unit] if the creation succeeds.
+     *         or the created player if the creation succeeds.
      */
-    fun create(id: UUID, name: String): Either<CreatePlayerError, PlayerEntity>
+    fun create(
+        actor: Actor,
+        id: UUID,
+        name: String,
+        builder: PlayerCreateSpec.() -> Unit = {},
+    ): Either<CreatePlayerError, PlayerEntity>
 
     /**
      * Deletes a player identified by the given unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player to be deleted.
      * @return An instance of [Either] containing [DeletePlayerError] if the deletion fails,
      *         or [Unit] if the deletion succeeds.
      */
-    fun delete(id: UUID): Either<DeletePlayerError, Unit>
+    fun delete(
+        actor: Actor,
+        id: UUID,
+    ): Either<DeletePlayerError, Unit>
 
     /**
      * Updates the name of a player identified by the specified unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose name is to be updated.
      * @param name The new name to assign to the player.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(id: UUID, name: String): Either<SetNameError, Boolean>
+    fun setName(
+        actor: Actor,
+        id: UUID,
+        name: String,
+    ): Either<SetNameError, Boolean>
 
     /**
      * Updates the name of the specified player entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity whose name is to be updated.
      * @param name The new name to assign to the player entity.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(entity: PlayerEntity, name: String): Either<SetNameError, Boolean>
+    fun setName(
+        actor: Actor,
+        entity: PlayerEntity,
+        name: String,
+    ): Either<SetNameError, Boolean>
 
     /**
      * Updates the weight of a player identified by the specified unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the player whose weight is to be updated.
      * @param weight The new weight to assign to the player.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(id: UUID, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        id: UUID,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of the specified player entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The player entity whose weight is to be updated.
      * @param weight The new weight to assign to the player entity.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(entity: PlayerEntity, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        entity: PlayerEntity,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of a player identified by its unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the player whose weight needs to be updated.
      * @param weight The new weight to assign to the player entity.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        idOrName: String,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Retrieves a player entity by its unique identifier.
@@ -203,12 +242,14 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * operation. Intended for periodic maintenance sweeps over a bounded set of players (e.g., all
      * currently online players) rather than a per-player loop.
      *
+     * @param actor The actor performing the operation.
      * @param playerIds The unique identifiers of the players whose expired roles should be removed.
      * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
      *         `(playerId, role)` pairs describing every role that was removed.
      */
     fun removeExpiredRoles(
-        playerIds: Collection<UUID>
+        actor: Actor,
+        playerIds: Collection<UUID>,
     ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
     /**
@@ -217,34 +258,43 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
      * permissions stop applying at (close to) the moment it expires rather than waiting for that
      * player's permission cache entry to naturally miss or be otherwise invalidated.
      *
+     *
+     * @param actor The actor performing the operation.
      * @return Either an error of type [RemoveExpiredRolesError] if the operation fails, or the list of
      *         `(playerId, role)` pairs describing every role that was removed.
      */
-    fun removeExpiredRoles(): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
+    fun removeExpiredRoles(
+        actor: Actor,
+    ): Either<RemoveExpiredRolesError, List<Pair<UUID, RoleEntity>>>
 
     sealed interface CreatePlayerError {
+        object Cancelled : CreatePlayerError, EventCancelledError
         object EntityAlreadyExists : CreatePlayerError
         object InvalidName : CreatePlayerError
         data class Unexpected(val throwable: Throwable) : CreatePlayerError
     }
 
     sealed interface DeletePlayerError {
+        object Cancelled : DeletePlayerError, EventCancelledError
         object EntityNotFound : DeletePlayerError
         data class Unexpected(val throwable: Throwable) : DeletePlayerError
     }
 
     sealed interface SetNameError {
+        object Cancelled : SetNameError, EventCancelledError
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         data class Unexpected(val throwable: Throwable) : SetNameError
     }
 
     sealed interface SetWeightError {
+        object Cancelled : SetWeightError, EventCancelledError
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
     }
 
     sealed interface AddRoleError {
+        object Cancelled : AddRoleError, EventCancelledError
         object EntityNotFound : AddRoleError
         object TargetNotFound : AddRoleError
         object AlreadyExists : AddRoleError
@@ -253,6 +303,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface RemoveRoleError {
+        object Cancelled : RemoveRoleError, EventCancelledError
         object EntityNotFound : RemoveRoleError
         object TargetNotFound : RemoveRoleError
         object NotExists : RemoveRoleError
@@ -260,6 +311,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetRoleUntilAtError {
+        object Cancelled : SetRoleUntilAtError, EventCancelledError
         object EntityNotFound : SetRoleUntilAtError
         object TargetNotFound : SetRoleUntilAtError
         object RelationNotFound : SetRoleUntilAtError
@@ -268,6 +320,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetRolePausedAtError {
+        object Cancelled : SetRolePausedAtError, EventCancelledError
         object EntityNotFound : SetRolePausedAtError
         object TargetNotFound : SetRolePausedAtError
         object RelationNotFound : SetRolePausedAtError
@@ -276,6 +329,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface PauseRoleError {
+        object Cancelled : PauseRoleError, EventCancelledError
         object EntityNotFound : PauseRoleError
         object TargetNotFound : PauseRoleError
         object RelationNotFound : PauseRoleError
@@ -284,6 +338,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface ResumeRoleError {
+        object Cancelled : ResumeRoleError, EventCancelledError
         object EntityNotFound : ResumeRoleError
         object TargetNotFound : ResumeRoleError
         object RelationNotFound : ResumeRoleError
@@ -292,6 +347,7 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface SetPrimaryRoleError {
+        object Cancelled : SetPrimaryRoleError, EventCancelledError
         object EntityNotFound : SetPrimaryRoleError
         object TargetNotFound : SetPrimaryRoleError
         object AlreadyPrimary : SetPrimaryRoleError
@@ -299,11 +355,13 @@ interface PlayerService : RolePlayerService, SharedAttributeService<PlayerEntity
     }
 
     sealed interface ApplyDefaultRoleError {
+        object Cancelled : ApplyDefaultRoleError, EventCancelledError
         object EntityNotFound : ApplyDefaultRoleError
         data class Unexpected(val throwable: Throwable) : ApplyDefaultRoleError
     }
 
     sealed interface ClearPrimaryRoleError {
+        object Cancelled : ClearPrimaryRoleError, EventCancelledError
         object EntityNotFound : ClearPrimaryRoleError
         object NoPrimaryRole : ClearPrimaryRoleError
         data class Unexpected(val throwable: Throwable) : ClearPrimaryRoleError

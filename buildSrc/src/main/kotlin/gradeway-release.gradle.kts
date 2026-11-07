@@ -1,4 +1,4 @@
-import gradle.kotlin.dsl.accessors._7efdda50f9f959eb80d21b302d04c803.shadowJar
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
     id("com.modrinth.minotaur")
@@ -21,10 +21,19 @@ val supportedVelocityVersions = arrayOf(
     "4.3.1"
 )
 
+val releaseDebugMode = (findProperty("gradeway.release.debug") as? String)?.toBoolean() ?: false
+
 val hangarApiKey = findProperty("gradeway.hangar.apiKey") as? String
 val modrinthToken = findProperty("gradeway.modrinth.token") as? String
 
 val readMeContent = rootProject.file("README.md").readText()
+
+val shadowJarFile = tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile }
+
+val releaseNotes = providers.of(GitHubReleaseNotes::class) {
+    parameters.repository.set("GradientTim/gradeway")
+    parameters.tag.set("v$moduleVersion")
+}
 
 data class ModuleInfo(val loaders: List<String>, val prettyName: String)
 
@@ -48,17 +57,21 @@ if (modrinthToken != null) {
         projectId.set("gradeway")
         versionType.set("release")
         versionNumber.set(moduleVersion)
-        versionName.set(moduleVersion + " - " + moduleInfo.prettyName)
+        versionName.set("$moduleVersion - ${moduleInfo.prettyName}")
+        changelog.set(releaseNotes)
 
-        uploadFile.set(tasks.shadowJar.flatMap { it.archiveFile })
+        uploadFile.set(shadowJarFile)
         syncBodyFrom = readMeContent
+
+        debugMode.set(releaseDebugMode)
 
         loaders.addAll(moduleInfo.loaders)
         gameVersions.addAll(*supportedMinecraftVersions)
     }
 }
 
-val hangarSupported = hangarApiKey != null && project.name in listOf("plugin-paper", "plugin-velocity")
+val hangarSupported = !releaseDebugMode && hangarApiKey != null &&
+        project.name in listOf("plugin-paper", "plugin-velocity")
 
 if (hangarSupported) {
     hangarPublish {
@@ -66,6 +79,7 @@ if (hangarSupported) {
             id = "gradeway"
             version = moduleVersion
             channel = "Release"
+            changelog = releaseNotes
 
             apiKey = hangarApiKey
 
@@ -74,14 +88,14 @@ if (hangarSupported) {
             platforms {
                 if (project.name == "plugin-paper") {
                     paper {
-                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        jar = shadowJarFile
                         platformVersions.addAll(*supportedMinecraftVersions)
                     }
                 }
 
                 if (project.name == "plugin-velocity") {
                     velocity {
-                        jar = tasks.shadowJar.flatMap { it.archiveFile }
+                        jar = shadowJarFile
                         platformVersions.addAll(*supportedVelocityVersions)
                     }
                 }

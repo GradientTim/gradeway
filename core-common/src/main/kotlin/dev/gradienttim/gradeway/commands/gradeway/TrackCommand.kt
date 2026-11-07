@@ -6,13 +6,8 @@ package dev.gradienttim.gradeway.commands.gradeway
 
 import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.command.context.CommandContext
-import dev.gradienttim.gradeway.command.execute
-import dev.gradienttim.gradeway.command.intParam
-import dev.gradienttim.gradeway.command.integer
-import dev.gradienttim.gradeway.command.literal
-import dev.gradienttim.gradeway.command.string
-import dev.gradienttim.gradeway.command.stringParam
 import dev.gradienttim.gradeway.commands.extensions.*
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.database.models.track.TrackStagesTable
@@ -47,10 +42,12 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
             string("slug") {
                 execute {
+                    val actor = commandContext.sourceToActor(source)
                     val slug = stringParam("slug")
 
-                    gradeway.tracks.createTrack(slug)
+                    gradeway.tracks.createTrack(actor, slug)
                         .onLeft { error ->
+                            if (commandContext.sendIfCancelled(source, error)) return@execute
                             if (error is CreateTrackError.InvalidSlug) {
                                 commandContext.sendTranslatedMessage(
                                     source,
@@ -103,11 +100,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                 suggestTracks(gradeway)
 
                 execute {
+                    val actor = commandContext.sourceToActor(source)
                     val idOrSlug = stringParam("idOrSlug")
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.tracks.deleteTrack(idOrSlug)
+                        gradeway.tracks.deleteTrack(actor, idOrSlug)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeleteTrackError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -220,11 +219,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                     string("slug") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrSlug = stringParam("idOrSlug")
                             val slug = stringParam("slug")
 
-                            gradeway.tracks.setSlug(idOrSlug, slug)
+                            gradeway.tracks.setSlug(actor, idOrSlug, slug)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is SetSlugError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -303,6 +304,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                             suggestRoles(gradeway)
 
                             execute {
+                                val actor = commandContext.sourceToActor(source)
                                 val idOrSlug = stringParam("idOrSlug")
                                 val roleId = stringParam("role")
                                 val roleUuid = gradeway.roles.findByIdOrName(roleId)?.id?.value
@@ -318,8 +320,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                                     return@execute
                                 }
 
-                                gradeway.tracks.addStage(idOrSlug, roleUuid)
+                                gradeway.tracks.addStage(actor, idOrSlug, roleUuid)
                                     .onLeft { error ->
+                                        if (commandContext.sendIfCancelled(source, error)) return@execute
                                         if (error is AddStageError.EntityNotFound) {
                                             commandContext.sendTranslatedMessage(
                                                 source,
@@ -392,6 +395,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                             suggestTrackStages(gradeway)
 
                             execute {
+                                val actor = commandContext.sourceToActor(source)
                                 val idOrSlug = stringParam("idOrSlug")
                                 val stageId = stringParam("stage")
                                 val track = gradeway.tracks.findTrackByIdOrSlug(idOrSlug)
@@ -419,8 +423,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                                     return@execute
                                 }
 
-                                gradeway.tracks.removeStage(stage)
+                                gradeway.tracks.removeStage(actor, stage)
                                     .onLeft { error ->
+                                        if (commandContext.sendIfCancelled(source, error)) return@execute
                                         if (error is RemoveStageError.EntityNotFound) {
                                             commandContext.sendTranslatedMessage(
                                                 source,
@@ -467,6 +472,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                             integer("position", min = 1) {
                                 execute {
+                                    val actor = commandContext.sourceToActor(source)
                                     val idOrSlug = stringParam("idOrSlug")
                                     val stageId = stringParam("stage")
                                     val position = intParam("position")
@@ -497,8 +503,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
 
                                     val roleName = transaction(gradeway.database) { stage.role.name }
 
-                                    gradeway.tracks.moveStage(stage, position - 1)
+                                    gradeway.tracks.moveStage(actor, stage, position - 1)
                                         .onLeft { error ->
+                                            if (commandContext.sendIfCancelled(source, error)) return@execute
                                             if (error is MoveStageError.EntityNotFound) {
                                                 commandContext.sendTranslatedMessage(
                                                     source,
@@ -652,6 +659,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                     suggestTracks(gradeway)
 
                     execute {
+                        val actor = commandContext.sourceToActor(source)
                         val playerIdOrName = stringParam("player")
                         val idOrSlug = stringParam("idOrSlug")
 
@@ -679,8 +687,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                             return@execute
                         }
 
-                        gradeway.tracks.promotePlayer(player, track)
+                        gradeway.tracks.promotePlayer(actor, player, track)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is PromotePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -760,6 +769,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                     suggestTracks(gradeway)
 
                     execute {
+                        val actor = commandContext.sourceToActor(source)
                         val playerIdOrName = stringParam("player")
                         val idOrSlug = stringParam("idOrSlug")
 
@@ -787,8 +797,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.trackCommand(
                             return@execute
                         }
 
-                        gradeway.tracks.demotePlayer(player, track)
+                        gradeway.tracks.demotePlayer(actor, player, track)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@execute
                                 if (error is DemotePlayerError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,

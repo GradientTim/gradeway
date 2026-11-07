@@ -22,15 +22,10 @@ import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.GroupService
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.translation.Argument
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.innerJoin
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.lowerCase
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import java.util.*
 
 internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
     rootLiteral: String,
@@ -38,9 +33,11 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
     commandContext: CommandContext<TCommandContext>,
 ) {
     fun handleCreateGroup(source: TCommandContext, name: String, defaultWeight: Int = -1) {
-        gradeway.groups.create(name) {
+        val actor = commandContext.sourceToActor(source)
+        gradeway.groups.create(actor, name) {
             this.defaultWeight = defaultWeight
         }.onLeft { error ->
+            if (commandContext.sendIfCancelled(source, error)) return@onLeft
             if (error is GroupService.CreateGroupError.InvalidName) {
                 commandContext.sendTranslatedMessage(
                     source,
@@ -105,11 +102,13 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
                 suggestGroups(gradeway)
 
                 execute {
+                    val actor = commandContext.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.groups.delete(idOrName)
+                        gradeway.groups.delete(actor, idOrName)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is GroupService.DeleteGroupError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -215,11 +214,13 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
 
                     string("name") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val name = stringParam("name")
 
-                            gradeway.groups.setName(idOrName, name)
+                            gradeway.groups.setName(actor, idOrName, name)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is GroupService.SetNameError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -283,11 +284,13 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
 
                     integer("defaultWeight") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val defaultWeight = intParam("defaultWeight")
 
-                            gradeway.groups.setDefaultWeight(idOrName, defaultWeight)
+                            gradeway.groups.setDefaultWeight(actor, idOrName, defaultWeight)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is GroupService.SetDefaultWeightError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -342,27 +345,28 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
                     gradeway = gradeway,
                     entityType = "group",
                     context = commandContext,
-                    handleSetPermission = { idOrName, permission, status ->
-                        gradeway.groups.setPermission(idOrName, permission, status)
+                    handleSetPermission = { actor, idOrName, permission, status ->
+                        gradeway.groups.setPermission(actor, idOrName, permission, status)
                     },
-                    handleUnsetPermission = { idOrName, permission ->
+                    handleUnsetPermission = { actor, idOrName, permission ->
                         gradeway.groups.unsetPermission(
+                            actor,
                             idOrName,
                             permission
                         )
                     },
-                    handleClearPermissions = { idOrName -> gradeway.groups.clearPermissions(idOrName) },
-                    handleLinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.linkTemplateToGroup(templateIdOrName, idOrName)
+                    handleClearPermissions = { actor, idOrName -> gradeway.groups.clearPermissions(actor, idOrName) },
+                    handleLinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.linkTemplateToGroup(actor, templateIdOrName, idOrName)
                     },
-                    handleUnlinkTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.unlinkTemplateFromGroup(templateIdOrName, idOrName)
+                    handleUnlinkTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.unlinkTemplateFromGroup(actor, templateIdOrName, idOrName)
                     },
-                    handleApplyTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.applyTemplateToGroup(templateIdOrName, idOrName)
+                    handleApplyTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.applyTemplateToGroup(actor, templateIdOrName, idOrName)
                     },
-                    handleRevokeTemplate = { idOrName, templateIdOrName ->
-                        gradeway.permissions.revokeTemplateFromGroup(templateIdOrName, idOrName)
+                    handleRevokeTemplate = { actor, idOrName, templateIdOrName ->
+                        gradeway.permissions.revokeTemplateFromGroup(actor, templateIdOrName, idOrName)
                     },
                     handleListQuery = { scope, page, limit ->
                         GroupPermissionsTable
@@ -481,6 +485,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
                 suggestRoles(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val roleId = stringParam("role")
 
@@ -498,8 +503,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
                         return@execute
                     }
 
-                    gradeway.groups.addRoleToGroup(idOrName, roleUniqueId)
+                    gradeway.groups.addRoleToGroup(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is GroupService.AddTargetError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -567,6 +573,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
                 suggestRoles(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val roleId = stringParam("role")
 
@@ -584,8 +591,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerGroupRo
                         return@execute
                     }
 
-                    gradeway.groups.removeRoleFromGroup(idOrName, roleUniqueId)
+                    gradeway.groups.removeRoleFromGroup(actor, idOrName, roleUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is GroupService.RemoveTargetError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

@@ -7,8 +7,12 @@ package dev.gradienttim.gradeway.extensions
 import dev.gradienttim.gradeway.commands.extensions.infoList
 import dev.gradienttim.gradeway.commands.extensions.infoListArguments
 import dev.gradienttim.gradeway.commands.gradeway.trackStagePreview
+import dev.gradienttim.gradeway.commands.gradeway.whoCanPlayerList
+import dev.gradienttim.gradeway.commands.gradeway.whoCanRoleList
+import dev.gradienttim.gradeway.services.permission.PermissionInspectionService.PermissionHolder
 import net.kyori.adventure.key.Key
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.JoinConfiguration
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.flattener.ComponentFlattener
@@ -20,9 +24,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.translation.Argument
 import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationStore
 import net.kyori.adventure.text.renderer.TranslatableComponentRenderer
-import java.util.Locale
-import java.util.Properties
-import java.util.UUID
+import java.util.*
 import kotlin.test.*
 
 class AdventureExtensionsTest {
@@ -127,6 +129,65 @@ class AdventureExtensionsTest {
         val rendered = renderer.render(infoList(emptyList()), Locale.US)
 
         assertEquals("None", rendered.plainText())
+    }
+
+    @Test
+    fun `why path separator keeps the spaces around the arrow`() {
+        val store = MiniMessageTranslationStore.create(Key.key("gradeway", "test"), miniMessage)
+        store.registerAll(Locale.US, languages)
+        val renderer = TranslatableComponentRenderer.usingTranslationSource(store)
+
+        val path = Component.join(
+            JoinConfiguration.separator(Component.translatable("gradeway.command.why.separator")),
+            Component.text("Steve"),
+            Component.text("*")
+        )
+
+        assertEquals("Steve \u2192 *", renderer.render(path, Locale.US).plainText())
+    }
+
+    @Test
+    fun `who can lists render compactly with a why command per player`() {
+        val store = MiniMessageTranslationStore.create(Key.key("gradeway", "test"), miniMessage)
+        store.registerAll(Locale.US, languages)
+        val renderer = TranslatableComponentRenderer.usingTranslationSource(store)
+        val players = listOf(
+            PermissionHolder(UUID.randomUUID(), "Alex", direct = true),
+            PermissionHolder(UUID.randomUUID(), "Steve", direct = false),
+        )
+        val roles = listOf(PermissionHolder(UUID.randomUUID(), "VIP", direct = false))
+
+        val playerList = renderer.render(whoCanPlayerList(players, "gw", "essentials.fly"), Locale.US)
+
+        assertEquals("Alex, Steve", playerList.plainText())
+        assertEquals(
+            listOf(
+                ClickEvent.runCommand("/gw why Alex essentials.fly"),
+                ClickEvent.runCommand("/gw why Steve essentials.fly"),
+            ),
+            playerList.descendants().mapNotNull { it.clickEvent() }.toList()
+        )
+        assertEquals("VIP", renderer.render(whoCanRoleList(roles), Locale.US).plainText())
+        assertEquals("None", renderer.render(whoCanRoleList(emptyList()), Locale.US).plainText())
+    }
+
+    @Test
+    fun `who can player list links the remaining players to the next page`() {
+        val store = MiniMessageTranslationStore.create(Key.key("gradeway", "test"), miniMessage)
+        store.registerAll(Locale.US, languages)
+        val renderer = TranslatableComponentRenderer.usingTranslationSource(store)
+        val players = listOf(PermissionHolder(UUID.randomUUID(), "Alex", direct = true))
+
+        val rendered = renderer.render(
+            whoCanPlayerList(players, "gw", "essentials.fly", 450, "/gw whocan essentials.fly 2"),
+            Locale.US
+        )
+
+        assertEquals("Alex, \u2026 and 450 more", rendered.plainText())
+        assertEquals(
+            ClickEvent.runCommand("/gw whocan essentials.fly 2"),
+            rendered.descendants().mapNotNull { it.clickEvent() }.last()
+        )
     }
 
     @Test

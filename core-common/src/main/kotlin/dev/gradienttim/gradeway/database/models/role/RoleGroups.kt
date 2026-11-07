@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.role
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupEntity
 import dev.gradienttim.gradeway.database.models.group.GroupsTable
@@ -53,9 +54,16 @@ class DatabaseRoleGroupEntity(id: EntityID<CompositeID>) : CompositeEntity(id), 
         }
     }
 
+    override val target by lazy { Target.roleGroup(roleId.value, groupId.value) }
+
     override var roleId by RoleGroupsTable.roleId
     override var groupId by RoleGroupsTable.groupId
 
     override val role by DatabaseRoleEntity referencedOn RoleGroupsTable.roleId
     override val group by DatabaseGroupEntity referencedOn RoleGroupsTable.groupId
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("roleId", roleId.value.toString())
+        put("groupId", groupId.value.toString())
+    }
 }

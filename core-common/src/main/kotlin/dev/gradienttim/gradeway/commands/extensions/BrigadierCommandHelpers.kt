@@ -9,6 +9,7 @@ import com.mojang.brigadier.builder.ArgumentBuilder
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.attribute.Attribute
 import dev.gradienttim.gradeway.attribute.AttributeType
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.command.*
 import dev.gradienttim.gradeway.command.context.CommandContext
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
@@ -48,6 +49,7 @@ internal fun <TCommandSource> requestConfirmation(
             )
         }
     ).onLeft { error ->
+        if (context.sendIfCancelled(source, error)) return@onLeft
         if (error is ConfirmationManager.RequestJobError.FailedToRegister) {
             context.sendTranslatedMessage(
                 source,
@@ -231,8 +233,8 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
     literalName: String,
     relationKey: String,
     targetKey: String,
-    handleAdd: (idOrName: String, targetId: UUID) -> Either<AddParentError, RoleParentEntity>,
-    handleRemove: (idOrName: String, targetId: UUID) -> Either<RemoveParentError, Unit>,
+    handleAdd: (actor: Actor, idOrName: String, targetId: UUID) -> Either<AddParentError, RoleParentEntity>,
+    handleRemove: (actor: Actor, idOrName: String, targetId: UUID) -> Either<RemoveParentError, Unit>,
     handleListQuery: (scope: String, page: Int, limit: Int) -> TListResult,
     handleListRender: (source: TCommandSource, page: Int, limit: Int, result: TListResult) -> Unit
 ) {
@@ -261,8 +263,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         return@execute
                     }
 
-                    handleAdd(idOrName, targetUniqueId)
+                    handleAdd(context.sourceToActor(source), idOrName, targetUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is AddParentError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -368,8 +371,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         return@execute
                     }
 
-                    handleRemove(idOrName, targetUniqueId)
+                    handleRemove(context.sourceToActor(source), idOrName, targetUniqueId)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemoveParentError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -446,13 +450,13 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
     rootLiteral: String,
     gradeway: CommonGradeway<*>,
     entityType: String,
-    handleSetPermission: (idOrName: String, permission: String, status: Boolean) -> Either<SetPermissionError, Unit>,
-    handleUnsetPermission: (idOrName: String, permission: String) -> Either<UnsetPermissionError, Unit>,
-    handleClearPermissions: (idOrName: String) -> Either<ClearPermissionsError, Unit>,
-    handleLinkTemplate: (idOrName: String, templateIdOrName: String) -> Either<LinkTemplateError, Unit>,
-    handleUnlinkTemplate: (idOrName: String, templateIdOrName: String) -> Either<UnlinkTemplateError, Unit>,
-    handleApplyTemplate: (idOrName: String, templateIdOrName: String) -> Either<ApplyTemplateError, Boolean>,
-    handleRevokeTemplate: (idOrName: String, templateIdOrName: String) -> Either<RevokeTemplateError, Boolean>,
+    handleSetPermission: (actor: Actor, idOrName: String, permission: String, status: Boolean) -> Either<SetPermissionError, Unit>,
+    handleUnsetPermission: (actor: Actor, idOrName: String, permission: String) -> Either<UnsetPermissionError, Unit>,
+    handleClearPermissions: (actor: Actor, idOrName: String) -> Either<ClearPermissionsError, Unit>,
+    handleLinkTemplate: (actor: Actor, idOrName: String, templateIdOrName: String) -> Either<LinkTemplateError, Unit>,
+    handleUnlinkTemplate: (actor: Actor, idOrName: String, templateIdOrName: String) -> Either<UnlinkTemplateError, Unit>,
+    handleApplyTemplate: (actor: Actor, idOrName: String, templateIdOrName: String) -> Either<ApplyTemplateError, Boolean>,
+    handleRevokeTemplate: (actor: Actor, idOrName: String, templateIdOrName: String) -> Either<RevokeTemplateError, Boolean>,
     handleListQuery: (scope: String, page: Int, limit: Int) -> TListResult,
     handleListRender: (source: TCommandSource, page: Int, limit: Int, result: TListResult) -> Unit
 ) {
@@ -461,12 +465,15 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
             requires { context.hasPermission(it, "gradeway.$entityType.permissions.set") }
 
             string("permission") {
+                suggestKnownPermissions(gradeway)
+
                 execute {
                     val idOrName = stringParam("idOrName")
                     val permission = stringParam("permission")
 
-                    handleSetPermission(idOrName, permission, true)
+                    handleSetPermission(context.sourceToActor(source), idOrName, permission, true)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@onLeft
                             renderSetPermissionError(
                                 source,
                                 context,
@@ -494,8 +501,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val permission = stringParam("permission")
                         val status = param("status", Boolean::class)
 
-                        handleSetPermission(idOrName, permission, status)
+                        handleSetPermission(context.sourceToActor(source), idOrName, permission, status)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@onLeft
                                 renderSetPermissionError(source, context, entityType, idOrName, permission, error)
                             }
                             .onRight {
@@ -521,8 +529,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                     val idOrName = stringParam("idOrName")
                     val permission = stringParam("permission")
 
-                    handleUnsetPermission(idOrName, permission)
+                    handleUnsetPermission(context.sourceToActor(source), idOrName, permission)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is UnsetPermissionError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -579,8 +588,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                 val idOrName = stringParam("idOrName")
 
                 requestConfirmation(source, context, gradeway, rootLiteral) {
-                    handleClearPermissions(idOrName)
+                    handleClearPermissions(context.sourceToActor(source), idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearPermissionsError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -636,8 +646,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val idOrName = stringParam("idOrName")
                         val templateIdOrName = stringParam("templateIdOrName")
 
-                        handleLinkTemplate(idOrName, templateIdOrName)
+                        handleLinkTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is LinkTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -719,8 +730,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val idOrName = stringParam("idOrName")
                         val templateIdOrName = stringParam("templateIdOrName")
 
-                        handleUnlinkTemplate(idOrName, templateIdOrName)
+                        handleUnlinkTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is UnlinkTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -791,8 +803,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val idOrName = stringParam("idOrName")
                         val templateIdOrName = stringParam("templateIdOrName")
 
-                        handleApplyTemplate(idOrName, templateIdOrName)
+                        handleApplyTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is ApplyTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -863,8 +876,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val idOrName = stringParam("idOrName")
                         val templateIdOrName = stringParam("templateIdOrName")
 
-                        handleRevokeTemplate(idOrName, templateIdOrName)
+                        handleRevokeTemplate(context.sourceToActor(source), idOrName, templateIdOrName)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is RevokeTemplateError.TargetNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -977,10 +991,10 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
     gradeway: CommonGradeway<*>,
     entityType: String,
     context: CommandContext<TCommandSource>,
-    handleAddAttribute: (idOrName: String, attribute: Attribute<Any>) -> Either<AddAttributeError, SharedAttributeEntity>,
-    handleUpdateAttribute: (idOrName: String, key: Key, value: Any) -> Either<UpdateAttributeError, SharedAttributeEntity>,
-    handleRemoveAttribute: (idOrName: String, key: Key) -> Either<RemoveAttributeError, Unit>,
-    handleClearAttributes: (idOrName: String) -> Either<ClearAttributesError, Unit>,
+    handleAddAttribute: (actor: Actor, idOrName: String, attribute: Attribute<Any>) -> Either<AddAttributeError, SharedAttributeEntity>,
+    handleUpdateAttribute: (actor: Actor, idOrName: String, key: Key, value: Any) -> Either<UpdateAttributeError, SharedAttributeEntity>,
+    handleRemoveAttribute: (actor: Actor, idOrName: String, key: Key) -> Either<RemoveAttributeError, Unit>,
+    handleClearAttributes: (actor: Actor, idOrName: String) -> Either<ClearAttributesError, Unit>,
     handleListQuery: (scope: String, page: Int, limit: Int) -> TListResult,
     handleListRender: (source: TCommandSource, page: Int, limit: Int, result: TListResult) -> Unit
 ) {
@@ -1016,8 +1030,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                             val attributeValue = attributeType.deserialize(value) ?: attributeType.fallback(key)
                             val attribute = Attribute(attributeType, key, attributeValue)
 
-                            handleAddAttribute(idOrName, attribute)
+                            handleAddAttribute(context.sourceToActor(source), idOrName, attribute)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is AddAttributeError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -1080,8 +1095,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                         val key = Key.key(stringParam("key"))
                         val value = stringParam("value")
 
-                        handleUpdateAttribute(idOrName, key, value)
+                        handleUpdateAttribute(context.sourceToActor(source), idOrName, key, value)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@execute
                                 if (error is UpdateAttributeError.EntityNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -1152,8 +1168,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                     val idOrName = stringParam("idOrName")
                     val key = Key.key(stringParam("key"))
 
-                    handleRemoveAttribute(idOrName, key)
+                    handleRemoveAttribute(context.sourceToActor(source), idOrName, key)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemoveAttributeError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -1210,8 +1227,9 @@ internal fun <TCommandSource, TListResult> ArgumentBuilder<TCommandSource, *>.re
                 val idOrName = stringParam("idOrName")
 
                 requestConfirmation(source, context, gradeway, rootLiteral) {
-                    handleClearAttributes(idOrName)
+                    handleClearAttributes(context.sourceToActor(source), idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearAttributesError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

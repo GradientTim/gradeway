@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.permission
 
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
 import dev.gradienttim.gradeway.services.PermissionService
@@ -53,6 +55,8 @@ class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), Per
         }
     }
 
+    override val target by lazy { Target.permissionTemplate(id.value) }
+
     internal val permissionService: PermissionService by inject()
 
     override var name by PermissionTemplatesTable.name
@@ -64,9 +68,17 @@ class DatabasePermissionTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id), Per
     override val permissions by DatabasePermissionTemplatePermissionEntity referrersOn
             PermissionTemplatePermissionsTable.templateId
 
-    override fun setName(name: String) =
-        permissionService.setTemplateName(this, name)
+    override fun setName(actor: Actor, name: String) =
+        permissionService.setTemplateName(actor, this, name)
 
-    override fun setAssignedTo(assignedTo: PermissionTemplateEntity.AssignedTo) =
-        permissionService.setTemplateAssignedTo(this, assignedTo)
+    override fun setAssignedTo(actor: Actor, assignedTo: PermissionTemplateEntity.AssignedTo) =
+        permissionService.setTemplateAssignedTo(actor, this, assignedTo)
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("name", name)
+        put("assignedTo", assignedTo.name)
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
+    }
 }

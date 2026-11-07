@@ -5,6 +5,8 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.database.models.player
 
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
@@ -81,6 +83,8 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
         }
     }
 
+    override val target by lazy { Target.player(id.value) }
+
     internal val trackService: TrackService by inject()
     internal val playerService: PlayerService by inject()
     internal val attributeService: AttributeService by inject()
@@ -102,32 +106,35 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
     override val permissionTemplates by DatabasePlayerPermissionTemplateEntity referrersOn
             PlayerPermissionTemplatesTable.playerId
 
-    override fun setName(name: String) = playerService.setName(this, name)
-    override fun setWeight(weight: Int) = playerService.setWeight(this, weight)
+    override fun setName(actor: Actor, name: String) = playerService.setName(actor, this, name)
+    override fun setWeight(actor: Actor, weight: Int) = playerService.setWeight(actor, this, weight)
 
-    override fun <TValue : Any> addAttribute(attribute: Attribute<TValue>) =
-        attributeService.addPlayerAttribute(this, attribute)
+    override fun <TValue : Any> addAttribute(actor: Actor, attribute: Attribute<TValue>) =
+        attributeService.addPlayerAttribute(actor, this, attribute)
 
-    override fun <TValue : Any> updateAttribute(key: Key, value: TValue) =
-        attributeService.updatePlayerAttribute(this, key, value)
+    override fun <TValue : Any> updateAttribute(actor: Actor, key: Key, value: TValue) =
+        attributeService.updatePlayerAttribute(actor, this, key, value)
 
-    override fun removeAttribute(key: Key) = attributeService.removePlayerAttribute(this, key)
-    override fun clearAttributes() = attributeService.clearPlayerAttributes(this)
+    override fun removeAttribute(actor: Actor, key: Key) = attributeService.removePlayerAttribute(actor, this, key)
+    override fun clearAttributes(actor: Actor) = attributeService.clearPlayerAttributes(actor, this)
 
     override fun hasAttribute(key: Key) = attributeService.hasPlayerAttribute(this, key)
     override fun getAttribute(key: Key) = attributeService.getPlayerAttribute(this, key)
 
-    override fun setPermission(permission: String, enabled: Boolean) =
-        permissionService.setPlayerPermission(this, permission, enabled)
+    override fun setPermission(actor: Actor, permission: String, enabled: Boolean) =
+        permissionService.setPlayerPermission(actor, this, permission, enabled)
 
-    override fun setPermissions(permissions: Map<String, Boolean>) =
-        permissionService.setPlayerPermissions(this, permissions)
+    override fun setPermissions(actor: Actor, permissions: Map<String, Boolean>) =
+        permissionService.setPlayerPermissions(actor, this, permissions)
 
-    override fun unsetPermission(permission: String) = permissionService.unsetPlayerPermission(this, permission)
-    override fun unsetPermissions(permissions: Collection<String>) =
-        permissionService.unsetPlayerPermissions(this, permissions)
+    override fun unsetPermission(
+        actor: Actor,
+        permission: String,
+    ) = permissionService.unsetPlayerPermission(actor, this, permission)
+    override fun unsetPermissions(actor: Actor, permissions: Collection<String>) =
+        permissionService.unsetPlayerPermissions(actor, this, permissions)
 
-    override fun clearPermissions() = permissionService.clearPlayerPermissions(this)
+    override fun clearPermissions(actor: Actor) = permissionService.clearPlayerPermissions(actor, this)
 
     override fun hasPermission(permission: String) = permissionService.hasPlayerPermission(this, permission)
     override fun hasAnyPermissions(permissions: Collection<String>) =
@@ -136,27 +143,27 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
     override fun hasAllPermissions(permissions: Collection<String>) =
         permissionService.hasPlayerAllPermissions(this, permissions)
 
-    override fun linkTemplate(id: UUID) = permissionService.linkTemplateToPlayer(id, this)
-    override fun linkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.linkTemplateToPlayer(entity, this)
+    override fun linkTemplate(actor: Actor, id: UUID) = permissionService.linkTemplateToPlayer(actor, id, this)
+    override fun linkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.linkTemplateToPlayer(actor, entity, this)
 
-    override fun unlinkTemplate(id: UUID) = permissionService.unlinkTemplateFromPlayer(id, this)
-    override fun unlinkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.unlinkTemplateFromPlayer(entity, this)
+    override fun unlinkTemplate(actor: Actor, id: UUID) = permissionService.unlinkTemplateFromPlayer(actor, id, this)
+    override fun unlinkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.unlinkTemplateFromPlayer(actor, entity, this)
 
-    override fun applyTemplate(id: UUID) = permissionService.applyTemplateToPlayer(id, this)
-    override fun applyTemplate(entity: PermissionTemplateEntity) =
-        permissionService.applyTemplateToPlayer(entity, this)
+    override fun applyTemplate(actor: Actor, id: UUID) = permissionService.applyTemplateToPlayer(actor, id, this)
+    override fun applyTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.applyTemplateToPlayer(actor, entity, this)
 
-    override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromPlayer(id, this)
-    override fun revokeTemplate(entity: PermissionTemplateEntity) =
-        permissionService.revokeTemplateFromPlayer(entity, this)
+    override fun revokeTemplate(actor: Actor, id: UUID) = permissionService.revokeTemplateFromPlayer(actor, id, this)
+    override fun revokeTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.revokeTemplateFromPlayer(actor, entity, this)
 
-    override fun promote(trackId: UUID) = trackService.promotePlayer(this, trackId)
-    override fun promote(track: TrackEntity) = trackService.promotePlayer(this, track)
+    override fun promote(actor: Actor, trackId: UUID) = trackService.promotePlayer(actor, this, trackId)
+    override fun promote(actor: Actor, track: TrackEntity) = trackService.promotePlayer(actor, this, track)
 
-    override fun demote(trackId: UUID) = trackService.demotePlayer(this, trackId)
-    override fun demote(track: TrackEntity) = trackService.demotePlayer(this, track)
+    override fun demote(actor: Actor, trackId: UUID) = trackService.demotePlayer(actor, this, trackId)
+    override fun demote(actor: Actor, track: TrackEntity) = trackService.demotePlayer(actor, this, track)
 
     override fun findCurrentStage(trackId: UUID) = trackService.findPlayersCurrentStage(this, trackId)
     override fun findCurrentStage(track: TrackEntity) = trackService.findPlayersCurrentStage(this, track)
@@ -173,5 +180,14 @@ class DatabasePlayerEntity(id: EntityID<UUID>) : UUIDEntity(id), PlayerEntity, K
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
+    }
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("name", name)
+        put("weight", weight)
+        put("primaryRoleId", primaryRoleId?.value?.toString())
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
     }
 }

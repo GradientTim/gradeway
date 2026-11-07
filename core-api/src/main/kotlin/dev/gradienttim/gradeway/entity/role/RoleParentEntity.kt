@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.entity.role
 
+import dev.gradienttim.gradeway.audit.Auditable
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import java.util.*
 
@@ -14,7 +15,7 @@ import java.util.*
  * as its parent or child. This hierarchy might be used to represent inheritance,
  * dependencies, or grouping within a role-based access control system.
  */
-interface RoleParentEntity {
+interface RoleParentEntity : Auditable {
     /**
      * Represents the identifier of the parent role in a hierarchical relationship.
      *

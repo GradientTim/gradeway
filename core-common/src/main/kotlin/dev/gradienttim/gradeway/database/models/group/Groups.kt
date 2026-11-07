@@ -4,6 +4,8 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.group
 
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RoleGroupsTable
@@ -53,6 +55,8 @@ class DatabaseGroupEntity(id: EntityID<UUID>) : UUIDEntity(id), GroupEntity, Koi
         }
     }
 
+    override val target by lazy { Target.group(id.value) }
+
     internal val permissionService: PermissionService by inject()
 
     override var name by GroupsTable.name
@@ -66,17 +70,20 @@ class DatabaseGroupEntity(id: EntityID<UUID>) : UUIDEntity(id), GroupEntity, Koi
     override val permissionTemplates by DatabaseGroupPermissionTemplateEntity referrersOn
             GroupPermissionTemplatesTable.groupId
 
-    override fun setPermission(permission: String, enabled: Boolean) =
-        permissionService.setGroupPermission(this, permission, enabled)
+    override fun setPermission(actor: Actor, permission: String, enabled: Boolean) =
+        permissionService.setGroupPermission(actor, this, permission, enabled)
 
-    override fun setPermissions(permissions: Map<String, Boolean>) =
-        permissionService.setGroupPermissions(this, permissions)
+    override fun setPermissions(actor: Actor, permissions: Map<String, Boolean>) =
+        permissionService.setGroupPermissions(actor, this, permissions)
 
-    override fun unsetPermission(permission: String) = permissionService.unsetGroupPermission(this, permission)
-    override fun unsetPermissions(permissions: Collection<String>) =
-        permissionService.unsetGroupPermissions(this, permissions)
+    override fun unsetPermission(
+        actor: Actor,
+        permission: String,
+    ) = permissionService.unsetGroupPermission(actor, this, permission)
+    override fun unsetPermissions(actor: Actor, permissions: Collection<String>) =
+        permissionService.unsetGroupPermissions(actor, this, permissions)
 
-    override fun clearPermissions() = permissionService.clearGroupPermissions(this)
+    override fun clearPermissions(actor: Actor) = permissionService.clearGroupPermissions(actor, this)
 
     override fun hasPermission(permission: String) = permissionService.hasGroupPermission(this, permission)
     override fun hasAnyPermissions(permissions: Collection<String>) =
@@ -85,24 +92,32 @@ class DatabaseGroupEntity(id: EntityID<UUID>) : UUIDEntity(id), GroupEntity, Koi
     override fun hasAllPermissions(permissions: Collection<String>) =
         permissionService.hasGroupAllPermissions(this, permissions)
 
-    override fun linkTemplate(id: UUID) = permissionService.linkTemplateToGroup(id, this)
-    override fun linkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.linkTemplateToGroup(entity, this)
+    override fun linkTemplate(actor: Actor, id: UUID) = permissionService.linkTemplateToGroup(actor, id, this)
+    override fun linkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.linkTemplateToGroup(actor, entity, this)
 
-    override fun unlinkTemplate(id: UUID) = permissionService.unlinkTemplateFromGroup(id, this)
-    override fun unlinkTemplate(entity: PermissionTemplateEntity) =
-        permissionService.unlinkTemplateFromGroup(entity, this)
+    override fun unlinkTemplate(actor: Actor, id: UUID) = permissionService.unlinkTemplateFromGroup(actor, id, this)
+    override fun unlinkTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.unlinkTemplateFromGroup(actor, entity, this)
 
-    override fun applyTemplate(id: UUID) = permissionService.applyTemplateToGroup(id, this)
-    override fun applyTemplate(entity: PermissionTemplateEntity) =
-        permissionService.applyTemplateToGroup(entity, this)
+    override fun applyTemplate(actor: Actor, id: UUID) = permissionService.applyTemplateToGroup(actor, id, this)
+    override fun applyTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.applyTemplateToGroup(actor, entity, this)
 
-    override fun revokeTemplate(id: UUID) = permissionService.revokeTemplateFromGroup(id, this)
-    override fun revokeTemplate(entity: PermissionTemplateEntity) =
-        permissionService.revokeTemplateFromGroup(entity, this)
+    override fun revokeTemplate(actor: Actor, id: UUID) = permissionService.revokeTemplateFromGroup(actor, id, this)
+    override fun revokeTemplate(actor: Actor, entity: PermissionTemplateEntity) =
+        permissionService.revokeTemplateFromGroup(actor, entity, this)
 
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
+    }
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("name", name)
+        put("defaultWeight", defaultWeight)
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
     }
 }

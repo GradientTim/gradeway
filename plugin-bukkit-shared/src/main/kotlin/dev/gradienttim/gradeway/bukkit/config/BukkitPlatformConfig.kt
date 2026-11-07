@@ -16,4 +16,26 @@ data class BukkitPlatformConfig(
         "When enabled, server operators will not have access to all permission protected commands."
     )
     val disableOp: Boolean = true,
-) : PlatformConfig
+
+    @TomlComments(
+        "When enabled, command blocks can no longer execute Gradeway commands."
+    )
+    val disableCommandBlocks: Boolean = true,
+
+    @TomlComments(
+        "When enabled, remote console access (RCON) can no longer execute Gradeway commands"
+    )
+    val disableRemoteConsole: Boolean = true,
+
+    val notification: Notification = Notification(),
+) : PlatformConfig {
+    @Serializable
+    data class Notification(
+        @TomlComments(
+            "When enabled, notifications will persist across server restarts."
+        )
+        val persistent: Boolean = true,
+    )
+
+}
+

@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.events.lifecycle.MigrationCompletedEvent
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
 import dev.gradienttim.gradeway.registries.MigrationStrategyRegistry
@@ -42,6 +43,8 @@ class CommonMigrationManager(val gradeway: CommonGradeway<*>) : MigrationManager
 
         strategy.migrate(file.toFile())
             .onLeft { raise(MigrationManager.MigrateError.Unexpected(it)) }
+
+        gradeway.events.fire(MigrationCompletedEvent(strategy.type, fileName))
     }
 
     init {

@@ -27,7 +27,6 @@ import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
-import java.util.*
 
 internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionCommand(
     rootLiteral: String,
@@ -35,8 +34,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
     commandContext: CommandContext<TCommandSource>,
 ) {
     fun handleAddPermission(source: TCommandSource, value: String, type: PermissionEntity.Type) {
-        gradeway.permissions.createPermission(value, type)
+        val actor = commandContext.sourceToActor(source)
+        gradeway.permissions.createPermission(actor, value, type)
             .onLeft { error ->
+                if (commandContext.sendIfCancelled(source, error)) return@onLeft
                 if (error is CreatePermissionError.AlreadyExists) {
                     commandContext.sendTranslatedMessage(
                         source,
@@ -78,6 +79,8 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
             requires { commandContext.hasPermission(it, "gradeway.permission.add") }
 
             string("value") {
+                suggestKnownPermissions(gradeway, includeStored = false)
+
                 execute {
                     val value = stringParam("value")
 
@@ -113,12 +116,16 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
             requires { commandContext.hasPermission(it, "gradeway.permission.remove") }
 
             string("idOrValue") {
+                suggestPermissions(gradeway)
+
                 execute {
+                    val actor = commandContext.sourceToActor(source)
                     val idOrValue = stringParam("idOrValue")
 
                     requestConfirmation(source, commandContext, gradeway, rootLiteral) {
-                        gradeway.permissions.deletePermission(idOrValue)
+                        gradeway.permissions.deletePermission(actor, idOrValue)
                             .onLeft { error ->
+                                if (commandContext.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeletePermissionError.EntityNotFound) {
                                     commandContext.sendTranslatedMessage(
                                         source,
@@ -164,11 +171,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
 
                     string("value") {
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrValue = stringParam("idOrValue")
                             val value = stringParam("value")
 
-                            gradeway.permissions.updatePermissionValue(idOrValue, value)
+                            gradeway.permissions.updatePermissionValue(actor, idOrValue, value)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is UpdatePermissionValueError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -224,6 +233,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
                         suggestStrings { PermissionEntity.Type.entries.map { it.name } }
 
                         execute {
+                            val actor = commandContext.sourceToActor(source)
                             val idOrValue = stringParam("idOrValue")
                             val rawType = stringParam("type").lowercase()
 
@@ -240,8 +250,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
                                 return@execute
                             }
 
-                            gradeway.permissions.updatePermissionType(idOrValue, type)
+                            gradeway.permissions.updatePermissionType(actor, idOrValue, type)
                                 .onLeft { error ->
+                                    if (commandContext.sendIfCancelled(source, error)) return@execute
                                     if (error is UpdatePermissionTypeError.EntityNotFound) {
                                         commandContext.sendTranslatedMessage(
                                             source,
@@ -358,10 +369,12 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
             string("name") {
                 execute {
+                    val actor = context.sourceToActor(source)
                     val name = stringParam("name")
 
-                    gradeway.permissions.createTemplate(name)
+                    gradeway.permissions.createTemplate(actor, name)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is CreateTemplateError.InvalidName) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -404,6 +417,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                 suggestPermissionTemplates(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val id = stringParam("idOrName")
 
                     val template = gradeway.permissions.findTemplateByIdOrName(id)
@@ -419,8 +433,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                     }
 
                     requestConfirmation(source, context, gradeway, rootLiteral) {
-                        gradeway.permissions.deleteTemplate(template.id.value)
+                        gradeway.permissions.deleteTemplate(actor, template.id.value)
                             .onLeft { error ->
+                                if (context.sendIfCancelled(source, error)) return@requestConfirmation
                                 if (error is DeleteTemplateError.EntityNotFound) {
                                     context.sendTranslatedMessage(
                                         source,
@@ -466,11 +481,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
 
                     string("value") {
                         execute {
+                            val actor = context.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val value = stringParam("value")
 
-                            gradeway.permissions.setTemplateName(idOrName, value)
+                            gradeway.permissions.setTemplateName(actor, idOrName, value)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is SetNameTemplateError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -536,6 +553,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                         suggestStrings { PermissionTemplateEntity.AssignedTo.entries.map { it.name } }
 
                         execute {
+                            val actor = context.sourceToActor(source)
                             val idOrName = stringParam("idOrName")
                             val rawAssignedTo = stringParam("value").lowercase()
 
@@ -555,8 +573,9 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                                 return@execute
                             }
 
-                            gradeway.permissions.setTemplateAssignedTo(idOrName, assignedTo)
+                            gradeway.permissions.setTemplateAssignedTo(actor, idOrName, assignedTo)
                                 .onLeft { error ->
+                                    if (context.sendIfCancelled(source, error)) return@execute
                                     if (error is SetAssignedToTemplateError.EntityNotFound) {
                                         context.sendTranslatedMessage(
                                             source,
@@ -671,11 +690,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                 suggestPermissions(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val permissionIdOrValue = stringParam("permissionIdOrValue")
 
-                    gradeway.permissions.addPermissionToTemplate(idOrName, permissionIdOrValue)
+                    gradeway.permissions.addPermissionToTemplate(actor, idOrName, permissionIdOrValue)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is AddPermissionToTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -743,11 +764,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                 suggestPermissions(gradeway)
 
                 execute {
+                    val actor = context.sourceToActor(source)
                     val idOrName = stringParam("idOrName")
                     val permissionIdOrValue = stringParam("permissionIdOrValue")
 
-                    gradeway.permissions.removePermissionFromTemplate(idOrName, permissionIdOrValue)
+                    gradeway.permissions.removePermissionFromTemplate(actor, idOrName, permissionIdOrValue)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@execute
                             if (error is RemovePermissionFromTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,
@@ -812,11 +835,13 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
             requires { context.hasPermission(it, "gradeway.permissionTemplate.permissions.clear") }
 
             execute {
+                val actor = context.sourceToActor(source)
                 val idOrName = stringParam("idOrName")
 
                 requestConfirmation(source, context, gradeway, rootLiteral) {
-                    gradeway.permissions.clearPermissionsFromTemplate(idOrName)
+                    gradeway.permissions.clearPermissionsFromTemplate(actor, idOrName)
                         .onLeft { error ->
+                            if (context.sendIfCancelled(source, error)) return@requestConfirmation
                             if (error is ClearPermissionsFromTemplateError.EntityNotFound) {
                                 context.sendTranslatedMessage(
                                     source,

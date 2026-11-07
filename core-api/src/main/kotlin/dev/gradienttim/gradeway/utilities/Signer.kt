@@ -29,10 +29,16 @@ open class Signer(val key: String) {
      * @param payload The data to be signed as a byte array.
      * @return A byte array containing the signature followed by the original payload.
      */
-    fun sign(payload: ByteArray): ByteArray {
-        val payloadSignature = mac.doFinal(payload)
-        return payloadSignature + payload
-    }
+    fun sign(payload: ByteArray): ByteArray = signature(payload) + payload
+
+    /**
+     * Generates the detached cryptographic signature of the given payload, without the payload
+     * itself (e.g., for sending the signature in a separate header).
+     *
+     * @param payload The data to be signed as a byte array.
+     * @return A byte array containing only the signature.
+     */
+    fun signature(payload: ByteArray): ByteArray = synchronized(mac) { mac.doFinal(payload) }
 
     /**
      * Verifies the integrity and authenticity of the provided signed payload.
@@ -49,7 +55,7 @@ open class Signer(val key: String) {
 
         val receivedSignature = signedPayload.copyOfRange(0, SIGNATURE_LENGTH_BYTES)
         val payload = signedPayload.copyOfRange(SIGNATURE_LENGTH_BYTES, signedPayload.size)
-        val expectedSignature = mac.doFinal(payload)
+        val expectedSignature = signature(payload)
 
         if (!MessageDigest.isEqual(receivedSignature, expectedSignature)) {
             return null

@@ -5,12 +5,15 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.services
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.role.RoleAttributeEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.entity.role.RolePermissionEntity
+import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.services.shared.SharedAttributeService
 import dev.gradienttim.gradeway.services.shared.SharedPermissionService
+import dev.gradienttim.gradeway.spec.RoleCreateSpec
 import java.util.*
 
 /**
@@ -22,50 +25,75 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     /**
      * Creates a new role with the specified name.
      *
+     * @param actor The actor performing the operation.
      * @param name The name of the role to be created.
+     * @param builder Configures further properties of the role before it is created.
      * @return An instance of [Either] containing [CreateRoleError] if the creation fails,
-     *         or [Unit] if the creation succeeds.
+     *         or the created role if the creation succeeds.
      */
-    fun create(name: String): Either<CreateRoleError, RoleEntity>
+    fun create(
+        actor: Actor,
+        name: String,
+        builder: RoleCreateSpec.() -> Unit = {},
+    ): Either<CreateRoleError, RoleEntity>
 
     /**
      * Deletes a role identified by the given unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role to be deleted.
      * @return An instance of [Either] containing [DeleteRoleError] if the deletion fails,
      *         or [Unit] if the deletion is successful.
      */
-    fun delete(id: UUID): Either<DeleteRoleError, Unit>
+    fun delete(
+        actor: Actor,
+        id: UUID,
+    ): Either<DeleteRoleError, Unit>
 
     /**
      * Updates the weight of a role identified by the specified unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role whose weight is to be updated.
      * @param weight The new weight to assign to the role.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(id: UUID, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        id: UUID,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of the specified role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity whose weight is to be updated.
      * @param weight The new weight to assign to the role entity.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(entity: RoleEntity, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        entity: RoleEntity,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Updates the weight of a role identified by its unique identifier or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The unique identifier or name of the role whose weight needs to be updated.
      * @param weight The new weight to assign to the role entity.
      * @return An instance of [Either] containing [SetWeightError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setWeight(idOrName: String, weight: Int): Either<SetWeightError, Boolean>
+    fun setWeight(
+        actor: Actor,
+        idOrName: String,
+        weight: Int,
+    ): Either<SetWeightError, Boolean>
 
     /**
      * Resolves the effective weight of a role, i.e., its own explicitly configured weight if set,
@@ -100,32 +128,47 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     /**
      * Updates the name of a role identified by the specified unique identifier.
      *
+     * @param actor The actor performing the operation.
      * @param id The unique identifier of the role whose name is to be updated.
      * @param name The new name to assign to the role.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(id: UUID, name: String): Either<SetNameError, Boolean>
+    fun setName(
+        actor: Actor,
+        id: UUID,
+        name: String,
+    ): Either<SetNameError, Boolean>
 
     /**
      * Updates the name of the specified role entity.
      *
+     * @param actor The actor performing the operation.
      * @param entity The role entity whose name is to be updated.
      * @param name The new name to assign to the role entity.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(entity: RoleEntity, name: String): Either<SetNameError, Boolean>
+    fun setName(
+        actor: Actor,
+        entity: RoleEntity,
+        name: String,
+    ): Either<SetNameError, Boolean>
 
     /**
      * Updates the name of the role identified by its current ID or name.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The identifier or current name of the role whose name is to be updated.
      * @param name The new name to assign to the role.
      * @return An instance of [Either] containing [SetNameError] if the update fails,
      *         or `true` if the update succeeds.
      */
-    fun setName(idOrName: String, name: String): Either<SetNameError, Boolean>
+    fun setName(
+        actor: Actor,
+        idOrName: String,
+        name: String,
+    ): Either<SetNameError, Boolean>
 
     /**
      * Retrieves a role entity by its unique identifier.
@@ -188,21 +231,29 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     /**
      * Makes the specified role the default role, replacing any previous default role.
      *
+     * @param actor The actor performing the operation.
      * @param role The role entity that should become the default role.
      * @return Either a `SetDefaultError` if the operation fails, or `Unit` if successful.
      */
-    fun setDefault(role: RoleEntity): Either<SetDefaultError, Unit>
+    fun setDefault(
+        actor: Actor,
+        role: RoleEntity,
+    ): Either<SetDefaultError, Unit>
 
     /**
      * Makes the role identified by its ID or name the default role, replacing any previous default role.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The identifier or name of the role that should become the default role.
      * @return Either a `SetDefaultError` if the operation fails, or `Unit` if successful.
      */
-    fun setDefault(idOrName: String): Either<SetDefaultError, Unit>
+    fun setDefault(
+        actor: Actor,
+        idOrName: String,
+    ): Either<SetDefaultError, Unit>
 
     /**
-     * Retrieves every role that is flagged as default, ordered by weight (highest first), then by name.
+     * Retrieves every role flagged as default, ordered by weight (highest first), then by name.
      *
      * Only the first role is given to new players; see [getDefaultRole].
      *
@@ -215,141 +266,207 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
      *
      * Unlike [setDefault], other default roles stay flagged, so several roles can be flagged at once.
      *
+     * @param actor The actor performing the operation.
      * @param role The role entity whose default flag should be changed.
      * @param isDefault Whether the role should be flagged as default.
      * @return Either a `SetDefaultFlagError` if the operation fails, or `Unit` if successful.
      */
-    fun setDefaultFlag(role: RoleEntity, isDefault: Boolean): Either<SetDefaultFlagError, Unit>
+    fun setDefaultFlag(
+        actor: Actor,
+        role: RoleEntity,
+        isDefault: Boolean,
+    ): Either<SetDefaultFlagError, Unit>
 
     /**
      * Flags or unflags the role identified by its ID or name as default without touching any other role.
      *
+     * @param actor The actor performing the operation.
      * @param idOrName The identifier or name of the role whose default flag should be changed.
      * @param isDefault Whether the role should be flagged as default.
      * @return Either a `SetDefaultFlagError` if the operation fails, or `Unit` if successful.
      */
-    fun setDefaultFlag(idOrName: String, isDefault: Boolean): Either<SetDefaultFlagError, Unit>
+    fun setDefaultFlag(
+        actor: Actor,
+        idOrName: String,
+        isDefault: Boolean,
+    ): Either<SetDefaultFlagError, Unit>
 
     /**
      * Clears the default role, so new players no longer receive a role automatically.
      *
+     * @param actor The actor performing the operation.
      * @return Either a `ClearDefaultError` if the operation fails, or `Unit` if successful.
      */
-    fun clearDefault(): Either<ClearDefaultError, Unit>
+    fun clearDefault(
+        actor: Actor,
+    ): Either<ClearDefaultError, Unit>
 
     /**
      * Adds an existing role as a parent of another role, so the child role inherits the parent's
      * attributes and permissions.
      *
+     * @param actor The actor performing the operation.
      * @param role The role that will inherit from the parent.
      * @param parentId The unique identifier of the role to add as a parent.
      * @return Either an error of type [AddParentError] if the operation fails,
      *         or the created [RoleParentEntity] representing the relationship.
      */
-    fun addParent(role: RoleEntity, parentId: UUID): Either<AddParentError, RoleParentEntity>
+    fun addParent(
+        actor: Actor,
+        role: RoleEntity,
+        parentId: UUID,
+    ): Either<AddParentError, RoleParentEntity>
 
     /**
      * Adds an existing role as a parent of another role, so the child role inherits the parent's
      * attributes and permissions.
      *
+     * @param actor The actor performing the operation.
      * @param role The role that will inherit from the parent.
      * @param parent The role entity to add as a parent.
      * @return Either an error of type [AddParentError] if the operation fails,
      *         or the created [RoleParentEntity] representing the relationship.
      */
-    fun addParent(role: RoleEntity, parent: RoleEntity): Either<AddParentError, RoleParentEntity>
+    fun addParent(
+        actor: Actor,
+        role: RoleEntity,
+        parent: RoleEntity,
+    ): Either<AddParentError, RoleParentEntity>
 
     /**
      * Adds an existing role as a parent of another role, identified by id or name, so the child role
      * inherits the parent's attributes and permissions.
      *
+     * @param actor The actor performing the operation.
      * @param roleIdOrName The unique identifier or name of the role that will inherit from the parent.
      * @param parentId The unique identifier of the role to add as a parent.
      * @return Either an error of type [AddParentError] if the operation fails,
      *         or the created [RoleParentEntity] representing the relationship.
      */
-    fun addParent(roleIdOrName: String, parentId: UUID): Either<AddParentError, RoleParentEntity>
+    fun addParent(
+        actor: Actor,
+        roleIdOrName: String,
+        parentId: UUID,
+    ): Either<AddParentError, RoleParentEntity>
 
     /**
      * Adds an existing role as a parent of another role, identified by id or name, so the child role
      * inherits the parent's attributes and permissions.
      *
+     * @param actor The actor performing the operation.
      * @param roleIdOrName The unique identifier or name of the role that will inherit from the parent.
      * @param parent The role entity to add as a parent.
      * @return Either an error of type [AddParentError] if the operation fails,
      *         or the created [RoleParentEntity] representing the relationship.
      */
-    fun addParent(roleIdOrName: String, parent: RoleEntity): Either<AddParentError, RoleParentEntity>
+    fun addParent(
+        actor: Actor,
+        roleIdOrName: String,
+        parent: RoleEntity,
+    ): Either<AddParentError, RoleParentEntity>
 
     /**
      * Adds an existing role as a child of another role, identified by id or name, so the new child
      * role inherits the parent's attributes and permissions.
      *
+     * @param actor The actor performing the operation.
      * @param parentIdOrName The unique identifier or name of the role that will act as the parent.
      * @param childId The unique identifier of the role to add as a child.
      * @return Either an error of type [AddParentError] if the operation fails,
      *         or the created [RoleParentEntity] representing the relationship.
      */
-    fun addChild(parentIdOrName: String, childId: UUID): Either<AddParentError, RoleParentEntity>
+    fun addChild(
+        actor: Actor,
+        parentIdOrName: String,
+        childId: UUID,
+    ): Either<AddParentError, RoleParentEntity>
 
     /**
      * Removes an existing parent-role relationship from a role.
      *
+     * @param actor The actor performing the operation.
      * @param role The role to remove the parent from.
      * @param parentId The unique identifier of the parent role to remove.
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
-    fun removeParent(role: RoleEntity, parentId: UUID): Either<RemoveParentError, Unit>
+    fun removeParent(
+        actor: Actor,
+        role: RoleEntity,
+        parentId: UUID,
+    ): Either<RemoveParentError, Unit>
 
     /**
      * Removes an existing parent-role relationship from a role.
      *
+     * @param actor The actor performing the operation.
      * @param role The role to remove the parent from.
      * @param parent The parent role entity to remove.
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
-    fun removeParent(role: RoleEntity, parent: RoleEntity): Either<RemoveParentError, Unit>
+    fun removeParent(
+        actor: Actor,
+        role: RoleEntity,
+        parent: RoleEntity,
+    ): Either<RemoveParentError, Unit>
 
     /**
      * Removes an existing parent-role relationship from a role, identified by id or name.
      *
+     * @param actor The actor performing the operation.
      * @param roleIdOrName The unique identifier or name of the role to remove the parent from.
      * @param parentId The unique identifier of the parent role to remove.
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
-    fun removeParent(roleIdOrName: String, parentId: UUID): Either<RemoveParentError, Unit>
+    fun removeParent(
+        actor: Actor,
+        roleIdOrName: String,
+        parentId: UUID,
+    ): Either<RemoveParentError, Unit>
 
     /**
      * Removes an existing parent-role relationship from a role, identified by id or name.
      *
+     * @param actor The actor performing the operation.
      * @param roleIdOrName The unique identifier or name of the role to remove the parent from.
      * @param parent The parent role entity to remove.
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
-    fun removeParent(roleIdOrName: String, parent: RoleEntity): Either<RemoveParentError, Unit>
+    fun removeParent(
+        actor: Actor,
+        roleIdOrName: String,
+        parent: RoleEntity,
+    ): Either<RemoveParentError, Unit>
 
     /**
      * Removes an existing parent-role relationship from a role, identified by id or name from the
      * parent's perspective.
      *
+     * @param actor The actor performing the operation.
      * @param parentIdOrName The unique identifier or name of the role to remove the child from.
      * @param childId The unique identifier of the child role to remove.
      * @return Either an error of type [RemoveParentError] if the operation fails, or [Unit] if successful.
      */
-    fun removeChild(parentIdOrName: String, childId: UUID): Either<RemoveParentError, Unit>
+    fun removeChild(
+        actor: Actor,
+        parentIdOrName: String,
+        childId: UUID,
+    ): Either<RemoveParentError, Unit>
 
     sealed interface CreateRoleError {
+        object Cancelled : CreateRoleError, EventCancelledError
         object EntityAlreadyExists : CreateRoleError
         object InvalidName : CreateRoleError
         data class Unexpected(val throwable: Throwable) : CreateRoleError
     }
 
     sealed interface DeleteRoleError {
+        object Cancelled : DeleteRoleError, EventCancelledError
         object EntityNotFound : DeleteRoleError
         data class Unexpected(val throwable: Throwable) : DeleteRoleError
     }
 
     sealed interface SetNameError {
+        object Cancelled : SetNameError, EventCancelledError
         object EntityNotFound : SetNameError
         object InvalidName : SetNameError
         object NameAlreadySet : SetNameError
@@ -358,28 +475,33 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     }
 
     sealed interface SetWeightError {
+        object Cancelled : SetWeightError, EventCancelledError
         object EntityNotFound : SetWeightError
         data class Unexpected(val throwable: Throwable) : SetWeightError
     }
 
     sealed interface SetDefaultError {
+        object Cancelled : SetDefaultError, EventCancelledError
         object EntityNotFound : SetDefaultError
         object AlreadyDefault : SetDefaultError
         data class Unexpected(val throwable: Throwable) : SetDefaultError
     }
 
     sealed interface SetDefaultFlagError {
+        object Cancelled : SetDefaultFlagError, EventCancelledError
         object EntityNotFound : SetDefaultFlagError
         object FlagAlreadySet : SetDefaultFlagError
         data class Unexpected(val throwable: Throwable) : SetDefaultFlagError
     }
 
     sealed interface ClearDefaultError {
+        object Cancelled : ClearDefaultError, EventCancelledError
         object NoDefaultRole : ClearDefaultError
         data class Unexpected(val throwable: Throwable) : ClearDefaultError
     }
 
     sealed interface AddParentError {
+        object Cancelled : AddParentError, EventCancelledError
         object EntityNotFound : AddParentError
         object TargetNotFound : AddParentError
         object SelfReference : AddParentError
@@ -389,6 +511,7 @@ interface RoleService : SharedAttributeService<RoleEntity, RoleAttributeEntity>,
     }
 
     sealed interface RemoveParentError {
+        object Cancelled : RemoveParentError, EventCancelledError
         object EntityNotFound : RemoveParentError
         object TargetNotFound : RemoveParentError
         object NotParent : RemoveParentError

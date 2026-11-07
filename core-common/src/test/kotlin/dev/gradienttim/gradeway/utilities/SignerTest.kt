@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.utilities
 
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class SignerTest {
@@ -55,5 +56,16 @@ class SignerTest {
 
         assertNull(signer.verify(ByteArray(4)))
         assertNull(signer.verify(ByteArray(0)))
+    }
+
+    @Test
+    fun `detached signature matches the prefix of the signed payload and a known hmac`() {
+        val signer = Signer(key = "key")
+
+        val payload = "The quick brown fox jumps over the lazy dog".toByteArray()
+        val signature = signer.signature(payload)
+
+        assertContentEquals(signer.sign(payload).copyOfRange(0, signature.size), signature)
+        assertEquals("f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8", signature.toHexString())
     }
 }

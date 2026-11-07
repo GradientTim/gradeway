@@ -7,9 +7,11 @@ package dev.gradienttim.gradeway.strategies
 import arrow.core.getOrElse
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.TestPlatformConfig
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.createTestGradeway
 import dev.gradienttim.gradeway.disposeTestGradeway
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
+import dev.gradienttim.gradeway.messaging.payloads.EventPayload
 import dev.gradienttim.gradeway.messaging.payloads.MessagingPayload
 import net.kyori.adventure.key.Key
 import java.io.File
@@ -183,7 +185,10 @@ class LuckPermsMigrationStrategyTest {
 
     @Test
     fun `migrate wipes existing data before importing`() {
-        val preExistingRole = gradeway.roles.create("pre-existing-${UUID.randomUUID().toString().take(8)}")
+        val preExistingRole = gradeway.roles.create(
+            Actor.System,
+            "pre-existing-${UUID.randomUUID().toString().take(8)}",
+        )
             .getOrElse { error(it.toString()) }
 
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
@@ -194,7 +199,7 @@ class LuckPermsMigrationStrategyTest {
 
     @Test
     fun `migrate wipes existing tracks before importing`() {
-        val preExistingTrack = gradeway.tracks.createTrack("pre-${UUID.randomUUID().toString().take(8)}")
+        val preExistingTrack = gradeway.tracks.createTrack(Actor.System, "pre-${UUID.randomUUID().toString().take(8)}")
             .getOrElse { error(it.toString()) }
 
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
@@ -208,7 +213,7 @@ class LuckPermsMigrationStrategyTest {
         val json = exportJson(groups = """{"admin": {"nodes": []}}""", users = "{}")
 
         val received = mutableListOf<MessagingPayload>()
-        gradeway.messaging.subscribe { received.add(it) }
+        gradeway.messaging.subscribe { if (it !is EventPayload) received.add(it) }
 
         strategy.migrate(gzippedExportFile(json)).getOrElse { error(it.toString()) }
 

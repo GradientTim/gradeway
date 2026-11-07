@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.ProjectMeta
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupEntity
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupPermissionEntity
 import dev.gradienttim.gradeway.database.models.group.DatabaseGroupPermissionTemplateEntity
@@ -17,22 +18,16 @@ import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackEntity
 import dev.gradienttim.gradeway.database.models.track.DatabaseTrackStageEntity
+import dev.gradienttim.gradeway.events.lifecycle.BackupExportedEvent
+import dev.gradienttim.gradeway.events.lifecycle.BackupImportedEvent
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.extensions.limitedTo
 import dev.gradienttim.gradeway.extensions.resolveWithinDirectory
 import dev.gradienttim.gradeway.messaging.payloads.CacheFlushPayload
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
-import dev.gradienttim.gradeway.ProjectMeta
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.DecodeSequenceMode
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.decodeToSequence
-import kotlinx.serialization.json.encodeToStream
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
@@ -138,9 +133,11 @@ class CommonBackupManager(val gradeway: CommonGradeway<*>) : BackupManager {
         }
 
         file
+    }.onRight { path ->
+        gradeway.events.fire(BackupExportedEvent(path))
     }
 
-    override fun import(fileName: String, wipe: Boolean): Either<BackupManager.ImportError, Unit> = either {
+    override fun import(fileName: String, wipe: Boolean): Either<BackupManager.ImportError, Unit> = either<_, Unit> {
         val file = directory.resolveWithinDirectory(fileName)
         if (file == null || !Files.exists(file)) {
             raise(BackupManager.ImportError.FileNotFound)
@@ -192,6 +189,8 @@ class CommonBackupManager(val gradeway: CommonGradeway<*>) : BackupManager {
         // payloads the services normally would, so every server's effective-permission and
         // effective-weight caches need to be dropped in full now that the import committed.
         gradeway.messaging.publish(CacheFlushPayload)
+    }.onRight {
+        gradeway.events.fire(BackupImportedEvent(fileName, wipe))
     }
 
     @OptIn(ExperimentalSerializationApi::class)

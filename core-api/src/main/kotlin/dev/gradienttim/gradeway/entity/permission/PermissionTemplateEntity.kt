@@ -5,6 +5,8 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.entity.permission
 
 import arrow.core.Either
+import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.Auditable
 import dev.gradienttim.gradeway.services.PermissionService
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.SizedIterable
@@ -16,7 +18,7 @@ import java.util.*
  * and their assignments to specific roles, players, or all entities. This entity is extensible
  * to support advanced permission management scenarios.
  */
-interface PermissionTemplateEntity {
+interface PermissionTemplateEntity : Auditable {
     /**
      * Unique identifier for an entity implementing the `PermissionTemplateEntity` interface.
      *
@@ -70,20 +72,25 @@ interface PermissionTemplateEntity {
     /**
      * Updates the name of this permission template entity.
      *
+     * @param actor The actor performing the operation.
      * @param name The new name to assign to this template.
      * @return Either an error of type SetNameTemplateError if the update fails,
      *         or a Boolean indicating whether the update was successful.
      */
-    fun setName(name: String): Either<PermissionService.SetNameTemplateError, Boolean>
+    fun setName(actor: Actor, name: String): Either<PermissionService.SetNameTemplateError, Boolean>
 
     /**
      * Updates the assigned-to value of this permission template entity.
      *
+     * @param actor The actor performing the operation.
      * @param assignedTo The new assignment target to set for this template.
      * @return Either an error of type SetAssignedToTemplateError if the update fails,
      *         or a Boolean indicating whether the update was successful.
      */
-    fun setAssignedTo(assignedTo: AssignedTo): Either<PermissionService.SetAssignedToTemplateError, Boolean>
+    fun setAssignedTo(
+        actor: Actor,
+        assignedTo: AssignedTo,
+    ): Either<PermissionService.SetAssignedToTemplateError, Boolean>
 
     /**
      * Represents the assignment target for a specific permission template entity.

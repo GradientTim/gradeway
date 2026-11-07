@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.track
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.entity.track.TrackEntity
 import dev.gradienttim.gradeway.utilities.serialize.JsonSerializable
@@ -44,6 +45,8 @@ class DatabaseTrackEntity(id: EntityID<UUID>) : UUIDEntity(id), TrackEntity {
         }
     }
 
+    override val target by lazy { Target.track(id.value) }
+
     override var slug by TracksTable.slug
 
     override var createdAt by TracksTable.createdAt
@@ -54,5 +57,12 @@ class DatabaseTrackEntity(id: EntityID<UUID>) : UUIDEntity(id), TrackEntity {
     override fun flush(batch: EntityBatchUpdate?): Boolean {
         updatedAt = Instant.now()
         return super.flush(batch)
+    }
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("slug", slug)
+        put("createdAt", createdAt.toEpochMilli())
+        put("updatedAt", updatedAt.toEpochMilli())
     }
 }

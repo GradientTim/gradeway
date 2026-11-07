@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.reference
 
 import arrow.core.Either
 import dev.gradienttim.gradeway.attribute.Attribute
+import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.entity.SharedAttributeEntity
 import dev.gradienttim.gradeway.services.AttributeService
 import net.kyori.adventure.key.Key
@@ -37,6 +38,7 @@ interface AttributeReference<TReference> {
      * operation is successful, it returns a success result. If it fails, an error
      * describing the issue is returned.
      *
+     * @param actor The actor performing the operation.
      * @param attribute The attribute to be added. It contains the type, key, and value
      *                  necessary to represent the attribute being added.
      * @return An [Either] instance which:
@@ -46,7 +48,8 @@ interface AttributeReference<TReference> {
      *         - Contains [Unit] upon successful addition of the attribute.
      */
     fun <TValue : Any> addAttribute(
-        attribute: Attribute<TValue>
+        actor: Actor,
+        attribute: Attribute<TValue>,
     ): Either<AttributeService.AddAttributeError, SharedAttributeEntity>
 
     /**
@@ -56,6 +59,7 @@ interface AttributeReference<TReference> {
      * to the provided value. If the operation succeeds, it returns a success result.
      * If it fails, an error detailing the reason for the failure is returned.
      *
+     * @param actor The actor performing the operation.
      * @param key The unique identifier for the attribute to be updated.
      * @param value The new value to associate with the specified attribute key.
      * @return An [Either] instance which:
@@ -65,8 +69,9 @@ interface AttributeReference<TReference> {
      *         - Contains [Unit] upon successful update of the attribute.
      */
     fun <TValue : Any> updateAttribute(
+        actor: Actor,
         key: Key,
-        value: TValue
+        value: TValue,
     ): Either<AttributeService.UpdateAttributeError, SharedAttributeEntity>
 
     /**
@@ -76,13 +81,14 @@ interface AttributeReference<TReference> {
      * If the operation succeeds, it returns a success result. If it fails, it provides an error detailing the reason
      * for the failure, such as the entity not being found, the attribute not existing, or an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @param key The unique identifier of the attribute to be removed.
      * @return An [Either] instance which:
      *         - Contains a [AttributeService.RemoveAttributeError] if the operation fails, providing details
      *           about the failure.
      *         - Contains [Unit] upon successful removal of the attribute.
      */
-    fun removeAttribute(key: Key): Either<AttributeService.RemoveAttributeError, Unit>
+    fun removeAttribute(actor: Actor, key: Key): Either<AttributeService.RemoveAttributeError, Unit>
 
     /**
      * Clears all attributes associated with the current instance.
@@ -92,12 +98,13 @@ interface AttributeReference<TReference> {
      * The operation may fail if there are no attributes to clear, the entity
      * associated with the attributes is not found, or due to an unexpected error.
      *
+     * @param actor The actor performing the operation.
      * @return An [Either] instance which:
      *         - Contains a [AttributeService.ClearAttributesError] if the operation fails, detailing
      *           reasons such as no attributes found, the entity not being found, or an unexpected error.
      *         - Contains [Unit] on successful removal of all attributes.
      */
-    fun clearAttributes(): Either<AttributeService.ClearAttributesError, Unit>
+    fun clearAttributes(actor: Actor): Either<AttributeService.ClearAttributesError, Unit>
 
     /**
      * Checks if an attribute with the specified key exists in the collection of attributes.

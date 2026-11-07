@@ -4,6 +4,7 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.database.models.track
 
+import dev.gradienttim.gradeway.audit.Target
 import dev.gradienttim.gradeway.constants.TableConstants
 import dev.gradienttim.gradeway.database.models.role.DatabaseRoleEntity
 import dev.gradienttim.gradeway.database.models.role.RolesTable
@@ -69,6 +70,8 @@ class DatabaseTrackStageEntity(id: EntityID<UUID>) : UUIDEntity(id), TrackStageE
         }
     }
 
+    override val target by lazy { Target.trackStage(id.value) }
+
     override var trackId by TrackStagesTable.trackId
     override var roleId by TrackStagesTable.roleId
 
@@ -76,4 +79,11 @@ class DatabaseTrackStageEntity(id: EntityID<UUID>) : UUIDEntity(id), TrackStageE
 
     override val track by DatabaseTrackEntity referencedOn TrackStagesTable.trackId
     override val role by DatabaseRoleEntity referencedOn TrackStagesTable.roleId
+
+    override fun snapshot(): JsonObject = buildJsonObject {
+        put("id", id.value.toString())
+        put("trackId", trackId.value.toString())
+        put("roleId", roleId.value.toString())
+        put("position", position)
+    }
 }

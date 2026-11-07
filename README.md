@@ -1,9 +1,16 @@
 # Gradeway
 
-A Minecraft permission gateway.
+**A modern permission plugin for Paper, Bukkit, Velocity, and BungeeCord – one shared database, every server in sync.**
+
+Manage ranks, permissions, and temporary roles across your entire network from a single place.  
+Coming from LuckPerms? Import your existing data with one command.
 
 <!-- modrinth_exclude.start -->
-[Changelog](https://github.com/GradientTim/gradeway/releases) – [Security Policy](https://github.com/GradientTim/gradeway/blob/main/SECURITY.md) – [Code of Conduct](https://github.com/GradientTim/gradeway/blob/main/CODE_OF_CONDUCT.md) – [Discord](https://discord.gg/f35EemU4jS) – [API Reference](https://gradeway-dokka.gradienttim.dev/)
+[Changelog](https://github.com/GradientTim/gradeway/releases) · [Documentation](https://docs.gradienttim.dev/gradeway/) · [Discord](https://discord.gg/f35EemU4jS) · [API Reference](https://dokka.gradienttim.dev/gradeway/)
+
+<a href="https://github.com/GradientTim/gradeway/releases" target="_blank">
+<img alt="github" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/github_vector.svg">
+</a>
 
 <a href="https://modrinth.com/project/gradeway" target="_blank">
 <img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">
@@ -14,54 +21,119 @@ A Minecraft permission gateway.
 </a>
 <!-- modrinth_exclude.end -->
 
+> [!NOTE]
+> Gradeway is in active development (0.x). It's ready to try, but expect changes between releases – back up your data
+> before upgrading.
+
 ***
 
-## Features
+## Why Gradeway?
 
-- Player, role, and group management with inheritance, weighted priority, and effective permission resolution
-- Permission management with presets via templates
-- Integrated messaging service to refresh data on every connected server
-- Backup export/import, plus a migration path for bringing over existing permission data
-- Confirmation prompts before destructive commands
-- Pluggable database and messaging backends, loaded as separate driver jars at runtime
-- Pausing and setting an expired date for individual player roles
-- Relational database layout to support efficient querying and in-database cleanups
-- Built-in attribute types and extendable attributes with custom serializers
+- **Your whole network, always in sync** – change a rank on one server and every connected server picks it up
+  instantly, no restarts or manual reloads.
+- **Temporary and pausable ranks** – give someone `vip` for 30 days, or pause a staff role while they're on break
+  without losing it.
+- **Know exactly why someone has a permission** – `/gradeway why` shows the full chain (player → role → group →
+  template), and `/gradeway whocan` lists everyone who has it.
+- **Promotion tracks** – define a ladder like `trial → mod → admin` and promote or demote players along it.
+- **Permission templates** – build a reusable set of permissions once and apply it to any role or player.
+- **Safe by default** – destructive commands ask for confirmation, and full backups export and import with one command.
+- **Works with what you already have** – plug in the database you already run, from SQLite on a single server to
+  MySQL or Postgres for a whole network.
 
-## Installation
+## How it works
 
-### For server admins
+Gradeway is built around a few simple ideas:
 
-See the [installation guide](https://docs.gradienttim.dev/gradeway/admin/install) for downloading and configuring
-Gradeway on your server.
+1. **Players get roles.** A role like `vip` or `mod` is a bundle of permissions. Give a player a role – forever or
+   for a limited time – and they get everything in it.
+2. **Roles can build on each other.** Let `admin` inherit everything from `mod`, put related roles into a **group**
+   so they share permissions, or reuse a **template** wherever you need the same set again.
+3. **Every server shares one database.** Change something on one server and Gradeway tells all the others, so the
+   whole network updates right away.
 
-### For developers
+```text
+Steve ──► vip (30 days) ──► essentials.fly
+      │                 └─► essentials.home
+      └─► default ────────► essentials.spawn
+```
 
-See the [installation guide](https://docs.gradienttim.dev/gradeway/dev/install) for depending on Gradeway from your own
-plugin.
+When Steve runs a command, Gradeway looks at all his roles and answers one question: is he allowed? If you ever
+wonder *why* the answer is yes or no, `/gradeway why` shows you the path it took.
 
-## Supported platforms and databases
+## See it in action
 
-Platforms: `Bukkit`, `Paper`, `BungeeCord`, and `Velocity`.  
-Drivers: `Postgres`, `MySQL`, `MariaDB`, `SQLite`, `SQL Server`, `Oracle`, `H2`, and `Redis` as pluggable backends.  
+```text
+/gradeway role create vip
+/gradeway role modify vip permissions set essentials.fly
+/gradeway player modify Steve roles add vip 30D
+/gradeway why Steve essentials.fly
+```
+
+<!-- TODO: add a screenshot or GIF of the commands above -->
+
+## Coming from LuckPerms?
+
+Run `/lp export` in LuckPerms, then import the file into Gradeway:
+
+```text
+/gradeway migrate luckperms <file>
+```
+
+One thing to know: **what LuckPerms calls a "group" is a _role_ in Gradeway.**
+
+| LuckPerms                                    | Gradeway                                                     |
+|----------------------------------------------|--------------------------------------------------------------|
+| Group (`admin`, `default`, …)                | **Role**                                                     |
+| Parent groups                                | Role parents                                                 |
+| Primary group                                | Primary role                                                 |
+| Track                                        | Track                                                        |
+| _no equivalent_                              | **Group** – a container that lets several roles share permissions and a default weight |
+
+The [architecture guide](https://github.com/GradientTim/gradeway/blob/main/ARCHITECTURE.md) explains the model in
+detail.
+
+## Getting started
+
+1. Download Gradeway for your platform from [Modrinth](https://modrinth.com/project/gradeway) or
+   [Hangar](https://hangar.papermc.io/GradientTim/gradeway).
+2. Download the driver for your database and place it in the `drivers/` folder.
+3. Start your server and fill in your database credentials in the generated config.
+
+The full [installation guide](https://docs.gradienttim.dev/gradeway/admin/install) covers every platform and option.
+
+### Which setup do I need?
+
+| Your setup                | Database                                 | Messaging                            |
+|---------------------------|------------------------------------------|--------------------------------------|
+| **One server**            | SQLite or H2 – no database server needed | Not needed, you can turn it off      |
+| **Proxy + a few servers** | MySQL, MariaDB, or Postgres              | Plugin Messaging (built in) or Redis |
+| **Large network**         | MySQL, MariaDB, or Postgres              | Redis                                |
+
+Plugin Messaging works without any extra software, but it can only reach a server while a player is online there.
+Redis keeps every server in sync at all times, so it's the better choice once your network grows.
+
+## Compatibility
+
+|                | Supported                                                |
+|----------------|----------------------------------------------------------|
+| **Servers**    | Paper, Bukkit (26.1+)                                    |
+| **Proxies**    | Velocity, BungeeCord                                     |
+| **Databases**  | Postgres, MySQL, MariaDB, SQLite, SQL Server, Oracle, H2 |
+| **Messaging**  | Redis, Plugin Messaging                                  |
+
 See the [compatibility documentation](https://docs.gradienttim.dev/gradeway/compatibility) for the full overview.
 
-## Architecture
+## For developers
 
-See [ARCHITECTURE.md](https://github.com/GradientTim/gradeway/blob/main/ARCHITECTURE.md) for how the Player, Role, and
-Group model works – especially relevant if you're
-coming from LuckPerms, where "group" means something different.
+Gradeway has a public API with events, actor tracking, and custom attribute types.
+See the [developer guide](https://docs.gradienttim.dev/gradeway/dev/install) and the
+[API reference](https://dokka.gradienttim.dev/gradeway/).
 
-## Database Schema
+<!-- modrinth_exclude.start -->
+## Building from source
 
-See the [database documentation](https://docs.gradienttim.dev/gradeway/database) for an interactive diagram of the
-schema.
-
-## Building from Source
-
-Requires a JDK 17+ to run Gradle itself.  
-The actual JDK 21/25 toolchains used to compile each module are auto-provisioned by Gradle on first build (via the
-Foojay resolver).
+Requires JDK 17+ to run Gradle; the JDK 21/25 toolchains are provisioned automatically on first build.
 
 ```bash
 git clone https://github.com/GradientTim/gradeway.git
@@ -69,14 +141,16 @@ cd gradeway
 ./gradlew build
 ```
 
-Build a single module instead, e.g. `./gradlew :core-common:build`.
+The [database schema](https://docs.gradienttim.dev/gradeway/database) is documented as an interactive diagram.
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/GradientTim/gradeway/blob/main/CONTRIBUTING.md) for the development setup,
-project layout, and PR expectations.  
-The [Discord server](https://discord.gg/f35EemU4jS) is the fastest way to discuss a change before you start.
+See [CONTRIBUTING.md](https://github.com/GradientTim/gradeway/blob/main/CONTRIBUTING.md) for the development setup and
+PR expectations. The [Discord server](https://discord.gg/f35EemU4jS) is the fastest way to discuss a change before you
+start. Please also read the [Code of Conduct](https://github.com/GradientTim/gradeway/blob/main/CODE_OF_CONDUCT.md)
+and [Security Policy](https://github.com/GradientTim/gradeway/blob/main/.github/SECURITY.md).
+<!-- modrinth_exclude.end -->
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/GradientTim/gradeway/blob/main/LICENSE).
+Gradeway is licensed under the [MIT License](https://github.com/GradientTim/gradeway/blob/main/LICENSE).
