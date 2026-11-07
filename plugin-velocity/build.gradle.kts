@@ -3,16 +3,14 @@ plugins {
     id("gradeway-shadow")
     id("gradeway-release")
     id("gradeway-artifact-metadata")
-    id("org.jetbrains.kotlin.kapt")
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-@Suppress("DataClassEqualsAndHashCodeShareKey")
 dependencies {
     implementation(project(":core-common"))
 
     compileOnly("com.velocitypowered:velocity-api:4.3.1")
-    kapt("com.velocitypowered:velocity-api:4.3.1")
+    annotationProcessor("com.velocitypowered:velocity-api:4.3.1")
 }
 
 gradewayArtifactMetadata {

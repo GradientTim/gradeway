@@ -15,7 +15,6 @@ dependencies {
 
     implementation(gradlePlugins.jetbrains.dokka)
     implementation(gradlePlugins.jetbrains.kotlin)
-    implementation(gradlePlugins.jetbrains.kotlin.kapt)
     implementation(gradlePlugins.jetbrains.kotlin.plugin.serialization)
 
     // Fix Jackson compatibility for plugin-yml

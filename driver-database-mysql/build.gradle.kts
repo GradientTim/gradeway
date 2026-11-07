@@ -9,5 +9,5 @@ dependencies {
     ksp(project(":core-api"))
     compileOnly(project(":core-api"))
 
-    shadow("mysql:mysql-connector-java:8.0.33")
+    shadow("com.mysql:mysql-connector-j:26.10.0")
 }

@@ -115,8 +115,12 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         state = GradewayState.PROCESSING
 
         stores.clearAll().onLeft { error ->
+            // use log warnings instead of panic/error as some stores
+            // like BukkitPersistentNotificationStore has a legitimate reason to fail
             when (error) {
-                is Store.ClearError.Unexpected -> raise(error.throwable)
+                is Store.ClearError.Unexpected -> {
+                    logger.warn("Failed to clear stores: ${error.throwable.localizedMessage}")
+                }
             }
         }
 
