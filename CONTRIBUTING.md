@@ -16,7 +16,7 @@ first:
 
 ## Project layout
 
-See the "Module layout" and "Architecture" sections of [CLAUDE.md](./CLAUDE.md) for a detailed breakdown of `core-api`,
+See the "Module layout" and "Architecture" sections of [AGENTS.md](./AGENTS.md) for a detailed breakdown of `core-api`,
 `core-common`, the `driver-*` modules, and the platform plugins (`plugin-bukkit`, `plugin-paper`, `plugin-bungeecord`,
 `plugin-velocity`). Read that before making structural changes - it documents where new code is expected to live (e.g.,
 new database/messaging backends follow the `driver-database-*` pattern, platform-specific config goes in that platform's

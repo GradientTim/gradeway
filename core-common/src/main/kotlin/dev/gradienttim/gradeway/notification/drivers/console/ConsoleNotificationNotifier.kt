@@ -7,7 +7,6 @@ package dev.gradienttim.gradeway.notification.drivers.console
 import dev.gradienttim.gradeway.audit.AuditNotification
 import dev.gradienttim.gradeway.notification.Notification
 import dev.gradienttim.gradeway.notification.NotificationNotifier
-import dev.gradienttim.gradeway.notification.summary
 import dev.gradienttim.gradeway.platform.Logger
 
 /**

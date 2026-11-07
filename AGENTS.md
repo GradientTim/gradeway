@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents when working with code in this repository.
 
 ## Project
 
@@ -119,7 +119,8 @@ default filtering processor would incorrectly exclude.
 
 User-facing text is never hardcoded - commands send `Component.translatable("gradeway...")` keys resolved against
 `core-common/src/main/resources/languages/en.properties`. After touching any command builder, use the
-**sync-translation-keys** skill to reconcile added/removed
+**sync-translation-keys** skill (`.claude/skills/sync-translation-keys/SKILL.md` - agents without skill support can
+follow its steps manually) to reconcile added/removed
 `Component.translatable` keys against `en.properties`, including the `$entityType`-templated keys used by the generic
 entity-permission/attribute helpers.
 

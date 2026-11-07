@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.notification.drivers.ingame
 
 import dev.gradienttim.gradeway.CommonGradeway
 import dev.gradienttim.gradeway.audit.Actor
+import dev.gradienttim.gradeway.audit.AuditFieldChange
 import dev.gradienttim.gradeway.audit.AuditNotification
 import dev.gradienttim.gradeway.commands.extensions.infoList
 import dev.gradienttim.gradeway.extensions.formatUTC
@@ -80,25 +81,26 @@ class IngameNotificationNotifier<TPlayer>(
     }
 
     private fun changeLine(change: AuditFieldChange): Component {
-        val field = Argument.string("field", change.field)
+        val (fieldName, before, after) = change
+        val field = Argument.string("field", fieldName)
         return when {
-            change.before == null -> Component.translatable(
+            before == null -> Component.translatable(
                 "gradeway.notification.ingame.audit.added",
                 field,
-                Argument.string("value", change.after.orEmpty().truncate()),
+                Argument.string("value", after.orEmpty().truncate()),
             )
 
-            change.after == null -> Component.translatable(
+            after == null -> Component.translatable(
                 "gradeway.notification.ingame.audit.removed",
                 field,
-                Argument.string("value", change.before.truncate()),
+                Argument.string("value", before.truncate()),
             )
 
             else -> Component.translatable(
                 "gradeway.notification.ingame.audit.changed",
                 field,
-                Argument.string("before", change.before.truncate()),
-                Argument.string("after", change.after.truncate()),
+                Argument.string("before", before.truncate()),
+                Argument.string("after", after.truncate()),
             )
         }
     }

@@ -28,6 +28,44 @@ data class AuditNotification(
 ) : Notification {
     override val type: String = "audit"
 
+    val title: String
+        get() = "$action ${target.type}"
+
+    val actorLabel: String
+        get() = actor.identifier()?.let { "${actor.type} ($it)" } ?: actor.type
+
+    val targetLabel: String
+        get() = listOfNotNull(target.id, target.secondaryId).joinToString(" / ")
+
+    /** One-line description such as `player (<uuid>) update role (<uuid>)`. */
+    val summary: String
+        get() = "$actorLabel $action ${target.type} ($targetLabel)"
+
+    /**
+     * The fields that differ between [before] and [after], in snapshot order, without the
+     * `createdAt`/`updatedAt` timestamps.
+     *
+     * On create every field of the new entity is listed with a null [AuditFieldChange.before], on
+     * delete every field of the removed entity with a null [AuditFieldChange.after].
+     */
+    val changes: List<AuditFieldChange>
+        get() {
+            val beforeFields = before.orEmpty()
+            val afterFields = after.orEmpty()
+
+            return (beforeFields.keys + afterFields.keys)
+                .filter { field -> field !in IGNORED_CHANGE_FIELDS }
+                .mapNotNull { field ->
+                    val beforeValue = beforeFields[field]
+                    val afterValue = afterFields[field]
+                    if (beforeValue == afterValue) {
+                        null
+                    } else {
+                        AuditFieldChange(field, beforeValue?.toDisplayString(), afterValue?.toDisplayString())
+                    }
+                }
+        }
+
     override fun toJson(): JsonObject = buildJsonObject {
         put("type", type)
         put("action", action)
@@ -44,4 +82,13 @@ data class AuditNotification(
         put("before", before ?: JsonNull)
         put("after", after ?: JsonNull)
     }
+}
+
+/** Timestamp fields every snapshot carries; `updatedAt` changes on every update, so both are noise. */
+private val IGNORED_CHANGE_FIELDS = setOf("createdAt", "updatedAt")
+
+private fun JsonElement.toDisplayString(): String = when (this) {
+    is JsonNull -> "null"
+    is JsonPrimitive -> content
+    else -> toString()
 }

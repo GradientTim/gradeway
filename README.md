@@ -2,11 +2,15 @@
 
 **A modern permission plugin for Paper, Bukkit, Velocity, and BungeeCord – one shared database, every server in sync.**
 
-Manage ranks, permissions, and temporary roles across your entire network from a single place.
+Manage ranks, permissions, and temporary roles across your entire network from a single place.  
 Coming from LuckPerms? Import your existing data with one command.
 
 <!-- modrinth_exclude.start -->
 [Changelog](https://github.com/GradientTim/gradeway/releases) · [Documentation](https://docs.gradienttim.dev/gradeway/) · [Discord](https://discord.gg/f35EemU4jS) · [API Reference](https://dokka.gradienttim.dev/gradeway/)
+
+<a href="https://github.com/GradientTim/gradeway/releases" target="_blank">
+<img alt="github" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/github_vector.svg">
+</a>
 
 <a href="https://modrinth.com/project/gradeway" target="_blank">
 <img alt="modrinth" height="40" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact/available/modrinth_vector.svg">

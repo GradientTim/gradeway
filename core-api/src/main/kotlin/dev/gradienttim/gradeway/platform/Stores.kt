@@ -4,7 +4,10 @@ Copyright (c) 2026 GradientTim
 */
 package dev.gradienttim.gradeway.platform
 
+import arrow.core.Either
+import arrow.core.raise.either
 import dev.gradienttim.gradeway.utilities.Store
+import dev.gradienttim.gradeway.utilities.Store.ClearError
 import java.util.*
 
 /**
@@ -24,4 +27,17 @@ interface Stores {
      * for notifications need to be tracked and modified dynamically.
      */
     val notification: Store<UUID, Boolean>
+
+    /**
+     * Clears all entries from the notification store.
+     *
+     * This operation removes all stored notification states. If clearing the store fails,
+     * the failure is returned as a `ClearError`.
+     *
+     * @return An `Either` containing `Unit` when all notification entries are cleared successfully,
+     * or a `ClearError` if the operation fails.
+     */
+    fun clearAll(): Either<ClearError, Unit> = either {
+        notification.clear().bind()
+    }
 }

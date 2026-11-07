@@ -26,6 +26,7 @@ import dev.gradienttim.gradeway.services.*
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyLoadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayAlreadyUnloadedThrowable
 import dev.gradienttim.gradeway.throwables.GradewayNotLoadedThrowable
+import dev.gradienttim.gradeway.utilities.Store
 import kotlinx.serialization.KSerializer
 import net.kyori.adventure.text.minimessage.MiniMessage
 import org.jetbrains.exposed.v1.jdbc.Database
@@ -112,6 +113,12 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override fun unload(): Either<Throwable, Unit> = either {
         if (!state.allowUnload) raise(GradewayAlreadyUnloadedThrowable())
         state = GradewayState.PROCESSING
+
+        stores.clearAll().onLeft { error ->
+            when (error) {
+                is Store.ClearError.Unexpected -> raise(error.throwable)
+            }
+        }
 
         caches.invalidateAll()
 

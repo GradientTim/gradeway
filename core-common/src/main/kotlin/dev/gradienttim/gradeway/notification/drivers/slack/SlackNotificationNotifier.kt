@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway.notification.drivers.slack
 
 import dev.gradienttim.gradeway.audit.AuditNotification
+import dev.gradienttim.gradeway.extensions.toPrettyString
 import dev.gradienttim.gradeway.notification.*
 import dev.gradienttim.gradeway.platform.Logger
 import kotlinx.serialization.json.*
