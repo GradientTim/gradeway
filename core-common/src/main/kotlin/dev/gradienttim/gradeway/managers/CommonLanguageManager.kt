@@ -33,6 +33,7 @@ class CommonLanguageManager(val gradeway: CommonGradeway<*>) : LanguageManager {
             saveResourceLanguages()
 
             translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
+            translator.defaultLocale(Locale.of(gradeway.configs.gradewayEntry.config.defaultLocale))
 
             val availableLocales = Locale.availableLocales().toList()
             directory.listDirectoryEntries("*.properties").forEach { filePath ->

@@ -30,6 +30,12 @@ data class GradewayConfig(
     val secondaryColor: String = "#e89e1e",
 
     @TomlComments(
+        "Defines the default locale used throughout Gradeway messages.",
+        "Must be a valid locale string."
+    )
+    val defaultLocale: String = "en",
+
+    @TomlComments(
         "Defines the maximum decompressed size, in bytes, allowed when importing a backup or migration file.",
         "Protects against decompression-bomb archives that expand to consume excessive memory once decompressed.",
         "Increase this if your server has a very large dataset and legitimate imports are being rejected."
@@ -79,6 +85,6 @@ data class GradewayConfig(
     )
 
     companion object {
-        const val LATEST_VERSION: Int = 3
+        const val LATEST_VERSION: Int = 4
     }
 }
