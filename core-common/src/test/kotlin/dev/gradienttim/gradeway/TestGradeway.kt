@@ -5,6 +5,7 @@ Copyright (c) 2026 GradientTim
 package dev.gradienttim.gradeway
 
 import arrow.core.getOrElse
+import dev.gradienttim.gradeway.driver.Driver
 import dev.gradienttim.gradeway.driver.meta.DriverType
 import dev.gradienttim.gradeway.platform.CommonLogger
 import dev.gradienttim.gradeway.platform.KnownPermissionSource
@@ -14,7 +15,7 @@ import dev.gradienttim.gradeway.platform.stores.MemoryUuidBooleanStore
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 
-fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
+fun createTestGradeway(databaseDriver: Driver = TestDatabaseDriver()): CommonGradeway<TestPlatformConfig> {
     val gradeway = CommonGradeway(
         logger = CommonLogger(onInfo = {}, onWarn = {}, onError = {}, onPanic = {}),
         scheduler = TestScheduler(),
@@ -31,7 +32,7 @@ fun createTestGradeway(): CommonGradeway<TestPlatformConfig> {
             gradeway.drivers.registerDriver(
                 id = "test",
                 type = DriverType.DATABASE,
-                driver = TestDatabaseDriver()
+                driver = databaseDriver
             )
             gradeway.configs.driversEntry.config.database.driver = "test"
 

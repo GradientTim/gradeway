@@ -14,7 +14,7 @@ import dev.gradienttim.gradeway.database.models.player.*
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.formatUTC
-import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.PlayerService
 import dev.gradienttim.gradeway.utilities.TimeParser
@@ -305,11 +305,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                                 PlayerAttributesTable.value
                             )
                             .where {
-                                (PlayersTable.id likeAsStr "$scope%") or
-                                        (PlayersTable.name.lowerCase() like "${scope.lowercase()}%")
+                                (PlayersTable.id eqUuidStr scope) or (PlayersTable.name.lowerCase() eq scope.lowercase())
                             }
                             .limit(limit)
-                            .offset((page - 1).toLong())
+                            .offset((page - 1).toLong() * limit)
                             .map { row ->
                                 object {
                                     val type = row[PlayerAttributesTable.type]
@@ -384,11 +383,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.playerCommand(
                             .innerJoin(PermissionsTable, { PlayerPermissionsTable.permissionId }, { id })
                             .select(PermissionsTable.value, PermissionsTable.type, PlayerPermissionsTable.isEnabled)
                             .where {
-                                (PlayersTable.id likeAsStr "$scope%") or
-                                        (PlayersTable.name.lowerCase() like "${scope.lowercase()}%")
+                                (PlayersTable.id eqUuidStr scope) or (PlayersTable.name.lowerCase() eq scope.lowercase())
                             }
                             .limit(limit)
-                            .offset((page - 1).toLong())
+                            .offset((page - 1).toLong() * limit)
                             .map { row ->
                                 object {
                                     val value = row[PermissionsTable.value]

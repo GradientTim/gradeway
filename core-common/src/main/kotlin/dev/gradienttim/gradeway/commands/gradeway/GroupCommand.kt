@@ -17,7 +17,7 @@ import dev.gradienttim.gradeway.database.models.role.RoleGroupsTable
 import dev.gradienttim.gradeway.database.models.role.RolesTable
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.formatUTC
-import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.GroupService
 import net.kyori.adventure.text.Component
@@ -374,11 +374,10 @@ internal fun <TCommandContext> ArgumentBuilder<TCommandContext, *>.groupCommand(
                             .innerJoin(PermissionsTable, { GroupPermissionsTable.permissionId }, { id })
                             .select(PermissionsTable.value, PermissionsTable.type, GroupPermissionsTable.isEnabled)
                             .where {
-                                (GroupsTable.id likeAsStr "$scope%") or
-                                        (GroupsTable.name.lowerCase() like "${scope.lowercase()}%")
+                                (GroupsTable.id eqUuidStr scope) or (GroupsTable.name.lowerCase() eq scope.lowercase())
                             }
                             .limit(limit)
-                            .offset((page - 1).toLong())
+                            .offset((page - 1).toLong() * limit)
                             .map { row ->
                                 object {
                                     val value = row[PermissionsTable.value]

@@ -15,7 +15,7 @@ import dev.gradienttim.gradeway.database.models.player.PlayerRolesTable
 import dev.gradienttim.gradeway.database.models.role.*
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.formatUTC
-import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.RoleService.*
 import net.kyori.adventure.text.Component
@@ -390,11 +390,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                                 RoleAttributesTable.value
                             )
                             .where {
-                                (RolesTable.id likeAsStr "$scope%") or
-                                        (RolesTable.name.lowerCase() like "${scope.lowercase()}%")
+                                (RolesTable.id eqUuidStr scope) or (RolesTable.name.lowerCase() eq scope.lowercase())
                             }
                             .limit(limit)
-                            .offset((page - 1).toLong())
+                            .offset((page - 1).toLong() * limit)
                             .map { row ->
                                 object {
                                     val type = row[RoleAttributesTable.type]
@@ -469,11 +468,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.roleCommand(
                             .innerJoin(PermissionsTable, { RolePermissionsTable.permissionId }, { id })
                             .select(PermissionsTable.value, PermissionsTable.type, RolePermissionsTable.isEnabled)
                             .where {
-                                (RolesTable.id likeAsStr "$scope%") or
-                                        (RolesTable.name.lowerCase() like "${scope.lowercase()}%")
+                                (RolesTable.id eqUuidStr scope) or (RolesTable.name.lowerCase() eq scope.lowercase())
                             }
                             .limit(limit)
-                            .offset((page - 1).toLong())
+                            .offset((page - 1).toLong() * limit)
                             .map { row ->
                                 object {
                                     val value = row[PermissionsTable.value]
@@ -814,11 +812,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerRoleRel
                 .innerJoin(parentRole, { RoleParentsTable.parentId }, { parentRole[RolesTable.id] })
                 .select(parentRole[RolesTable.name])
                 .where {
-                    (childRole[RolesTable.id] likeAsStr "$scope%") or
-                            (childRole[RolesTable.name].lowerCase() like "${scope.lowercase()}%")
+                    (childRole[RolesTable.id] eqUuidStr scope) or (childRole[RolesTable.name].lowerCase() eq scope.lowercase())
                 }
                 .limit(limit)
-                .offset((page - 1).toLong())
+                .offset((page - 1).toLong() * limit)
                 .map { row ->
                     object {
                         val name = row[parentRole[RolesTable.name]]
@@ -869,11 +866,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerRoleRel
                 .innerJoin(childRole, { RoleParentsTable.childId }, { childRole[RolesTable.id] })
                 .select(childRole[RolesTable.name])
                 .where {
-                    (parentRole[RolesTable.id] likeAsStr "$scope%") or
-                            (parentRole[RolesTable.name].lowerCase() like "${scope.lowercase()}%")
+                    (parentRole[RolesTable.id] eqUuidStr scope) or (parentRole[RolesTable.name].lowerCase() eq scope.lowercase())
                 }
                 .limit(limit)
-                .offset((page - 1).toLong())
+                .offset((page - 1).toLong() * limit)
                 .map { row ->
                     object {
                         val name = row[childRole[RolesTable.name]]

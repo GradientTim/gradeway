@@ -22,7 +22,7 @@ import dev.gradienttim.gradeway.entity.track.TrackStageEntity
 import dev.gradienttim.gradeway.event.EventCancelledError
 import dev.gradienttim.gradeway.event.fireCancellable
 import dev.gradienttim.gradeway.events.track.*
-import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.eqId
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
@@ -346,7 +346,7 @@ class CommonTrackService(
         }
         return transaction(gradeway.database) {
             DatabaseTrackEntity.find {
-                (TracksTable.id eqAsStr value) or (TracksTable.slug eq value)
+                (TracksTable.id eqUuidStr value) or (TracksTable.slug eq value)
             }.limit(1).firstOrNull()
         }
     }

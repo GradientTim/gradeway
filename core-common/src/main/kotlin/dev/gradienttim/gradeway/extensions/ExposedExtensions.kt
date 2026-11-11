@@ -9,6 +9,7 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.dao.id.IdTable
 import java.sql.SQLException
 import java.sql.SQLIntegrityConstraintViolationException
+import java.util.UUID
 
 private const val INTEGRITY_CONSTRAINT_VIOLATION_SQL_STATE_CLASS = "23"
 private const val SQLITE_CONSTRAINT_ERROR_CODE = 19
@@ -22,11 +23,8 @@ fun Throwable.isIntegrityConstraintViolation(): Boolean =
                     (exception.sqlState == null && exception.errorCode == SQLITE_CONSTRAINT_ERROR_CODE)
         }
 
-infix fun Expression<*>.likeAsStr(pattern: String): Op<Boolean> =
-    castTo(VarCharColumnType()) like pattern
-
-infix fun Expression<*>.eqAsStr(value: String): Op<Boolean> =
-    castTo(VarCharColumnType()) eq value
+infix fun Column<EntityID<UUID>>.eqUuidStr(value: String): Op<Boolean> =
+    if (value.isUuid()) eqId(UUID.fromString(value)) else Op.FALSE
 
 infix fun <T : Comparable<T>> Column<EntityID<T>>.eqId(value: T): Op<Boolean> {
     @Suppress("UNCHECKED_CAST")

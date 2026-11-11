@@ -17,13 +17,13 @@ import dev.gradienttim.gradeway.database.models.permission.PermissionTemplatesTa
 import dev.gradienttim.gradeway.database.models.permission.PermissionsTable
 import dev.gradienttim.gradeway.entity.permission.PermissionEntity
 import dev.gradienttim.gradeway.entity.permission.PermissionTemplateEntity
-import dev.gradienttim.gradeway.extensions.likeAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.toIdArgument
 import dev.gradienttim.gradeway.services.PermissionService.*
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.translation.Argument
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.innerJoin
-import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.lowerCase
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.jdbc.select
@@ -311,7 +311,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.permissionComma
                 PermissionsTable
                     .select(PermissionsTable.id, PermissionsTable.value, PermissionsTable.type)
                     .limit(limit)
-                    .offset((page - 1).toLong())
+                    .offset((page - 1).toLong() * limit)
                     .map { row ->
                         object {
                             val id = row[PermissionsTable.id].value
@@ -636,7 +636,7 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                 PermissionTemplatesTable
                     .select(PermissionTemplatesTable.id, PermissionTemplatesTable.name)
                     .limit(limit)
-                    .offset((page - 1).toLong())
+                    .offset((page - 1).toLong() * limit)
                     .map { row ->
                         object {
                             val id = row[PermissionTemplatesTable.id].value
@@ -888,12 +888,10 @@ internal fun <TCommandSource> ArgumentBuilder<TCommandSource, *>.registerPermiss
                     .innerJoin(PermissionsTable, { PermissionTemplatePermissionsTable.permissionId }, { id })
                     .select(PermissionsTable.id, PermissionsTable.value, PermissionsTable.type)
                     .where {
-                        (PermissionTemplatesTable.id likeAsStr "$scope%") or
-                                (PermissionTemplatesTable.name.lowerCase() like
-                                        "${scope.lowercase()}%")
+                        (PermissionTemplatesTable.id eqUuidStr scope) or (PermissionTemplatesTable.name.lowerCase() eq scope.lowercase())
                     }
                     .limit(limit)
-                    .offset((page - 1).toLong())
+                    .offset((page - 1).toLong() * limit)
                     .map { row ->
                         object {
                             val id = row[PermissionsTable.id].value

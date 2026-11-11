@@ -21,7 +21,7 @@ import dev.gradienttim.gradeway.entity.player.PlayerRoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.event.fireCancellable
 import dev.gradienttim.gradeway.events.player.*
-import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
@@ -231,7 +231,7 @@ class CommonPlayerService(
         }
         return transaction(gradeway.database) {
             DatabasePlayerEntity.find {
-                (PlayersTable.id eqAsStr value) or (PlayersTable.name eq value)
+                (PlayersTable.id eqUuidStr value) or (PlayersTable.name eq value)
             }.limit(1).firstOrNull()
         }
     }

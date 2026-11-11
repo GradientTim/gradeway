@@ -29,6 +29,7 @@ dependencies {
 
     testImplementation(kotlin("test"))
     testImplementation("com.h2database:h2:2.5.252")
+    testImplementation("org.xerial:sqlite-jdbc:3.54.1.0")
 }
 
 buildMeta {

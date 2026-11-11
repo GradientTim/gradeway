@@ -20,7 +20,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleParentEntity
 import dev.gradienttim.gradeway.event.fireCancellable
 import dev.gradienttim.gradeway.events.role.*
-import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.messaging.payloads.*
@@ -245,7 +245,7 @@ class CommonRoleService(
         }
         return transaction(gradeway.database) {
             DatabaseRoleEntity.find {
-                (RolesTable.id eqAsStr value) or (RolesTable.name eq value)
+                (RolesTable.id eqUuidStr value) or (RolesTable.name eq value)
             }.limit(1).firstOrNull()
         }
     }

@@ -18,7 +18,7 @@ import dev.gradienttim.gradeway.entity.role.RoleEntity
 import dev.gradienttim.gradeway.entity.role.RoleGroupEntity
 import dev.gradienttim.gradeway.event.fireCancellable
 import dev.gradienttim.gradeway.events.group.*
-import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.extensions.isUuid
@@ -216,7 +216,7 @@ class CommonGroupService(
         return try {
             transaction(gradeway.database) {
                 DatabaseGroupEntity.find {
-                    (GroupsTable.id eqAsStr value) or (GroupsTable.name eq value)
+                    (GroupsTable.id eqUuidStr value) or (GroupsTable.name eq value)
                 }.limit(1).firstOrNull()
             }
         } catch (throwable: Throwable) {

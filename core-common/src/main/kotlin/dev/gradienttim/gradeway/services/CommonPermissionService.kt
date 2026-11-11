@@ -37,7 +37,7 @@ import dev.gradienttim.gradeway.event.eventSubjectOf
 import dev.gradienttim.gradeway.event.fireCancellable
 import dev.gradienttim.gradeway.events.permission.*
 import dev.gradienttim.gradeway.events.template.*
-import dev.gradienttim.gradeway.extensions.eqAsStr
+import dev.gradienttim.gradeway.extensions.eqUuidStr
 import dev.gradienttim.gradeway.extensions.isIntegrityConstraintViolation
 import dev.gradienttim.gradeway.extensions.isNameValid
 import dev.gradienttim.gradeway.extensions.isUuid
@@ -265,7 +265,7 @@ class CommonPermissionService(
         return try {
             transaction(gradeway.database) {
                 DatabasePermissionEntity.find {
-                    (PermissionsTable.id eqAsStr value) or (PermissionsTable.value eq value)
+                    (PermissionsTable.id eqUuidStr value) or (PermissionsTable.value eq value)
                 }.limit(1).firstOrNull()
             }
         } catch (throwable: Throwable) {
@@ -459,7 +459,7 @@ class CommonPermissionService(
         return try {
             transaction(gradeway.database) {
                 DatabasePermissionTemplateEntity.find {
-                    (PermissionTemplatesTable.id eqAsStr value) or (PermissionTemplatesTable.name eq value)
+                    (PermissionTemplatesTable.id eqUuidStr value) or (PermissionTemplatesTable.name eq value)
                 }.limit(1).firstOrNull()
             }
         } catch (throwable: Throwable) {
