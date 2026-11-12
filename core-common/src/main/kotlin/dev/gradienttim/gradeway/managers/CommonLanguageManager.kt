@@ -34,8 +34,8 @@ class CommonLanguageManager(val gradeway: CommonGradeway<*>) : LanguageManager {
             saveResourceLanguages()
 
             translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
-            var defaultLocale = gradeway.configs.gradewayEntry.config.defaultLocale
-            if (!defaultLocale.isBlank()) {
+            val defaultLocale = gradeway.configs.gradewayEntry.config.defaultLocale
+            if (defaultLocale.isNotBlank()) {
                 translator.defaultLocale(Locale.of(defaultLocale))
             } else {
                 translator.defaultLocale(GradewayConfig.DEFAULT_LOCALE)
