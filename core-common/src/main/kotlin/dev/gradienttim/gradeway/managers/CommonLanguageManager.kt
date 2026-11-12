@@ -7,6 +7,7 @@ package dev.gradienttim.gradeway.managers
 import arrow.core.Either
 import arrow.core.raise.either
 import dev.gradienttim.gradeway.CommonGradeway
+import dev.gradienttim.gradeway.configs.GradewayConfig
 import dev.gradienttim.gradeway.extensions.cleanUnusedKeys
 import dev.gradienttim.gradeway.extensions.createDirectoryIfNotExists
 import dev.gradienttim.gradeway.extensions.fillMissingKeys
@@ -33,7 +34,12 @@ class CommonLanguageManager(val gradeway: CommonGradeway<*>) : LanguageManager {
             saveResourceLanguages()
 
             translator = MiniMessageTranslationStore.create(Key.key("gradeway", "languages"), gradeway.miniMessage)
-            translator.defaultLocale(Locale.of(gradeway.configs.gradewayEntry.config.defaultLocale))
+            var defaultLocale = gradeway.configs.gradewayEntry.config.defaultLocale
+            if (!defaultLocale.isBlank()) {
+                translator.defaultLocale(Locale.of(defaultLocale))
+            } else {
+                translator.defaultLocale(GradewayConfig.DEFAULT_LOCALE)
+            }
 
             val availableLocales = Locale.availableLocales().toList()
             directory.listDirectoryEntries("*.properties").forEach { filePath ->

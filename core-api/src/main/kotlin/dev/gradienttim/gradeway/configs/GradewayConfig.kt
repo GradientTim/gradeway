@@ -6,6 +6,7 @@ package dev.gradienttim.gradeway.configs
 
 import com.akuleshov7.ktoml.annotations.TomlComments
 import kotlinx.serialization.Serializable
+import java.util.Locale
 
 @Serializable
 data class GradewayConfig(
@@ -33,7 +34,7 @@ data class GradewayConfig(
         "Defines the default locale used throughout Gradeway messages.",
         "Must be a valid locale string."
     )
-    val defaultLocale: String = "en",
+    val defaultLocale: String = DEFAULT_LOCALE.toString(),
 
     @TomlComments(
         "Defines the maximum decompressed size, in bytes, allowed when importing a backup or migration file.",
@@ -86,5 +87,6 @@ data class GradewayConfig(
 
     companion object {
         const val LATEST_VERSION: Int = 4
+        val DEFAULT_LOCALE: Locale = Locale.ENGLISH
     }
 }
