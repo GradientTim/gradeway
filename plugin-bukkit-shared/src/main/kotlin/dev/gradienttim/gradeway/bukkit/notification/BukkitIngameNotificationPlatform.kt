@@ -16,6 +16,8 @@ import java.util.*
 abstract class BukkitIngameNotificationPlatform(
     private val server: Server,
 ) : IngameNotificationPlatform<Player> {
+    open val supportsClickEvents: Boolean = true
+
     override fun onlinePlayers(): Collection<Player> = server.onlinePlayers.toList()
 
     override fun uniqueId(player: Player): UUID = player.uniqueId

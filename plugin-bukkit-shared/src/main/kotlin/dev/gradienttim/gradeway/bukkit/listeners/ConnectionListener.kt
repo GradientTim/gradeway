@@ -7,8 +7,10 @@ package dev.gradienttim.gradeway.bukkit.listeners
 import dev.gradienttim.gradeway.GradewayLifecycle
 import dev.gradienttim.gradeway.audit.Actor
 import dev.gradienttim.gradeway.bukkit.config.BukkitPlatformConfig
+import dev.gradienttim.gradeway.bukkit.notification.BukkitIngameNotificationPlatform
 import dev.gradienttim.gradeway.bukkit.permission.GradewayPermissibleBase
 import dev.gradienttim.gradeway.messaging.payloads.*
+import dev.gradienttim.gradeway.update.UpdateMessages
 import org.bukkit.Server
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -19,10 +21,12 @@ import org.bukkit.event.player.PlayerQuitEvent
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class ConnectionListener(
     val server: Server,
-    val gradeway: GradewayLifecycle<BukkitPlatformConfig>
+    val gradeway: GradewayLifecycle<BukkitPlatformConfig>,
+    private val notificationPlatform: BukkitIngameNotificationPlatform,
 ) : Listener {
     private var entityPermissionHandle: MethodHandle? = null
 
@@ -48,11 +52,31 @@ class ConnectionListener(
 
         player.recalculatePermissions()
         player.updateCommands()
+
+        notifyAboutUpdate(player)
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     fun onPlayerQuit(event: PlayerQuitEvent) {
         gradeway.caches.invalidatePlayer(event.player.uniqueId)
+    }
+
+    private fun notifyAboutUpdate(player: Player) {
+        val updates = gradeway.updates
+        val latest = updates.latestRelease ?: return
+        if (!gradeway.configs.gradewayEntry.config.updateChecker.notifyOnJoin || !updates.isUpdateAvailable) return
+        if (!player.isOp && !player.hasPermission(UpdateMessages.PERMISSION)) return
+
+        val message = UpdateMessages.available(
+            current = updates.currentVersion,
+            latest = latest.version,
+            clickable = notificationPlatform.supportsClickEvents,
+        )
+        gradeway.scheduler.runTaskLater(UPDATE_NOTIFY_DELAY_SECONDS, TimeUnit.SECONDS) {
+            if (player.isOnline) {
+                notificationPlatform.sendTranslatedMessage(player, message)
+            }
+        }
     }
 
     private fun initializeEntityPermissionHandle() {
@@ -128,6 +152,10 @@ class ConnectionListener(
         } else {
             gradeway.scheduler.runTask(action)
         }
+    }
+
+    private companion object {
+        const val UPDATE_NOTIFY_DELAY_SECONDS = 2L
     }
 
     init {

@@ -74,6 +74,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
     override val drivers: DriverManager by inject()
     override val configs: ConfigManager<TPlatformConfig> by inject()
     override val backups: BackupManager by inject()
+    override val updates: UpdateManager by inject()
 
     internal lateinit var miniMessage: MiniMessage
     internal lateinit var database: Database
@@ -146,6 +147,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         messaging.reload().bind()
         languages.reload().bind()
         notifications.reload().bind()
+        updates.reload().bind()
 
         events.fire(GradewayReloadedEvent())
     }.onLeft { throwable ->
@@ -158,6 +160,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         databases.enable().bind()
         messaging.enable().bind()
         notifications.enable().bind()
+        updates.enable().bind()
 
         caches.suggestions.initialize()
         knownPermissions.seed(knownPermissionSource.collect())
@@ -186,6 +189,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
         messaging.disable().bind()
         confirmations.disable().bind()
         notifications.disable().bind()
+        updates.disable().bind()
 
         events.fire(GradewayDisabledEvent())
     }.onLeft { throwable ->
@@ -224,6 +228,7 @@ class CommonGradeway<TPlatformConfig : PlatformConfig>(
                 single<DriverManager> { CommonDriverManager(gradeway) }
                 single<ConfigManager<TPlatformConfig>> { CommonConfigManager(gradeway) }
                 single<BackupManager> { CommonBackupManager(gradeway) }
+                single<UpdateManager> { CommonUpdateManager(gradeway) }
             },
 
             module {

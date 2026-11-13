@@ -35,6 +35,7 @@ fun createTestGradeway(databaseDriver: Driver = TestDatabaseDriver()): CommonGra
                 driver = databaseDriver
             )
             gradeway.configs.driversEntry.config.database.driver = "test"
+            gradeway.configs.gradewayEntry.config.updateChecker.enabled = false
 
             gradeway.enable().onLeft { error("Failed to enable test Gradeway: $it") }
         }

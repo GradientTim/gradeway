@@ -293,6 +293,11 @@ interface GradewayLifecycle<TPlatformConfig : PlatformConfig> : Gradeway<TPlatfo
     val backups: BackupManager
 
     /**
+     * Manages asynchronous checks for newer Gradeway releases and reports available updates.
+     */
+    val updates: UpdateManager
+
+    /**
      * The event bus other plugins subscribe to, to listen to and cancel Gradeway changes.
      *
      * @see EventManager

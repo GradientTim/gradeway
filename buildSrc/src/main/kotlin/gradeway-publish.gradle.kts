@@ -42,6 +42,14 @@ mavenPublishing {
             }
         }
 
+        // Contributors are welcome to add themselves here when contributing, entirely voluntary.
+        contributors {
+            // contributor {
+            //     name.set("Your Name")
+            //     url.set("https://github.com/your-username")
+            // }
+        }
+
         scm {
             url.set("https://github.com/GradientTim/gradeway")
             connection.set("scm:git:git://github.com/GradientTim/gradeway.git")

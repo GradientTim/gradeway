@@ -54,7 +54,33 @@ data class GradewayConfig(
         "Controls how changes are recorded in the audit log."
     )
     val auditLog: AuditLogConfig = AuditLogConfig(),
+
+    @TomlComments(
+        "Controls checking GitHub for new Gradeway releases."
+    )
+    val updateChecker: UpdateCheckerConfig = UpdateCheckerConfig(),
 ) : BaseConfig {
+    @Serializable
+    data class UpdateCheckerConfig(
+        @TomlComments(
+            "Controls whether Gradeway checks for new releases and logs them to the console."
+        )
+        var enabled: Boolean = true,
+
+        @TomlComments(
+            "Defines how often, in hours, Gradeway checks for new releases.",
+            "Values below 1 are treated as 1."
+        )
+        @Suppress("MagicNumber")
+        val intervalHours: Long = 6,
+
+        @TomlComments(
+            "Notifies players with the 'gradeway.update.notify' permission or op about new releases when they join.",
+            "Only applies to servers (Bukkit, Paper), not proxies."
+        )
+        val notifyOnJoin: Boolean = true,
+    )
+
     @Serializable
     data class DefaultRoleConfig(
         @TomlComments(
@@ -86,7 +112,7 @@ data class GradewayConfig(
     )
 
     companion object {
-        const val LATEST_VERSION: Int = 4
+        const val LATEST_VERSION: Int = 5
         val DEFAULT_LOCALE: Locale = Locale.ENGLISH
     }
 }

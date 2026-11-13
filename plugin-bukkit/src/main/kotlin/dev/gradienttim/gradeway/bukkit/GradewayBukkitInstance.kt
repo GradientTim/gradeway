@@ -31,6 +31,7 @@ class GradewayBukkitInstance(
 ) {
     private val commandDispatcher = CommandDispatcher<CommandSender>()
     private lateinit var gradeway: CommonGradeway<BukkitPlatformConfig>
+    private lateinit var notificationPlatform: SpigotIngameNotificationPlatform
 
     fun initialize() {
         if (::gradeway.isInitialized) return
@@ -52,6 +53,8 @@ class GradewayBukkitInstance(
                 logger.severe("Failed to load Gradeway: ${throwable.message}")
             }
             .onRight {
+                notificationPlatform = SpigotIngameNotificationPlatform(plugin.server, BukkitCommandContext(gradeway))
+
                 gradeway.drivers.registerDriver(
                     id = "plugin-message",
                     type = DriverType.MESSAGING,
@@ -61,9 +64,7 @@ class GradewayBukkitInstance(
                 gradeway.drivers.registerDriver(
                     id = IngameNotificationDriver.ID,
                     type = DriverType.NOTIFICATION,
-                    driver = IngameNotificationDriver(
-                        SpigotIngameNotificationPlatform(plugin.server, BukkitCommandContext(gradeway))
-                    )
+                    driver = IngameNotificationDriver(notificationPlatform)
                 )
 
                 gradeway.enable()
@@ -89,7 +90,8 @@ class GradewayBukkitInstance(
     }
 
     private fun registerEvents() {
-        plugin.server.pluginManager.registerEvents(ConnectionListener(plugin.server, gradeway), plugin)
+        val connectionListener = ConnectionListener(plugin.server, gradeway, notificationPlatform)
+        plugin.server.pluginManager.registerEvents(connectionListener, plugin)
         plugin.server.pluginManager.registerEvents(PluginLifecycleListener(gradeway), plugin)
     }
 

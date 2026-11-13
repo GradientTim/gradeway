@@ -37,6 +37,7 @@ class GradewayPlugin : JavaPlugin() {
         platformConfigSerializer = BukkitPlatformConfig.serializer(),
         knownPermissionSource = PaperKnownPermissionSource(server),
     )
+    private val notificationPlatform by lazy { PaperIngameNotificationPlatform(server) }
 
     override fun onEnable() {
         gradeway.load()
@@ -53,7 +54,7 @@ class GradewayPlugin : JavaPlugin() {
                 gradeway.drivers.registerDriver(
                     id = IngameNotificationDriver.ID,
                     type = DriverType.NOTIFICATION,
-                    driver = IngameNotificationDriver(PaperIngameNotificationPlatform(server))
+                    driver = IngameNotificationDriver(notificationPlatform)
                 )
 
                 gradeway.enable()
@@ -77,7 +78,7 @@ class GradewayPlugin : JavaPlugin() {
     }
 
     private fun registerEvents() {
-        server.pluginManager.registerEvents(ConnectionListener(server, gradeway), this)
+        server.pluginManager.registerEvents(ConnectionListener(server, gradeway, notificationPlatform), this)
         server.pluginManager.registerEvents(PluginLifecycleListener(gradeway), this)
     }
 
